@@ -1561,7 +1561,7 @@ wheels = [
 
 [[package]]
 name = "mjswan"
-version = "0.11.0"
+version = "0.11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mujoco" },
@@ -1570,9 +1570,9 @@ dependencies = [
     { name = "rich" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/7d/566802859246fa0d41fa007f4a2afc7fd88837188ee3cec22d431d45ea27/mjswan-0.11.0.tar.gz", hash = "sha256:df3ceb30bbb59da1ce90223fca9cc572cfbfba50d5fa16fb63c13363b0ee4b7f", size = 11391236, upload-time = "2026-09-26T07:19:15.624Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/04/79b61f6ac8341f93e343b1774e5f6b73a669cb19f259213700de4de5e1a5/mjswan-0.11.1.tar.gz", hash = "sha256:9bf17b3fcfd2e8311241f7d6121f3c9b187ff67982a8b77af402c7a41d77a63e", size = 11404525, upload-time = "2026-09-26T15:35:18.311Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/99/34e1cc30a8cc9b5373877ea5f05aa93a71d2dd9e5cc240d395ff1f8126e8/mjswan-0.11.0-py3-none-any.whl", hash = "sha256:3cda5cbe6c360fb43242fba44ed1add7ed06da051a4f6a4b22b2b7d55f904382", size = 11598270, upload-time = "2026-09-26T07:19:12.801Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/0c/61fafd70c3fb04995142fd132a8dc5cc9b3831d480133106386cab761725/mjswan-0.11.1-py3-none-any.whl", hash = "sha256:1cfdccce9d0e7f69df49f42b3bcfcc7ccae2430ee71d34d097eb3046bcd57d40", size = 11610551, upload-time = "2026-09-26T15:35:16.264Z" },
 ]
 
 [[package]]
@@ -1611,7 +1611,7 @@ previews = [
 [package.metadata]
 requires-dist = [
     { name = "mjlab", specifier = "==1.6.0" },
-    { name = "mjswan", specifier = ">=0.11.0" },
+    { name = "mjswan", specifier = ">=0.11.1" },
     { name = "myosuite", extras = ["musclemimic"], marker = "extra == 'musclemimic'", git = "https://github.com/MyoHub/myosuite?branch=ms3" },
     { name = "onnx", specifier = ">=1.20.0" },
     { name = "onnxconverter-common", marker = "extra == 'musclemimic'", specifier = ">=1.16" },
