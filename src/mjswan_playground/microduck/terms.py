@@ -69,7 +69,8 @@ class GroundPickPhaseCommand(CommandTerm):
         self.step_count = torch.zeros_like(self.step_count)
         self.phase_cmd = torch.zeros_like(self.phase_cmd)
 
-    def _update_command(self) -> None:
+    def _update_command(self, env_ids: torch.Tensor | None) -> None:
+        del env_ids
         steps_per_cycle = self.cfg.period / self.cfg.control_dt
         self.step_count = torch.remainder(self.step_count + 1.0, steps_per_cycle)
         phase = self.step_count / steps_per_cycle

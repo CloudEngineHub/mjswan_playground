@@ -9,8 +9,8 @@ authors = [{ name = "mjswan Developers" }]
 # pre-built wheel for 3.13+.
 requires-python = ">=3.10, <3.13"
 dependencies = [
-    "mjswan>=0.10.2",
-    "mjlab==1.5.3",
+    "mjswan>=0.11.0",
+    "mjlab==1.6.0",
     "torch>=2.9.1",
     "onnx>=1.20.0",
     "pyyaml>=6.0",
@@ -19,7 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Registers the `Wbc-*` tasks with mjlab; only the wbc task needs it.
-wbc = ["wbc-mjlab>=0.0.5"]
+wbc = ["wbc-mjlab>=0.0.6"]
 # Registers the `myoMimic*` tasks with mjlab and reads the public Orbax checkpoint; only
 # the musclemimic task needs it.
 musclemimic = [
@@ -44,18 +44,7 @@ build-backend = "hatchling.build"
 packages = ["src/mjswan_playground"]
 
 [tool.uv.sources]
-# `myoMimic*` and `FullbodyObsAdapter` are on `ms3` only, not in the PyPI release.
 myosuite = { git = "https://github.com/MyoHub/myosuite", branch = "ms3" }
-
-# Same overrides mjswan itself carries: mjlab pulls a mujoco older than the one
-# mujoco-warp needs, and myosuite pins an h5py with no arm64 wheel.
-[tool.uv]
-override-dependencies = [
-    "mujoco==3.10.0",
-    "mujoco-mjx==3.10.0",
-    "mujoco-warp>=3.10.0.3,<3.11",
-    "h5py>=3.8.0",
-]
 
 [dependency-groups]
 dev = ["pytest>=9.0.2", "ruff==0.16.0"]

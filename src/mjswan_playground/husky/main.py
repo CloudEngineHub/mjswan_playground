@@ -13,7 +13,7 @@ from mjlab.envs.mdp import terminations as term_fns
 from mjswan.envs.mdp.actions import JointPositionActionCfg
 from mjswan.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
 from mjswan.managers.termination_manager import TerminationTermCfg
-from mjswan.trace_env import build_single_entity_trace_env
+from mjswan.mjlab import build_single_entity_trace_env
 
 from mjswan_playground._deps import ensure_repo
 from mjswan_playground._trace import CommandValues

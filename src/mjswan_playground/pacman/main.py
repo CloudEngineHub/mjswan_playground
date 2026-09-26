@@ -7,9 +7,9 @@ from typing import Any
 import mjswan
 import onnx
 from mjlab.tasks.registry import load_env_cfg
-from mjswan.adapters import DEFAULT_OBS_GROUP_KEY, adapt_observations
 from mjswan.managers.event_manager import EventTermCfg
 from mjswan.managers.observation_manager import ObservationTermCfg
+from mjswan.mjlab import DEFAULT_OBS_GROUP_KEY, adapt_observations
 
 from . import terms, upstream
 
