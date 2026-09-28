@@ -7,6 +7,10 @@ import importlib.util
 import sys
 from pathlib import Path
 from types import ModuleType
+from unittest import mock
+
+from mjlab.managers import observation_manager
+from mjlab.utils.spec_config import CollisionCfg
 
 from mjswan_playground._deps import ensure_repo
 
@@ -37,6 +41,8 @@ def register_tasks(root: Path) -> None:
     Upstream runs from source as top-level ``src``, so its root must come *first* on
     ``sys.path``: this repo has a ``src/`` of its own that would shadow it.
     """
+    if TASK_PACKAGE in sys.modules:  # Registered and shimmed already.
+        return
     imported = sys.modules.get("src")
     if imported is not None:
         paths = [str(path) for path in getattr(imported, "__path__", ()) or ()]
@@ -48,7 +54,41 @@ def register_tasks(root: Path) -> None:
             )
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
-    importlib.import_module(TASK_PACKAGE)
+    with mock.patch("mjlab.utils.spec_config.CollisionCfg", _collision_cfg):
+        importlib.import_module(TASK_PACKAGE)
+    goal = importlib.import_module("src.tasks.amp_loco.mdp.goal_command")
+    for cls, name in (
+        (goal.GoToGoalCommand, "_update_command"),
+        (goal.DodgeGoToGoalCommand, "_update_command"),
+        # Upstream's TimeOrderingObservationManager, rebound here by its import.
+        (observation_manager.ObservationManager, "compute_group"),
+    ):
+        setattr(cls, name, _dropping_env_ids(vars(cls)[name]))
+
+
+# ponytail: upstream is on mjlab 1.5.3; drop these shims once REPO_COMMIT is on 1.6.
+_COLLISION_DEFAULTS = {"contype": 1, "conaffinity": 1, "condim": 3, "priority": 0}
+
+
+def _collision_cfg(**kwargs) -> CollisionCfg:
+    """1.5.3 defaulted the structural fields, also for geoms a dict leaves unmatched.
+    Patterns match first-wins, so the catch-all goes last."""
+    for name, default in _COLLISION_DEFAULTS.items():
+        value = kwargs.setdefault(name, default)
+        if isinstance(value, dict):
+            kwargs[name] = {**value, ".*": value.get(".*", default)}
+    return CollisionCfg(**kwargs)
+
+
+def _dropping_env_ids(method):
+    """1.6 passes the reset env ids; 1.5.3 acted on every env on reset, so drop them.
+    Not ``functools.wraps``: mjlab checks the signature, which would follow it."""
+    kept = method.__code__.co_argcount
+
+    def wrapper(*args, env_ids=None, **kwargs):
+        return method(*args[:kept], **kwargs)
+
+    return wrapper
 
 
 def deployed_contract(root: Path) -> ModuleType:
