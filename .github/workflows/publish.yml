@@ -1,0 +1,101 @@
+name: publish
+
+# Publishes a task to mjswan Cloud when its pull request gets the `publish` label, then
+# links it from the task's README row. One run at a time: each run refreshes the bot's
+# stored session, and the old refresh token stops working once the new one is issued.
+on:
+  pull_request:
+    types: [labeled]
+
+concurrency:
+  group: mjswan-cloud-session
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event.label.name == 'publish' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      MUJOCO_GL: disable
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Find the task
+        run: |
+          id="${GITHUB_HEAD_REF##*/}"
+          id="${id#daily-}"
+          id="${id#add-}"
+          grep -q "\"$id\": \"mjswan_playground.$id.main\"" src/mjswan_playground/registry.py \
+            || { echo "::error::Branch $GITHUB_HEAD_REF names no registered task."; exit 1; }
+          echo "TASK_ID=$id" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: |
+          if grep -q "^$TASK_ID = \[" pyproject.toml; then uv sync --extra "$TASK_ID"; else uv sync; fi
+          uv run msp build "$TASK_ID"
+
+      - name: Restore the bot's mjswan Cloud session
+        env:
+          CREDENTIALS: ${{ secrets.MJSWAN_CREDENTIALS }}
+          ROTATE_TOKEN: ${{ secrets.SECRETS_WRITE_PAT }}
+        run: |
+          test -n "$CREDENTIALS" || { echo "::error::Secret MJSWAN_CREDENTIALS is not set."; exit 1; }
+          test -n "$ROTATE_TOKEN" || { echo "::error::Secret SECRETS_WRITE_PAT is not set."; exit 1; }
+          dir="$RUNNER_TEMP/mjswan"
+          mkdir -p "$dir"
+          printf '%s' "$CREDENTIALS" > "$dir/credentials.json"
+          echo "MJSWAN_CONFIG_HOME=$dir" >> "$GITHUB_ENV"
+
+      - name: Publish
+        run: |
+          uv run python - <<'PY'
+          import os, pathlib
+          from mjswan.cloud.publish import publish_dist, simulation_url
+          url = simulation_url(publish_dist(f"dist/{os.environ['TASK_ID']}").id)
+          pathlib.Path(os.environ["RUNNER_TEMP"], "url").write_text(url)
+          PY
+          echo "URL=$(cat "$RUNNER_TEMP/url")" >> "$GITHUB_ENV"
+
+      - name: Save the refreshed session
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.SECRETS_WRITE_PAT }}
+        run: |
+          f="$MJSWAN_CONFIG_HOME/credentials.json"
+          if [ -s "$f" ] && [ -n "$GH_TOKEN" ]; then gh secret set MJSWAN_CREDENTIALS < "$f"; fi
+
+      - name: Link it from the README and the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          task, url = os.environ["TASK_ID"], os.environ["URL"]
+          link = f"[{url.removeprefix('https://')}]({url})"
+          gif = f'<img src="assets/{task}.gif" width="200"/>'
+          readme = pathlib.Path("README.md")
+          lines = readme.read_text().splitlines(keepends=True)
+          for i, line in enumerate(lines):
+              if line.startswith(f"| [`{task}`]"):
+                  head, _ = line.rstrip("\n").removesuffix(" |").rsplit(" | ", 1)
+                  cell = f'<a href="{url}">{gif}</a><br />{link}' if gif in line else link
+                  lines[i] = f"{head} | {cell} |\n"
+                  break
+          else:
+              raise SystemExit(f"README.md has no Tasks row for {task}")
+          readme.write_text("".join(lines))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Link $TASK_ID on mjswan Cloud"
+          git push
+          gh pr comment "$PR" --body "Published: $URL"
