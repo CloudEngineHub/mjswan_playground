@@ -38,16 +38,6 @@ builder.build(output_dir="dist").launch()
 
 Each task also lives at `mjswan_playground.<task_module>.main` (the task ID with underscores, e.g. `mjswan_playground.husky.main`), exposing `setup_builder()`.
 
-## Adding a task
-
-The `msp:add-new-task` agent skill adds one task from any repo that registers mjlab tasks. It ports the task with mjswan's [`mjlab-to-mjswan`](https://github.com/ttktjmt/mjswan/tree/main/skills/mjlab-to-mjswan) skill, wires it into the registry and the table above, and opens a pull request for that task alone. In Claude Code, from the repository root:
-
-```
-/msp:add-new-task https://github.com/<owner>/<repo> [task-id]
-```
-
-Claude Code loads the skill from `.claude/skills/msp/` once you trust the workspace. A cloud session never asks, so set `CLAUDE_CODE_PLUGIN_DIRS=/home/user/mjswan_playground/.claude/skills/msp` in its environment instead. The skill's [README](.claude/skills/msp/skills/add-new-task/README.md) covers its steps and where it stops.
-
 ## License
 
 This project is licensed under the [Apache-2.0 License](LICENSE).
