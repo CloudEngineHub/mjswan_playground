@@ -141,6 +141,14 @@ PREVIEWS: dict[str, Preview] = {
         from_reset=True,
         seconds=4.84,
     ),
+    # 4.64 s is the 232-frame clip, so the GIF is the whole kick from one reset.
+    "spinkick": Preview(
+        query="ref=0",
+        orbit=150,
+        crop="719:526:115:122",
+        from_reset=True,
+        seconds=4.64,
+    ),
 }
 
 
@@ -319,8 +327,7 @@ def film(
     seconds = preview.seconds if seconds is None else seconds
 
     with sync_playwright() as pw:
-        # Headed: see the module docstring. Headless films slow motion. The forced scale
-        # keeps the capture at 2x on a 1x display too (Xvfb, most Linux desktops).
+        # Headed (see the module docstring), and at 2x even on a 1x display.
         args = ["--hide-scrollbars", f"--force-device-scale-factor={CAPTURE_SCALE}"]
         if clock < 1:
             # Mesa's llvmpipe leaves the step loop on time, where SwiftShader stalls it.

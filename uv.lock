@@ -1595,6 +1595,9 @@ musclemimic = [
     { name = "orbax-checkpoint", version = "0.11.39", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "orbax-checkpoint", version = "0.12.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
+spinkick = [
+    { name = "spinkick-example" },
+]
 wbc = [
     { name = "wbc-mjlab" },
 ]
@@ -1617,11 +1620,12 @@ requires-dist = [
     { name = "onnxconverter-common", marker = "extra == 'musclemimic'", specifier = ">=1.16" },
     { name = "orbax-checkpoint", marker = "extra == 'musclemimic'", specifier = ">=0.11" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "spinkick-example", marker = "extra == 'spinkick'", git = "https://github.com/mujocolab/g1_spinkick_example?rev=f1c4b230bd1a76c44e801e49f079212b6c6487da" },
     { name = "torch", specifier = ">=2.9.1" },
     { name = "typer", specifier = ">=0.12" },
     { name = "wbc-mjlab", marker = "extra == 'wbc'", specifier = ">=0.0.6" },
 ]
-provides-extras = ["wbc", "musclemimic"]
+provides-extras = ["wbc", "musclemimic", "spinkick"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -3197,6 +3201,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1f/ea/49c993d6dfdd7338c9b1000a0f36817ed7ec84577ae2e52f890d1a4ff909/smmap-5.0.3.tar.gz", hash = "sha256:4d9debb8b99007ae47165abc08670bd74cb74b5227dda7f643eccc4e9eb5642c", size = 22506, upload-time = "2026-03-09T03:43:26.1Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/d4/59e74daffcb57a07668852eeeb6035af9f32cbfd7a1d2511f17d2fe6a738/smmap-5.0.3-py3-none-any.whl", hash = "sha256:c106e05d5a61449cf6ba9a1e650227ecfb141590d2a98412103ff35d89fc7b2f", size = 24390, upload-time = "2026-03-09T03:43:24.361Z" },
+]
+
+[[package]]
+name = "spinkick-example"
+version = "0.1.0"
+source = { git = "https://github.com/mujocolab/g1_spinkick_example?rev=f1c4b230bd1a76c44e801e49f079212b6c6487da#f1c4b230bd1a76c44e801e49f079212b6c6487da" }
+dependencies = [
+    { name = "mjlab" },
+    { name = "ruff" },
 ]
 
 [[package]]
