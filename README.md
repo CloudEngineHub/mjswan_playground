@@ -11,7 +11,7 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 | [`pacman`](src/mjswan_playground/pacman/README.md) | Unitree G1 | Dodging thrown balls from a head depth camera ([PAC-MAN](https://lzyang2000.github.io/perceptive_cbf_rl/), 2026) | <a href="https://mjswan.com/s/GOTofiq"><img src="assets/pacman.gif" width="200"/></a><br />[mjswan.com/s/GOTofiq](https://mjswan.com/s/GOTofiq) |
 | [`microduck`](src/mjswan_playground/microduck/README.md) | Microduck | Every policy the robot ships: walk, stand, sit, ground pick, ball kick, roulade, roller skate ([Microduck](https://github.com/pollen-robotics/microduck)) | <a href="https://mjswan.com/s/DOGILsh"><img src="assets/microduck.gif" width="200"/></a><br />[mjswan.com/s/DOGILsh](https://mjswan.com/s/DOGILsh) |
 | [`musclemimic`](src/mjswan_playground/musclemimic/README.md) | MyoFullBody | A 354-muscle body tracking a walking clip with the public 2.05e9-step checkpoint ([MuscleMimic](https://github.com/amathislab/musclemimic), 2026) | <a href="https://mjswan.com/s/gOrSan8"><img src="assets/musclemimic.gif" width="200"/></a><br />[mjswan.com/s/gOrSan8](https://mjswan.com/s/gOrSan8) |
-| [`spinkick`](src/mjswan_playground/spinkick/README.md) | Unitree G1 | A double spin kick motion tracking ([g1_spinkick_example](https://github.com/mujocolab/g1_spinkick_example)) | <img src="assets/spinkick.gif" width="200"/><br />WIP |
+| [`spinkick`](src/mjswan_playground/spinkick/README.md) | Unitree G1 | A double spin kick motion tracking ([g1_spinkick_example](https://github.com/mujocolab/g1_spinkick_example)) | <a href="https://mjswan.com/s/-wXxa8L"><img src="assets/spinkick.gif" width="200"/></a><br />[mjswan.com/s/-wXxa8L](https://mjswan.com/s/-wXxa8L) |
 
 ## CLI
 
