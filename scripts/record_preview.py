@@ -296,8 +296,7 @@ def film(
     seconds = preview.seconds if seconds is None else seconds
 
     with sync_playwright() as pw:
-        # Headed: see the module docstring. Headless films slow motion. The forced scale
-        # keeps the capture at 2x on a 1x display too (Xvfb, most Linux desktops).
+        # Headed (see the module docstring), and at 2x even on a 1x display.
         browser = pw.chromium.launch(
             headless=False,
             args=["--hide-scrollbars", f"--force-device-scale-factor={CAPTURE_SCALE}"],

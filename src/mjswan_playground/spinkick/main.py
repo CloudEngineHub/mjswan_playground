@@ -17,7 +17,7 @@ TASK_ID = "Mjlab-Spinkick-Unitree-G1"
 def setup_builder() -> mjswan.Builder:
     root = upstream.resolve_root()
     policy = onnx.load(str(root / upstream.POLICY_ONNX))
-    # The deploy contract `motion_tracking_controller` reads: joint order and rest pose.
+    # Joint order and rest pose, as the robot's `motion_tracking_controller` reads them.
     contract = read_mjlab_metadata(policy)
     env_cfg = load_env_cfg(TASK_ID, play=True)
     clip = upstream.ensure_clip(policy, env_cfg)
