@@ -373,8 +373,13 @@ def film(
             # The panel's own shortcut, on a window listener, so it still works hidden.
             # `engine.reset()` leaves the camera alone, so the framing survives.
             page.keyboard.press("r")
-            # Two control steps to land, or the first frame shows the pose before it.
+            # Two control steps to land and two drawn frames to show, or the first frame
+            # is the pose before it (`--software` draws one every few steps).
             page.wait_for_timeout(2 / expected_rate / clock * 1000)
+            page.evaluate(
+                "() => new Promise((drawn) =>"
+                " requestAnimationFrame(() => requestAnimationFrame(drawn)))"
+            )
 
         client = context.new_cdp_session(page)
         frames: list[tuple[float, str]] = []
