@@ -72,5 +72,5 @@ A generic gap becomes a pull request against mjswan, as mjswan's skill says. The
 
 ## What it will not do
 
-- Merge anything, or publish to mjswan Cloud: that is the author's call, by `uv run mjswan publish dist/<id>` or the `publish` label.
+- Merge anything, or publish to mjswan Cloud: `uv run mjswan publish dist/<id>` is the author's call.
 - Put two tasks in one pull request.

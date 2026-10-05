@@ -1,13 +1,14 @@
-# The daily routine's queue (ROUTINE.md, part C), first entry first. People keep it; the
-# routine never edits it.
+# The daily routine's queue (ROUTINE.md, part D), first entry first. Its scout (part A)
+# adds trending entries at the top through the `claude/daily-backlog` pull request; people
+# edit it the same way, by pull request.
 #
 #   id       playground id
 #   repo     upstream repository, and commit, the commit the entry was reviewed at
 #   task     the mjlab task to port
 #   policy   where the checkpoint is
 #   license  everything the build fetches: code, checkpoint, clips, robot assets
-#   publish  true only once a person has checked that the demo may be published
 #   notes    what the port is known to need
+#   found    for an entry the scout added: when, and the evidence it was trending
 #
 # "Unverified" marks what could not be checked on Hugging Face or W&B when it was added.
 
@@ -17,7 +18,6 @@
   task: Unitree-H1_2-Flat
   policy: deploy/robots/h1_2/config/policy/velocity/v0/exported/policy.onnx (obs 92, actions 27); deploy contract in deploy/robots/h1_2/config/policy/velocity/v0/params/deploy.yaml
   license: Apache-2.0; the H1-2 MJCF and meshes carry no license file of their own
-  publish: false
   notes: >-
     Unitree H1-2 walking to velocity commands, with the checkpoint the author ran on the
     robot. Runs from source as top-level `src` (pacman's checkout shape); importing
@@ -31,7 +31,6 @@
   task: Mjlab-Velocity-Upkie
   policy: logs/rsl_rl/upkie_velocity/bests/default.onnx (obs 22, actions 6)
   license: Apache-2.0
-  publish: false
   notes: >-
     Upkie, a wheeled biped, balancing and driving to velocity commands. Pins
     mjlab==1.3.0, so the checkout shape and a 1.3 to 1.6 diff. The wheels use mjlab's
@@ -44,7 +43,6 @@
   task: Unitree-G1-23Dof-Duet-Flat
   policy: exported/policy.onnx (obs 71, actions 13); contract in exported/deploy_contract.json
   license: Apache-2.0; the G1 meshes carry no license file of their own
-  publish: false
   notes: >-
     A G1 walking and squatting on a height command down to 0.18 m pelvis height. Top-level
     `src`, mjlab==1.2.0: checkout shape. BaseHeightCommandCfg needs a command binding; the
@@ -57,7 +55,6 @@
   task: Mjlab-MultiTarget-Tracking-Flat-Unitree-G1
   policy: deploy/policies/kicks_no_ori.onnx (inputs obs 157, which_motion, time_step; five clips baked in)
   license: MIT; the clips were retargeted from video with PromptHMR and GMR, source videos not stated
-  publish: false
   notes: >-
     A G1 kicking a commanded target point with one of five kicks. The task lives in the
     tasknpoint_project sub-project, which wants Python 3.13: checkout shape.
@@ -70,7 +67,6 @@
   task: Mjlab-Homie-Unitree-H1
   policy: Hugging Face Nagi-ovo/HOMIERL-loco, policy.onnx (unverified; pin a revision)
   license: Apache-2.0; reproduces OpenHomie (CC BY-NC-SA 4.0) and reuses its values; the Hub model's license is unverified
-  publish: false
   notes: >-
     An H1 walking and squatting to a commanded height while its upper body is disturbed.
     Which task the Hub checkpoint belongs to is unverified. Pins mjlab<1.6.0: checkout
@@ -84,7 +80,6 @@
   task: Mjlab-Leap-Left-Custom-HandCube-Rotate
   policy: ckpts/leap_left_custom_model_4900.pt (convert at build time)
   license: Apache-2.0; the LEAP hand MJCF is MIT
-  publish: false
   notes: >-
     A LEAP hand spinning a cube in its palm. Written for mjlab 1.1 (DelayedActuatorCfg,
     TerrainImporterCfg and update_assets are gone in 1.6.0). Its JointPositionDeltaActionCfg
@@ -98,7 +93,6 @@
   task: Mini2S-Walk-Flat
   policy: none upstream; Hugging Face robomotic/XGO is a third party's (unverified)
   license: Apache-2.0 for code and robot models; the third-party checkpoint's license is unverified
-  publish: false
   notes: >-
     The XGO Mini2S, a palm-sized robot dog, walking to velocity commands. mjlab==1.2.0:
     XmlPositionActuatorCfg, XmlMotorActuatorCfg, DelayedActuatorCfg and update_assets need
