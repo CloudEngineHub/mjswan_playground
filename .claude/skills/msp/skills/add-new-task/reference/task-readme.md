@@ -22,8 +22,9 @@ uv sync --extra <id>            # an extra only: what it registers
 uv run msp run <id>
 ```
 
-<What the first build fetches and where it lands (`.cache/`), `MJSWAN_<ID>_ROOT` for a
-checkout the reader already has, and any login it needs (`hf auth login`).>
+<What the first build fetches and where it lands (`.cache/`), the `MJSWAN_<NAME>_ROOT`
+variable of each checkout for one the reader already has, and any login it needs
+(`hf auth login`).>
 
 | From `<upstream>` | Used as |
 |---|---|
@@ -40,6 +41,7 @@ Training-only terms count.>
 and that the demo is published only by its author.>
 ~~~
 
+- The Source line credits everything the demo uses, each with its license: the code, the checkpoint and the clips when they live elsewhere, and a motion's origin.
 - Drop the quote block when there is no paper, and the License section when everything is permissive.
 - Add a section only when it earns its place, as the existing ones do: "What the policy reads" for the observation layout (all but `wbc`), "How it behaves" (`pacman`), "The one known gap" (`microduck`).
 - Wrap prose at about 90 columns, separate the sources with `·`, and use no em dashes.

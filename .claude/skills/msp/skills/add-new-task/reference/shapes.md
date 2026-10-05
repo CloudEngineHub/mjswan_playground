@@ -6,8 +6,8 @@ The five tasks, grouped by how they reach upstream. Read the precedent's files b
 
 The playground resolves upstream as an optional dependency, and importing it registers the tasks.
 
-- `wbc`: `wbc = ["wbc-mjlab>=0.0.6"]`, from PyPI. `wbc-mjlab` registers `Wbc-*` through mjlab's `mjlab.tasks` entry point, so `main.py` imports `mjlab.tasks` and `add_scene_mjlab("Wbc-G1", env_cfg=...)` defaults every term off the task's own config. The policy and clips come from a separate deploy repo through `ensure_repo` (`MJSWAN_WBC_DEPLOY_ROOT`), whose `config.yaml` gives the joint order and default pose. Two training-only events are popped from `env_cfg`.
-- `musclemimic`: myosuite's `ms3` branch, a git source under `[tool.uv.sources]`. Registration is a call that needs a clip (`bootstrap_myosuite_mjlab_registry(clip_path=...)`). The policy is a Hub checkpoint converted once into `.cache/musclemimic/` (`upstream.ensure_policy`), the clip a gated Hub dataset (`hf auth login`), and `upstream.py` rebuilds in torch the observation the checkpoint was trained on.
+- `wbc`: `wbc = ["wbc-mjlab>=0.0.6"]`, from PyPI. `wbc-mjlab` registers `Wbc-*` through mjlab's `mjlab.tasks` entry point, so `add_scene_mjlab("Wbc-G1", env_cfg=...)` defaults every term off the task's own config. The policy and the clip library come from a separate deploy repo through `ensure_repo` (`MJSWAN_WBC_DEPLOY_ROOT`), whose `config.yaml` gives the joint order and default pose and whose manifest lists the clips. Two events the deploy runtime does not apply are popped from `env_cfg`.
+- `musclemimic`: myosuite's `ms3` branch, a git source under `[tool.uv.sources]` that names the branch and leaves the commit to `uv.lock`; a new task pins `rev` instead. Registration is a call that needs a clip (`bootstrap_myosuite_mjlab_registry(clip_path=...)`). The policy is a Hub checkpoint converted once into `.cache/musclemimic/` (`upstream.ensure_policy`), the clip a gated Hub dataset (`hf auth login`), and `upstream.py` rebuilds in torch the observation the checkpoint was trained on.
 
 ## checkout: upstream runs only from source
 

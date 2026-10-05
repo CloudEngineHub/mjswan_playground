@@ -30,7 +30,7 @@ config:
   theme: dark
 ---
 flowchart LR
-  S0["00<br>load mjswan's skill<br>at the locked version"] --> S1["01<br>intake<br>id, license, branch"] --> S2["02<br>pin and shape"] --> S3["03<br>find tasks<br>pre-flight"] --> S4["04<br>policies"]
+  S0["00<br>load mjswan's skill<br>at the locked version"] --> S1["01<br>intake<br>id, license, branch"] --> S2["02<br>pin and shape"] --> S3["03<br>find tasks<br>pre-flight"] --> S4["04<br>policies<br>and clips"]
   S4 --> S5["05<br>generate"] --> S6["06<br>build, info<br>parity"] --> S7["07<br>wire in"] --> S8["08<br>verify"] --> S10["10<br>review<br>simplify-comments"] --> S11["11<br>pull request"]
   S3 -.-> S9["09<br>mjswan PR<br>generic gaps only"]
   S6 -.-> S9
@@ -60,7 +60,7 @@ Nothing binary is committed: checkpoints, clips and upstream code are fetched at
 - a dependency conflict on `mujoco` or `mjlab`, reported verbatim;
 - a checkpoint or clip that is not published anywhere pinned (a `.pt` on someone's disk);
 - an upstream whose env config cannot be adapted: the `husky` / `microduck` shape, proposed but not built;
-- in unattended mode, any question the caller left unanswered.
+- in unattended mode, any question the caller left unanswered, a license the caller's answer does not cover, or more than one mjlab task with a published checkpoint.
 
 A stop commits nothing and opens nothing.
 
