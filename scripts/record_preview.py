@@ -131,6 +131,14 @@ PREVIEWS: dict[str, Preview] = {
         from_reset=True,
         seconds=4.84,
     ),
+    # 4.64 s is the 232-frame clip, so the GIF is the whole kick from one reset.
+    "spinkick": Preview(
+        query="ref=0",
+        orbit=150,
+        crop="719:526:115:122",
+        from_reset=True,
+        seconds=4.64,
+    ),
 }
 
 
@@ -288,8 +296,11 @@ def film(
     seconds = preview.seconds if seconds is None else seconds
 
     with sync_playwright() as pw:
-        # Headed: see the module docstring. Headless films slow motion.
-        browser = pw.chromium.launch(headless=False, args=["--hide-scrollbars"])
+        # Headed (see the module docstring), and at 2x even on a 1x display.
+        browser = pw.chromium.launch(
+            headless=False,
+            args=["--hide-scrollbars", f"--force-device-scale-factor={CAPTURE_SCALE}"],
+        )
         context = browser.new_context(
             viewport={"width": WIDTH, "height": HEIGHT},
             device_scale_factor=CAPTURE_SCALE,
