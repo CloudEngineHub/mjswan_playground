@@ -9,8 +9,7 @@
 #   publish  true only once a person has checked that the demo may be published
 #   notes    what the port is known to need
 #
-# Researched 2026-10-05 from public sources. Hugging Face and W&B were unreachable then,
-# so what is stored there is marked unverified.
+# "Unverified" marks what could not be checked on Hugging Face or W&B when it was added.
 
 - id: bipedhrl
   repo: https://github.com/spaethli/biped_hrl

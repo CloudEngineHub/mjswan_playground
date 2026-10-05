@@ -1,8 +1,7 @@
 name: publish
 
-# Publishes a task to mjswan Cloud when its pull request gets the `publish` label, then
-# links it from the task's README row. One run at a time: each run refreshes the bot's
-# stored session, and the old refresh token stops working once the new one is issued.
+# On the `publish` label: publish the task to mjswan Cloud and link it from its README
+# row. One run at a time: a run refreshes the bot's session, retiring the old token.
 on:
   pull_request:
     types: [labeled]
