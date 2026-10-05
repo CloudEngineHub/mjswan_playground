@@ -49,11 +49,13 @@ src/mjswan_playground/<id>/
   upstream.py      the checkout shape, or fetching and converting
   README.md
 src/mjswan_playground/registry.py     one line
-README.md                             one Tasks row
+README.md                             one Tasks row: the preview, and WIP until published
+assets/<id>.gif                       the preview
+scripts/record_preview.py             its PREVIEWS entry
 pyproject.toml, uv.lock, Makefile     an extra only
 ```
 
-Nothing binary is committed: checkpoints, clips and upstream code are fetched at build time from pinned commits into `.cache/`.
+Nothing else binary is committed: checkpoints, clips and upstream code are fetched at build time from pinned commits into `.cache/`. The preview films in a cloud session too, through `record_preview.py --software`.
 
 ## Where it stops
 
@@ -70,5 +72,5 @@ A generic gap becomes a pull request against mjswan, as mjswan's skill says. The
 
 ## What it will not do
 
-- Merge anything, or publish to mjswan Cloud: `uv run mjswan publish dist/<id>` is the author's call.
+- Merge anything, or publish to mjswan Cloud: that is the author's call, by `uv run mjswan publish dist/<id>` or the `publish` label.
 - Put two tasks in one pull request.

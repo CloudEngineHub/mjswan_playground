@@ -17,7 +17,7 @@ Add one task to this playground, on a branch and a pull request of its own. The 
 | "8. When the gap is mjswan's, open a PR" | as written, plus step 9 |
 | "9. Report" | replaced by steps 10 and 11 |
 
-- Nothing binary goes into git and nothing is cloned into the tracked tree: upstream code, checkpoints and clips are fetched at build time from pinned sources into `.cache/`.
+- Nothing binary goes into git but the preview GIF, and nothing is cloned into the tracked tree: upstream code, checkpoints and clips are fetched at build time from pinned sources into `.cache/`.
 - Unattended mode, when the caller says so (a routine prompt does): ask nothing. Every answer comes from what the caller handed over, and a question it does not answer is a stop.
 - A stop, in either mode: no commit, no push, no pull request. Report the step, the error verbatim and what would unblock it.
 
@@ -116,8 +116,8 @@ uv run mjswan info dist/<id>      # motions are not listed: read dist/<id>/manif
 ## 7. Wire it in
 
 - An extra: `--extra <id>` in the `Makefile`'s `sync`.
-- `README.md`: a row at the end of the Tasks table linking `src/mjswan_playground/<id>/README.md`, with the robot and a one-line description like the others. The Preview & Link cell stays empty for the author until a GIF and a published link exist.
-- `scripts/record_preview.py`: a `PREVIEWS` entry only for a GIF you filmed (headed Chromium and ffmpeg, so not in a cloud session).
+- `README.md`: a row at the end of the Tasks table linking `src/mjswan_playground/<id>/README.md`, with the robot, a one-line description like the others, and `<img src="assets/<id>.gif" width="200"/><br />WIP` as its Preview & Link cell. Publishing replaces `WIP` with the link.
+- The preview: a `PREVIEWS` entry in `scripts/record_preview.py`, framed with `--shot` starting from the closest precedent's, then `assets/<id>.gif` filmed with it. Without a GPU (a cloud session), film with `xvfb-run -a uv run --group previews python scripts/record_preview.py <id> --software --chromium /opt/pw-browsers/chromium`. A preview that will not film is not a stop: the cell keeps only `WIP`, and the pull request says why.
 
 ## 8. Verify
 
@@ -138,7 +138,7 @@ uv run mjswan info dist/<id>      # motions are not listed: read dist/<id>/manif
 Only once steps 6 to 8 pass, with a step 9 pin or without. Stage everything (`git add -A`) and read `git diff --cached origin/main` as its reviewer would:
 
 - the README follows reference/task-readme.md, and "What differs from upstream" names every term the port dropped, replaced or skipped;
-- every source is pinned to a commit or revision, and nothing binary or from `.cache/` or `dist/` is staged;
+- every source is pinned to a commit or revision, and nothing binary but `assets/<id>.gif`, and nothing from `.cache/` or `dist/`, is staged;
 - English throughout, no em dashes, comments only for a non-obvious why.
 
 Then run mjswan's `simplify-comments` on the same staged diff and apply what it finds: follow `$MJSWAN/.claude/commands/simplify-comments.md` with that diff as the target. It names `ponytail:ponytail-review`; invoke it when it is in your skill list, otherwise read `.cache/ponytail/skills/ponytail-review/SKILL.md` from a pinned clone:
@@ -155,4 +155,4 @@ It touches comments and docstrings only. Finish with `make format` and `make tes
 - Commit on the task's branch as `Add <id>: <what it shows>` (`Add musclemimic: a 354-muscle body tracking a clip with the public checkpoint`), push, and open a pull request against `main` under the same title.
 - The body, in this order: what the task shows, its sources and licenses; the `mjswan info` tree; terms traced and the parity result (`report.summary()` verbatim if anything failed), with the terminations parity left unchecked; terms skipped or dropped, each with what unblocks it; what differs from upstream; and that browser behaviour is unverified, since parity matches the graphs to mjlab while mjlab integrates with `mujoco_warp` and the browser runs MuJoCo's WASM build.
 - With a step 9 pin: a draft, labelled `needs-mjswan`, linking the mjswan PR.
-- Never merge it and never publish. Tell the user the PR URL, anything you stopped on, and `uv run mjswan publish dist/<id>` for the author to run.
+- Never merge it, and never publish on your own: that is the author's call, or the caller's under its own rules (the daily routine adds the `publish` label). Tell the user the PR URL, anything you stopped on, and how to publish: the `publish` label on the PR, or `uv run mjswan publish dist/<id>`.
