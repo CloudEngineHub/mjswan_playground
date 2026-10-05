@@ -1,0 +1,32 @@
+name: released-mjswan
+
+# A task waiting on an mjswan release pins mjswan to a commit (msp:add-new-task, step 9).
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  released-mjswan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: No needs-mjswan label
+        if: contains(github.event.pull_request.labels.*.name, 'needs-mjswan')
+        run: |
+          echo "::error::This task waits on an mjswan release."
+          exit 1
+
+      - name: uv.lock takes a stable mjswan release from PyPI
+        run: |
+          lock=$(grep -A2 '^name = "mjswan"$' uv.lock)
+          echo "$lock"
+          grep -q '^source = { registry = ' <<<"$lock" \
+            || { echo "::error::uv.lock does not take mjswan from PyPI."; exit 1; }
+          grep -Eq '^version = "[0-9]+\.[0-9]+\.[0-9]+"$' <<<"$lock" \
+            || { echo "::error::uv.lock takes an mjswan prerelease."; exit 1; }
