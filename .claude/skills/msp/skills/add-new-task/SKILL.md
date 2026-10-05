@@ -115,7 +115,6 @@ uv run mjswan info dist/<id>      # motions are not listed: read dist/<id>/manif
 
 ## 7. Wire it in
 
-- An extra: `--extra <id>` in the `Makefile`'s `sync`.
 - `README.md`: a row at the end of the Tasks table linking `src/mjswan_playground/<id>/README.md`, with the robot, a one-line description like the others, and `<img src="assets/<id>.gif" width="200"/><br />WIP` as its Preview & Link cell. Whoever publishes the task replaces `WIP` with the link.
 - The preview: a `PREVIEWS` entry in `scripts/record_preview.py`, framed with `--shot` starting from the closest precedent's, then `assets/<id>.gif` filmed with it. Without a GPU (a cloud session), film with `xvfb-run -a uv run --group previews python scripts/record_preview.py <id> --software --chromium /opt/pw-browsers/chromium`. A preview that will not film is not a stop: the cell keeps only `WIP`, and the pull request says why.
 

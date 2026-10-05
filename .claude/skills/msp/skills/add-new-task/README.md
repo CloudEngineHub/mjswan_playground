@@ -52,7 +52,7 @@ src/mjswan_playground/registry.py     one line
 README.md                             one Tasks row: the preview, and WIP until published
 assets/<id>.gif                       the preview
 scripts/record_preview.py             its PREVIEWS entry
-pyproject.toml, uv.lock, Makefile     an extra only
+pyproject.toml, uv.lock               an extra only
 ```
 
 Nothing else binary is committed: checkpoints, clips and upstream code are fetched at build time from pinned commits into `.cache/`. The preview films in a cloud session too, through `record_preview.py --software`.
