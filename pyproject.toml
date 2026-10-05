@@ -27,6 +27,8 @@ musclemimic = [
     "orbax-checkpoint>=0.11",
     "onnxconverter-common>=1.16",
 ]
+# Registers `Mjlab-Spinkick-Unitree-G1` with mjlab; only the spinkick task needs it.
+spinkick = ["spinkick-example"]
 
 [project.scripts]
 mjswan-playground = "mjswan_playground._cli:app"
@@ -45,6 +47,7 @@ packages = ["src/mjswan_playground"]
 
 [tool.uv.sources]
 myosuite = { git = "https://github.com/MyoHub/myosuite", branch = "ms3" }
+spinkick-example = { git = "https://github.com/mujocolab/g1_spinkick_example", rev = "f1c4b230bd1a76c44e801e49f079212b6c6487da" }
 
 [dependency-groups]
 dev = ["pytest>=9.0.2", "ruff==0.16.0"]
