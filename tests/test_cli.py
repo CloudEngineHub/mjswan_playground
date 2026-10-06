@@ -1,5 +1,4 @@
-"""The build refuses a graph input the browser cannot serve, such as the ``command`` field
-that ``get_command()`` records inside a traced term."""
+"""The build refuses a graph input the browser cannot serve."""
 
 import importlib.util
 import json

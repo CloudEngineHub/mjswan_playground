@@ -50,10 +50,7 @@ def _build(task_id: str, output_dir: Optional[Path]):
     return built, path
 
 
-#: What the browser serves for a ``{command, field}`` slot on mjswan's own command
-#: classes (``getStateField`` under its template's core/command/); a traced
-#: ``OnnxCommand`` serves its state fields. tests/test_cli.py checks this against the
-#: installed mjswan.
+#: Fields mjswan's own command classes serve in the browser (their ``getStateField``).
 _NATIVE_COMMAND_FIELDS = {
     "UiCommand": ("command",),
     "TrackingCommand": (
@@ -81,8 +78,7 @@ _NATIVE_COMMAND_FIELDS = {
 
 
 def _unservable_command_slots(manifest: dict) -> list[str]:
-    """``{command, field}`` slots the browser cannot serve. It never runs a graph with
-    such an input, while parity, which reads the attribute in mjlab, still passes."""
+    """``{command, field}`` slots the browser cannot serve; parity misses them."""
     problems = []
     for project in manifest.get("projects", []):
         for scene in project.get("scenes", []):
