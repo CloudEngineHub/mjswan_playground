@@ -1,7 +1,7 @@
 # H1-2 Velocity Walking (`bipedhrl`)
 
-Source: https://github.com/spaethli/biped_hrl (Apache-2.0; the H1-2 MJCF and meshes carry
-no license file of their own)
+Source: https://github.com/spaethli/biped_hrl (Apache-2.0; the H1-2 model is Unitree's,
+BSD-3-Clause)
 
 A Unitree H1-2 walking to velocity commands with A0, the flat PPO baseline of a thesis on
 hierarchical RL, using the checkpoint its author ran on the real robot. The command is
@@ -71,6 +71,13 @@ Seven terms, one frame, no history:
 
 ## License
 
-The code and checkpoint are Apache-2.0. Upstream ships the H1-2 MJCF and meshes without a
-license or a source of their own; mjswan matches the model by name to Unitree's
-BSD-3-Clause license and bundles that text with the scene.
+The code and checkpoint are Apache-2.0, under biped_hrl's `LICENCE`. The H1-2 model is
+Unitree's: biped_hrl inherits it unchanged from
+[unitree_rl_mjlab](https://github.com/unitreerobotics/unitree_rl_mjlab), where it has no
+license file of its own. Its meshes are byte for byte those of Unitree's
+[`h1_2_description`](https://github.com/unitreerobotics/unitree_ros/tree/master/robots/h1_2_description),
+and its MJCF is that package's `h1_2_handless.xml` rewritten for mjlab (the same bodies,
+inertias, joints and meshes, with collision capsules, sites and sensors added). Unitree
+publishes the package under BSD-3-Clause, Copyright (c) 2016-2022 HangZhou YuShu
+TECHNOLOGY CO.,LTD. ("Unitree Robotics"), and the scene carries that notice as
+`LICENSE.unitree_h1_2`.

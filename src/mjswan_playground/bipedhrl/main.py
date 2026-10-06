@@ -46,6 +46,13 @@ def setup_builder() -> mjswan.Builder:
     builder = mjswan.Builder()
     project = builder.add_project(name="H1-2 Velocity")
     scene = project.add_scene_mjlab(TASK_ID, env_cfg=env_cfg)
+    # The name match picks menagerie's H1; this model is Unitree's h1_2_description.
+    scene.clear_attributions()
+    scene.add_attribution(
+        "unitree_h1_2",
+        license="BSD-3-Clause",
+        copyright='2016-2022 HangZhou YuShu TECHNOLOGY CO.,LTD. ("Unitree Robotics")',
+    )
     scene.add_policy(
         name="A0",
         policy=policy,
