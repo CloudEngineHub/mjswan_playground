@@ -23,7 +23,7 @@ def setup_builder() -> mjswan.Builder:
     clip = upstream.ensure_clip(policy, env_cfg)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="G1 Spinkick")
+    project = builder.add_project(name="G1 Spinkick", license=root / "LICENSE")
     scene = project.add_scene_mjlab(TASK_ID, env_cfg=env_cfg)
     handle = scene.add_policy(
         name="spinkick_safe",

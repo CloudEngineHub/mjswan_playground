@@ -58,7 +58,8 @@ def setup_builder() -> mjswan.Builder:
         env_cfg.events.pop(training_only, None)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="WBC-Mjlab G1")
+    project = builder.add_project(name="WBC-Mjlab G1", license=deploy / "LICENSE")
+    project.set_notice(deploy / "NOTICE")
     scene = project.add_scene_mjlab(TASK_ID, env_cfg=env_cfg)
 
     joint_names = [f"robot/{name}" for name in contract["joint_names"]]

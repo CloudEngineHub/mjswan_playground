@@ -98,6 +98,7 @@ src/mjswan_playground/<id>/
 - `main.py` exposes `setup_builder()` and runs nothing: no `main()`, `build()` or `launch()`. `msp run` and `msp build` do that. With an extra, it imports upstream's package by name, so a missing extra fails as an import error rather than a bare `KeyError` from `load_env_cfg`.
 - Register it now, since `msp build` looks it up: `"<id>": "mjswan_playground.<id>.main"` in `registry.py`, in alphabetical order.
 - The README follows [reference/task-readme.md](reference/task-readme.md).
+- The project carries upstream's license file verbatim: `builder.add_project(name=..., license=<checkout> / "LICENSE")`, and `project.set_notice(<checkout> / "NOTICE")` beside it when upstream ships one. A checkpoint from elsewhere whose terms you could not read leaves the project without one, and the pull request says so.
 - A shim for an upstream version gap carries `# ponytail: <what>; drop once <condition>.` (pacman's precedent). A gap in mjswan itself gets no shim: step 9.
 - A term in `terms.py` reads an mjlab command as `env.command_manager.get_term(name).<state field>`, never `get_command(name)`. Only a `mjswan.ui_command` is read with `get_command(name)`.
 
