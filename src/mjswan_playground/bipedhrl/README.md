@@ -71,10 +71,10 @@ Seven terms, one frame, no history:
 
 ## License
 
-The code and checkpoint are Apache-2.0, under biped_hrl's `LICENCE`. The H1-2 model is
-Unitree's: biped_hrl inherits it unchanged from
-[unitree_rl_mjlab](https://github.com/unitreerobotics/unitree_rl_mjlab), where it has no
-license file of its own. Its meshes are byte for byte those of Unitree's
+The code and checkpoint are Apache-2.0, under biped_hrl's `LICENCE`, which the build
+ships as the project's `LICENSE`. The H1-2 model is Unitree's: biped_hrl inherits it
+unchanged from [unitree_rl_mjlab](https://github.com/unitreerobotics/unitree_rl_mjlab),
+where it has no license file of its own. Its meshes are byte for byte those of Unitree's
 [`h1_2_description`](https://github.com/unitreerobotics/unitree_ros/tree/master/robots/h1_2_description),
 and its MJCF is that package's `h1_2_handless.xml` rewritten for mjlab (the same bodies,
 inertias, joints and meshes, with collision capsules, sites and sensors added). Unitree

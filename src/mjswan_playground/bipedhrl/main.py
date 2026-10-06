@@ -44,7 +44,7 @@ def setup_builder() -> mjswan.Builder:
     _clock_phase(env_cfg)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="H1-2 Velocity")
+    project = builder.add_project(name="H1-2 Velocity", license=root / "LICENCE")
     scene = project.add_scene_mjlab(TASK_ID, env_cfg=env_cfg)
     # The name match picks menagerie's H1; this model is Unitree's h1_2_description.
     scene.clear_attributions()
