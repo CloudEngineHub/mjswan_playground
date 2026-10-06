@@ -149,6 +149,8 @@ PREVIEWS: dict[str, Preview] = {
         from_reset=True,
         seconds=4.64,
     ),
+    # The twist command resamples every 3-8 s, as upstream's play config draws it.
+    "bipedhrl": Preview(orbit=-30, crop="719:526:115:100"),
 }
 
 
