@@ -1,16 +1,14 @@
 # The daily routine's queue (ROUTINE.md, part D), first entry first. Its scout (part A)
-# adds trending entries at the top through the `claude/daily-backlog` pull request; people
-# edit it the same way, by pull request.
+# adds trending entries at the top through the `claude/daily-backlog` pull request.
 #
 #   id       playground id
-#   repo     upstream repository, and commit, the commit the entry was reviewed at
+#   repo     upstream repository
+#   commit   the commit the entry was reviewed at
 #   task     the mjlab task to port
 #   policy   where the checkpoint is
 #   license  everything the build fetches: code, checkpoint, clips, robot assets
 #   notes    what the port is known to need
 #   found    for an entry the scout added: when, and the evidence it was trending
-#
-# "Unverified" marks what could not be checked on Hugging Face or W&B when it was added.
 
 - id: bipedhrl
   repo: https://github.com/spaethli/biped_hrl

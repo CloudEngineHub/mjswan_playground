@@ -26,9 +26,9 @@ new one in with `--shot`, which stops after the setup and writes the framing as 
     uv run --group previews python scripts/record_preview.py husky --shot /tmp/f.png \\
         --orbit 150 --crop 960:702:0:0    # the whole frame, to find the crop from
 
-Without a GPU (a cloud container, CI), `--software` renders through Mesa under Xvfb and
-slows the page's clock so the renderer keeps up; `--chromium` launches an installed
-browser when Playwright's own build is missing:
+Without a GPU, `--software` renders through Mesa under Xvfb and slows the page's clock
+so the renderer keeps up; `--chromium` launches an installed browser when Playwright's
+own build is missing:
 
     xvfb-run -a uv run --group previews python scripts/record_preview.py husky \\
         --software --chromium /opt/pw-browsers/chromium
@@ -373,8 +373,8 @@ def film(
             # The panel's own shortcut, on a window listener, so it still works hidden.
             # `engine.reset()` leaves the camera alone, so the framing survives.
             page.keyboard.press("r")
-            # Two control steps to land and two drawn frames to show, or the first frame
-            # is the pose before it (`--software` draws one every few steps).
+            # Two control steps to land and two drawn frames to show, or the first
+            # frame is the pose before it.
             page.wait_for_timeout(2 / expected_rate / clock * 1000)
             page.evaluate(
                 "() => new Promise((drawn) =>"
@@ -420,8 +420,7 @@ def film(
         f"{rate:.1f} of {expected_rate:.0f} steps/s{slow}"
     )
 
-    # The frame nearest each 1/FPS tick of page time: even spacing off real presentation
-    # times, stretched back by `clock`.
+    # The frame nearest each 1/FPS tick of page time (`clock` times real time).
     assert frames_dir is not None
     start, span = frames[0][0], (frames[-1][0] - frames[0][0]) * clock
     frames_dir.mkdir(parents=True, exist_ok=True)
@@ -435,7 +434,7 @@ def film(
 
 
 def _ffmpeg() -> str:
-    """`ffmpeg` on PATH, else the build mjlab's `imageio-ffmpeg` dependency ships."""
+    """`ffmpeg` on PATH, else `imageio-ffmpeg`'s, which mjlab depends on."""
     found = shutil.which("ffmpeg")
     if found:
         return found
