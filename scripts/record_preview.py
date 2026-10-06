@@ -25,6 +25,13 @@ new one in with `--shot`, which stops after the setup and writes the framing as 
 
     uv run --group previews python scripts/record_preview.py husky --shot /tmp/f.png \\
         --orbit 150 --crop 960:702:0:0    # the whole frame, to find the crop from
+
+Without a GPU, `--software` renders through Mesa under Xvfb and slows the page's clock
+so the renderer keeps up; `--chromium` launches an installed browser when Playwright's
+own build is missing:
+
+    xvfb-run -a uv run --group previews python scripts/record_preview.py husky \\
+        --software --chromium /opt/pw-browsers/chromium
 """
 
 from __future__ import annotations
@@ -54,6 +61,9 @@ WIDTH, HEIGHT, FPS = 480, 351, 15
 CAPTURE_SCALE = 2
 #: Fraction of the policy's own control rate a recording has to hold to count as real time.
 MIN_STEP_RATE_RATIO = 0.9
+#: `--software` runs the page's clock at this fraction of real time, so a renderer that
+#: draws a few frames a second still lands one every few control steps of page time.
+SOFTWARE_CLOCK = 0.15
 
 
 @dataclass(frozen=True)
@@ -274,6 +284,24 @@ _STEP_COUNTER = """(() => {
     };
 })();"""
 
+#: Runs the page's clock at a fraction of real time for `--software`: timers,
+#: `performance.now`, `Date.now` and animation-frame timestamps alike. Installed before
+#: `_STEP_COUNTER`, which then still sees the step loop's own 20 ms delays.
+_SCALED_CLOCK = """((k) => {
+    const now = performance.now.bind(performance), t0 = now();
+    performance.now = () => t0 + (now() - t0) * k;
+    const dateNow = Date.now, d0 = dateNow();
+    Date.now = () => d0 + (dateNow() - d0) * k;
+    const timeout = window.setTimeout;
+    window.setTimeout = function (fn, ms, ...rest) {
+        return timeout.call(this, fn, (ms || 0) / k, ...rest);
+    };
+    const raf = window.requestAnimationFrame;
+    window.requestAnimationFrame = function (cb) {
+        return raf.call(this, (ts) => cb(t0 + (ts - t0) * k));
+    };
+})(%r);"""
+
 
 def film(
     url: str,
@@ -284,12 +312,15 @@ def film(
     motion: str | None = None,
     seconds: float | None = None,
     start_index: int = 0,
+    clock: float = 1.0,
+    chromium: str | None = None,
 ) -> int:
     """Set the shot up, then write either a framing PNG (`shot`) or a PNG sequence.
 
     One call is one segment: `motion` picks it in the panel, `seconds` overrides the
     recipe's length and `start_index` continues an earlier segment's numbering, so a
     multi-motion preview concatenates into a single sequence. Returns the next index.
+    `clock` below 1 is `--software`: every wait and the frame pick run on page time.
     """
     from playwright.sync_api import sync_playwright
 
@@ -297,14 +328,19 @@ def film(
 
     with sync_playwright() as pw:
         # Headed (see the module docstring), and at 2x even on a 1x display.
+        args = ["--hide-scrollbars", f"--force-device-scale-factor={CAPTURE_SCALE}"]
+        if clock < 1:
+            # Mesa's llvmpipe leaves the step loop on time, where SwiftShader stalls it.
+            args += ["--use-angle=gl", "--ignore-gpu-blocklist"]
         browser = pw.chromium.launch(
-            headless=False,
-            args=["--hide-scrollbars", f"--force-device-scale-factor={CAPTURE_SCALE}"],
+            headless=False, args=args, executable_path=chromium
         )
         context = browser.new_context(
             viewport={"width": WIDTH, "height": HEIGHT},
             device_scale_factor=CAPTURE_SCALE,
         )
+        if clock < 1:
+            context.add_init_script(_SCALED_CLOCK % clock)
         context.add_init_script(_STEP_COUNTER)
         page = context.new_page()
         page.on("pageerror", lambda e: print(f"  [pageerror] {e}", file=sys.stderr))
@@ -326,7 +362,7 @@ def film(
         # The panel leaves a reopen affordance over the canvas; nothing else is a button.
         page.add_style_tag(content="button{display:none!important}")
         _orbit(page, preview.orbit, preview.tilt)
-        page.wait_for_timeout(preview.settle * 1000)
+        page.wait_for_timeout(preview.settle / clock * 1000)
 
         if shot is not None:
             page.screenshot(path=str(shot))
@@ -337,6 +373,13 @@ def film(
             # The panel's own shortcut, on a window listener, so it still works hidden.
             # `engine.reset()` leaves the camera alone, so the framing survives.
             page.keyboard.press("r")
+            # Two control steps to land and two drawn frames to show, or the first
+            # frame is the pose before it.
+            page.wait_for_timeout(2 / expected_rate / clock * 1000)
+            page.evaluate(
+                "() => new Promise((drawn) =>"
+                " requestAnimationFrame(() => requestAnimationFrame(drawn)))"
+            )
 
         client = context.new_cdp_session(page)
         frames: list[tuple[float, str]] = []
@@ -356,7 +399,7 @@ def film(
                 "everyNthFrame": 1,
             },
         )
-        page.wait_for_timeout(seconds * 1000)
+        page.wait_for_timeout(seconds / clock * 1000)
         client.send("Page.stopScreencast")
         after = page.evaluate("() => window.__paced + window.__yield / 2")
         browser.close()
@@ -369,23 +412,35 @@ def film(
         if rate >= expected_rate * MIN_STEP_RATE_RATIO
         else (f"  ** slow motion: {expected_rate:.0f}/s expected **")
     )
+    if len(frames) / seconds < FPS:
+        slow += f"  ** fewer than {FPS} frames per second: frames repeat **"
     label = f" [{motion}]" if motion else ""
     print(
         f"  {len(frames)} frames captured{label}, "
         f"{rate:.1f} of {expected_rate:.0f} steps/s{slow}"
     )
 
-    # The frame nearest each 1/FPS tick: even spacing off real presentation times.
+    # The frame nearest each 1/FPS tick of page time (`clock` times real time).
     assert frames_dir is not None
-    start, span = frames[0][0], frames[-1][0] - frames[0][0]
+    start, span = frames[0][0], (frames[-1][0] - frames[0][0]) * clock
     frames_dir.mkdir(parents=True, exist_ok=True)
     index = start_index
     while (index - start_index) / FPS <= span:
-        want = start + (index - start_index) / FPS
+        want = start + (index - start_index) / FPS / clock
         _, data = min(frames, key=lambda frame: abs(frame[0] - want))
         (frames_dir / f"seq_{index:04d}.png").write_bytes(base64.b64decode(data))
         index += 1
     return index
+
+
+def _ffmpeg() -> str:
+    """`ffmpeg` on PATH, else `imageio-ffmpeg`'s, which mjlab depends on."""
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    import imageio_ffmpeg
+
+    return imageio_ffmpeg.get_ffmpeg_exe()
 
 
 def to_gif(frames_dir: Path, out: Path, crop: str) -> None:
@@ -402,7 +457,7 @@ def to_gif(frames_dir: Path, out: Path, crop: str) -> None:
     )
     subprocess.run(
         [
-            "ffmpeg",
+            _ffmpeg(),
             "-v",
             "error",
             "-framerate",
@@ -418,7 +473,8 @@ def to_gif(frames_dir: Path, out: Path, crop: str) -> None:
         ],
         check=True,
     )
-    print(f"  {out.relative_to(ROOT)}  {out.stat().st_size / 1e6:.1f} MB")
+    shown = out.relative_to(ROOT) if out.is_relative_to(ROOT) else out
+    print(f"  {shown}  {out.stat().st_size / 1e6:.1f} MB")
 
 
 def crop_png(path: Path, crop: str) -> None:
@@ -426,7 +482,7 @@ def crop_png(path: Path, crop: str) -> None:
     cropped = path.with_suffix(".crop.png")  # ffmpeg cannot read and write one file
     subprocess.run(
         [
-            "ffmpeg",
+            _ffmpeg(),
             "-v",
             "error",
             "-i",
@@ -478,6 +534,14 @@ def main() -> None:
         type=Path,
         help="write the framing to this PNG instead of filming a GIF",
     )
+    parser.add_argument(
+        "--software",
+        action="store_true",
+        help="no GPU: render through Mesa and slow the page's clock to keep up",
+    )
+    parser.add_argument(
+        "--chromium", help="a Chromium binary to launch instead of Playwright's own"
+    )
     args = parser.parse_args()
 
     tasks = ALL_TASKS if args.all else tuple(args.tasks)
@@ -490,8 +554,10 @@ def main() -> None:
         )
     if args.shot and len(tasks) > 1:
         parser.error("--shot takes one task at a time")
-    if not shutil.which("ffmpeg"):
-        parser.error("ffmpeg is not on PATH")
+    browser = {
+        "clock": SOFTWARE_CLOCK if args.software else 1.0,
+        "chromium": args.chromium,
+    }
 
     for task_id in tasks:
         overrides = {
@@ -522,6 +588,7 @@ def main() -> None:
                     preview,
                     shot=args.shot,
                     motion=preview.motions[0] if preview.motions else None,
+                    **browser,
                 )
                 crop_png(args.shot, preview.crop)
                 print(f"  {args.shot}")
@@ -544,6 +611,7 @@ def main() -> None:
                         motion=motion,
                         seconds=preview.seconds / len(segments),
                         start_index=index,
+                        **browser,
                     )
                 to_gif(frames_dir, args.out_dir / f"{task_id}.gif", preview.crop)
         finally:

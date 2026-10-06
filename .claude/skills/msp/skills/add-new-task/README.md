@@ -49,11 +49,13 @@ src/mjswan_playground/<id>/
   upstream.py      the checkout shape, or fetching and converting
   README.md
 src/mjswan_playground/registry.py     one line
-README.md                             one Tasks row
-pyproject.toml, uv.lock, Makefile     an extra only
+README.md                             one Tasks row: the preview, and WIP until published
+assets/<id>.gif                       the preview
+scripts/record_preview.py             its PREVIEWS entry
+pyproject.toml, uv.lock               an extra only
 ```
 
-Nothing binary is committed: checkpoints, clips and upstream code are fetched at build time from pinned commits into `.cache/`.
+Nothing else binary is committed: checkpoints, clips and upstream code are fetched at build time from pinned commits into `.cache/`. The preview films in a cloud session too, through `record_preview.py --software`.
 
 ## Where it stops
 

@@ -17,7 +17,7 @@ Add one task to this playground, on a branch and a pull request of its own. The 
 | "8. When the gap is mjswan's, open a PR" | as written, plus step 9 |
 | "9. Report" | replaced by steps 10 and 11 |
 
-- Nothing binary goes into git and nothing is cloned into the tracked tree: upstream code, checkpoints and clips are fetched at build time from pinned sources into `.cache/`.
+- Nothing binary goes into git but the preview GIF, and nothing is cloned into the tracked tree: upstream code, checkpoints and clips are fetched at build time from pinned sources into `.cache/`.
 - Unattended mode, when the caller says so (a routine prompt does): ask nothing. Every answer comes from what the caller handed over, and a question it does not answer is a stop.
 - A stop, in either mode: no commit, no push, no pull request. Report the step, the error verbatim and what would unblock it.
 
@@ -54,7 +54,7 @@ Then follow `$MJSWAN/skills/mjlab-to-mjswan/SKILL.md`. Its `export_policy.py` si
 
   | Shape | When | Registration | Precedent |
   |---|---|---|---|
-  | extra | upstream is a package the playground can resolve | `[project.optional-dependencies] <id>` with a comment naming the task, from PyPI (`uv.lock` is then the pin; check the release matches the commit you read) or from a git source under `[tool.uv.sources]` pinned with `rev = "<commit>"`, the same commit as any `ensure_repo` checkout of that repo; `uv lock` and `uv sync --extra <id>` before step 3 | `wbc`, `musclemimic` |
+  | extra | upstream is a package the playground can resolve | `[project.optional-dependencies] <id>`, commented only for what its name does not say, from PyPI (`uv.lock` is then the pin; check the release matches the commit you read) or from a git source under `[tool.uv.sources]` pinned with `rev = "<commit>"`, the same commit as any `ensure_repo` checkout of that repo; `uv lock` and `uv sync --extra <id>` before step 3 | `wbc`, `musclemimic` |
   | checkout | upstream runs only from source, on imports the playground already resolves | `upstream.py` with `resolve_root()` and `register_tasks(root)`, the root first on `sys.path`; version shims marked `# ponytail:` | `pacman` |
   | data-only | the env config cannot be adapted: a non-mjlab actuator, pins that do not co-resolve | out of scope: stop and propose the `husky` / `microduck` shape | `husky`, `microduck` |
 
@@ -115,9 +115,8 @@ uv run mjswan info dist/<id>      # motions are not listed: read dist/<id>/manif
 
 ## 7. Wire it in
 
-- An extra: `--extra <id>` in the `Makefile`'s `sync`.
-- `README.md`: a row at the end of the Tasks table linking `src/mjswan_playground/<id>/README.md`, with the robot and a one-line description like the others. The Preview & Link cell stays empty for the author until a GIF and a published link exist.
-- `scripts/record_preview.py`: a `PREVIEWS` entry only for a GIF you filmed (headed Chromium and ffmpeg, so not in a cloud session).
+- `README.md`: a row at the end of the Tasks table linking `src/mjswan_playground/<id>/README.md`, with the robot, a one-line description like the others, and `<img src="assets/<id>.gif" width="200"/><br />WIP` as its Preview & Link cell. Whoever publishes the task replaces `WIP` with the link.
+- The preview: a `PREVIEWS` entry in `scripts/record_preview.py`, framed with `--shot` starting from the closest precedent's, then `assets/<id>.gif` filmed with it. Without a GPU (a cloud session), film with `xvfb-run -a uv run --group previews python scripts/record_preview.py <id> --software --chromium /opt/pw-browsers/chromium`. A preview that will not film is not a stop: the cell keeps only `WIP`, and the pull request says why.
 
 ## 8. Verify
 
@@ -131,14 +130,14 @@ uv run mjswan info dist/<id>      # motions are not listed: read dist/<id>/manif
 - Work in a clone at `.cache/mjswan-pr`. Push the branch to ttktjmt/mjswan itself when you can (a cloud session needs it attached with push access), else fork as that section says. Run step 10's review over its diff before opening it, and label it `from-playground`.
 - Finish the port against that PR: add `mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "<head sha>" }` under `[tool.uv.sources]`, `uv lock --upgrade-package mjswan`, then sync, build and parity as usual. The web client builds through nodeenv on first use.
 - The task's pull request is a draft labelled `needs-mjswan` that links the mjswan PR. Nothing is published or merged while the pin is there: the `released-mjswan` check refuses a git-sourced mjswan on `main`. When the mjswan PR gets new commits, move the pin to its new head and verify again.
-- Finish it once `origin/main` locks an mjswan release that contains the change: merge `origin/main`, drop the pin, `uv lock`, then steps 6, 8 and 10 again; remove `needs-mjswan` and mark the PR ready. If the change touched `src/mjswan/template/`, publishing also waits until mjswan Cloud serves that engine, which the label `cloud-ready` on the mjswan PR says.
+- Finish it once `origin/main` locks an mjswan release that contains the change: merge `origin/main`, drop the pin, `uv lock`, then steps 6, 8 and 10 again; remove `needs-mjswan` and mark the PR ready. If the change touched `src/mjswan/template/`, say in the PR that publishing has to wait until mjswan Cloud serves that engine.
 
 ## 10. Final review (replaces "Report")
 
 Only once steps 6 to 8 pass, with a step 9 pin or without. Stage everything (`git add -A`) and read `git diff --cached origin/main` as its reviewer would:
 
 - the README follows reference/task-readme.md, and "What differs from upstream" names every term the port dropped, replaced or skipped;
-- every source is pinned to a commit or revision, and nothing binary or from `.cache/` or `dist/` is staged;
+- every source is pinned to a commit or revision, and nothing binary but `assets/<id>.gif`, and nothing from `.cache/` or `dist/`, is staged;
 - English throughout, no em dashes, comments only for a non-obvious why.
 
 Then run mjswan's `simplify-comments` on the same staged diff and apply what it finds: follow `$MJSWAN/.claude/commands/simplify-comments.md` with that diff as the target. It names `ponytail:ponytail-review`; invoke it when it is in your skill list, otherwise read `.cache/ponytail/skills/ponytail-review/SKILL.md` from a pinned clone:

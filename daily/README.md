@@ -1,0 +1,54 @@
+# Daily tasks
+
+A routine adds one task a day and opens a pull request for it, following [`ROUTINE.md`](ROUTINE.md). It first scouts for trending repositories built on mjlab and puts them at the front of [`backlog.yaml`](backlog.yaml). Merging and publishing stay with people.
+
+- `ROUTINE.md`: what each run does, and what it never does.
+- `backlog.yaml`: the queue. The scout's additions arrive as one standing pull request from `claude/daily-backlog`. Merge it to keep them, or edit the branch first; the routine already reads from it while it is open.
+- [`released-mjswan.yml`](../.github/workflows/released-mjswan.yml): keeps a task that waits on an unreleased mjswan off `main`.
+- Labels: `daily-task`, `daily-backlog`, `daily-task-skipped`, `needs-mjswan` and `mjswan-bump` here; `from-playground` on ttktjmt/mjswan.
+
+## Publishing a task
+
+A task's pull request ships its preview with `WIP` in place of the link. To publish it:
+
+```sh
+make sync
+uv run msp build <id>
+uv run mjswan publish dist/<id>    # signs you in first if needed
+```
+
+Then replace `WIP` in its README row with the link, as the other rows have it, in a pull request.
+
+## One-time setup
+
+1. A cloud environment named `mjswan-daily`:
+   - Network: Custom, with the default list included, plus:
+
+     ```
+     huggingface.co
+     *.huggingface.co
+     *.hf.co
+     api.wandb.ai
+     ```
+
+   - Environment variables:
+
+     ```
+     CLAUDE_CODE_PLUGIN_DIRS=/home/user/mjswan_playground/.claude/skills/msp
+     BASH_DEFAULT_TIMEOUT_MS=600000
+     MUJOCO_GL=disable
+     ```
+
+2. In this repository's `main` ruleset, require the `released-mjswan` status check. Commits then reach `main` only through a pull request, yours included. Leave ttktjmt/mjswan's ruleset as it is: its release workflow pushes the version bump to `main`.
+3. The routine, at claude.ai/code/routines:
+   - Repositories: ttktjmt/mjswan_playground and ttktjmt/mjswan
+   - Environment: `mjswan-daily`
+   - Schedule: every day at 04:47 JST
+   - Connectors: none
+   - Prompt:
+
+     ```
+     Do today's daily run for ttktjmt/mjswan_playground exactly as daily/ROUTINE.md on its main branch says. You may push to claude/ branches of ttktjmt/mjswan_playground and ttktjmt/mjswan, open pull requests and issues in both, and add the labels that file names. Never merge, and never push to main.
+     ```
+
+4. Run it once by hand and read the run before leaving the schedule on. A finished run only means the session ended: check the pull requests and issues it opened.
