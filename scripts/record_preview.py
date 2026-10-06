@@ -151,6 +151,8 @@ PREVIEWS: dict[str, Preview] = {
     ),
     # Wider crop for the taller H1-2. No steps: the twist command resamples every 3-8 s.
     "bipedhrl": Preview(orbit=-30, crop="878:642:41:35"),
+    # Tight crop: the robot is 0.4 m tall under a camera authored at 3 m.
+    "upkie": Preview(orbit=45, crop="540:395:210:170", seconds=5.0),
 }
 
 

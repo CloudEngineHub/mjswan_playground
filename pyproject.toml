@@ -47,6 +47,7 @@ packages = ["src/mjswan_playground"]
 [tool.uv.sources]
 myosuite = { git = "https://github.com/MyoHub/myosuite", branch = "ms3" }
 spinkick-example = { git = "https://github.com/mujocolab/g1_spinkick_example", rev = "f1c4b230bd1a76c44e801e49f079212b6c6487da" }
+mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "503e3539b842b7b8699a24cb8bea7f3f8ee85d45" }
 
 [dependency-groups]
 dev = ["pytest>=9.0.2", "ruff==0.16.0"]
