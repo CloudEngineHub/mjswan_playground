@@ -149,6 +149,8 @@ PREVIEWS: dict[str, Preview] = {
         from_reset=True,
         seconds=4.64,
     ),
+    # Wider crop for the taller H1-2. No steps: the twist command resamples every 3-8 s.
+    "bipedhrl": Preview(orbit=-30, crop="878:642:41:35"),
 }
 
 
