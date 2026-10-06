@@ -149,8 +149,9 @@ PREVIEWS: dict[str, Preview] = {
         from_reset=True,
         seconds=4.64,
     ),
-    # The twist command resamples every 3-8 s, as upstream's play config draws it.
-    "bipedhrl": Preview(orbit=-30, crop="719:526:115:100"),
+    # A wider crop than the G1 tasks', since the H1-2 is taller. The twist command
+    # resamples every 3-8 s, as upstream's play config draws it.
+    "bipedhrl": Preview(orbit=-30, crop="878:642:41:35"),
 }
 
 

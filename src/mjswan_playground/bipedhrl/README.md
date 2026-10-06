@@ -45,9 +45,18 @@ Seven terms, one frame, no history:
 
 - **The gait clock is a command term.** Upstream's `phase` reads `env.episode_length_buf`,
   which the browser does not serve. [`terms.py`](terms.py) counts control steps in a
-  `gait_clock` command that restarts on reset, and the observation reads it from there.
-  Against upstream's own `phase` in a live mjlab env it agrees to 1e-6 over 120 steps,
-  across two auto-resets and a manual one.
+  `gait_clock` command that restarts on reset, and the observation reads its `step_count`
+  and the twist's `vel_command_b` directly: the browser serves a traced command to a
+  graph by state field, not through `get_command()`.
+  Against upstream's own `phase` in a one-env mjlab env it agrees to within 1e-5 over
+  1,400 steps, across ten auto-resets and two manual ones. In the browser, the clock runs one step ahead
+  after a fall until the next manual reset: mjswan updates a command once more right
+  after resetting it.
+- **The joystick leaves the standing gate alone.** mjswan feeds a traced term the
+  command's own state, not the joystick's override, so with the joystick on, `phase` is
+  zero while the resampled command is below 0.1, whatever the sliders say. At zero
+  sliders the robot keeps stepping and drifts about 0.5 m in 15 s, and a sideways or
+  turning slider can reach under half its speed.
 - **mjlab 1.6.0.** Upstream asks for `mjlab>=1.3.0` and locks none; its robot constants
   build `CollisionCfg` without the fields 1.6.0 made required, so `upstream.py` fills in
   the old defaults while importing it.
