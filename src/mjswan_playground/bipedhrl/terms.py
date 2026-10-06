@@ -1,6 +1,5 @@
-"""Upstream's ``phase`` observation, which reads ``env.episode_length_buf``: a step counter
-the tracer does not serve. The clock becomes a command term that counts steps itself, and
-the observation reads it from there."""
+"""Upstream's ``phase`` observation, with its clock moved from ``env.episode_length_buf``,
+which the tracer does not serve, to a command term that counts steps itself."""
 
 from __future__ import annotations
 
@@ -28,13 +27,6 @@ class GaitClockCommandCfg(CommandTermCfg):
 
 
 class GaitClockCommand(CommandTerm):
-    """``episode_length_buf`` modulo the period, kept as a float state.
-
-    mjlab resets the command and then updates it in the same call, both from
-    ``reset()`` and on an auto-reset, so starting at -1 gives the 0 upstream reads on an
-    episode's first frame.
-    """
-
     cfg: GaitClockCommandCfg
 
     def __init__(self, cfg: GaitClockCommandCfg, env: Any) -> None:
@@ -47,6 +39,7 @@ class GaitClockCommand(CommandTerm):
 
     def _resample_command(self, env_ids: torch.Tensor) -> None:
         del env_ids
+        # mjlab updates right after every reset, so -1 reads as upstream's 0 on frame one.
         self.step_count = torch.full_like(self.step_count, -1.0)
 
     def _update_command(self, env_ids: torch.Tensor | None) -> None:

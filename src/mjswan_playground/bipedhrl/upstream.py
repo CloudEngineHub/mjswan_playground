@@ -14,7 +14,6 @@ from mjswan_playground._deps import ensure_repo
 REPO_URL = "https://github.com/spaethli/biped_hrl.git"
 REPO_COMMIT = "cd2c75a1f12a78fe5aeb49f78c94ba3faf3116d7"
 
-#: Importing it registers every task the repo defines with mjlab's registry.
 TASK_PACKAGE = "src.tasks.velocity.config.h1_2"
 POLICY_DIR = "deploy/robots/h1_2/config/policy/velocity/v0"
 #: The checkpoint the author ran on the robot; the tree holds several others.
