@@ -34,36 +34,79 @@ def _build(task_id: str, output_dir: Optional[Path]):
     )
     if problems:
         typer.echo(
-            "These graph inputs read a command field the browser cannot serve, so the "
-            "graph would never run. In a traced term, read "
-            "env.command_manager.get_term(name).<state field>, not get_command(name):",
+            "These graph inputs read a command field the browser does not serve, so "
+            "their graphs would never run:",
             err=True,
         )
         for problem in problems:
             typer.echo(f"  {problem}", err=True)
+        typer.echo(
+            "Read a traced command as env.command_manager.get_term(name).<state field> "
+            "and a ui_command as get_command(name); a command the MDP lacks goes in the "
+            "policy's commands=.",
+            err=True,
+        )
         raise typer.Exit(1)
     return built, path
 
 
+#: What the browser serves for a ``{command, field}`` slot on mjswan's own command
+#: classes (``getStateField`` under its template's core/command/); a traced
+#: ``OnnxCommand`` serves its state fields. tests/test_cli.py checks this against the
+#: installed mjswan.
+_NATIVE_COMMAND_FIELDS = {
+    "UiCommand": ("command",),
+    "TrackingCommand": (
+        "is_ready",
+        "ref_root_pos_w",
+        "ref_root_quat_w",
+        "ref_joint_pos",
+        "anchor_pos_w",
+        "anchor_quat_w",
+        "anchor_lin_vel_w",
+        "anchor_ang_vel_w",
+        "ref_base_height",
+        "ref_base_lin_vel_b",
+        "ref_base_ang_vel_b",
+        "ref_gravity_b",
+        "joint_pos",
+        "tracked_joint_pos",
+        "body_pos_w",
+        "robot_anchor_pos_w",
+        "robot_anchor_quat_w",
+        "robot_body_pos_w",
+        "body_pos_relative_w",
+    ),
+}
+
+
 def _unservable_command_slots(manifest: dict) -> list[str]:
-    """Each `{command, field}` input slot on a traced command that has no such state
-    field. The browser serves those by state-field name only, and an input it cannot
-    serve leaves the graph's output at its initial zeros, with no warning."""
+    """``{command, field}`` slots the browser cannot serve. It never runs a graph with
+    such an input, while parity, which reads the attribute in mjlab, still passes."""
     problems = []
     for project in manifest.get("projects", []):
         for scene in project.get("scenes", []):
             for mdp in scene.get("mdps", []):
                 commands = mdp.get("commands") or {}
                 for where, slot in _command_slots(mdp):
-                    command = commands.get(slot["command"]) or {}
-                    fields = [
-                        field["name"] for field in command.get("state_fields", [])
-                    ]
-                    if fields and slot["field"] not in fields:
-                        problems.append(
-                            f"{mdp.get('id')}{where}: {slot['command']}.{slot['field']} "
-                            f"(state fields: {', '.join(fields)})"
-                        )
+                    read = (
+                        f"{scene.get('id')}/{mdp.get('id')}{where}: "
+                        f"{slot['command']}.{slot['field']}"
+                    )
+                    command = commands.get(slot["command"])
+                    if command is None:
+                        problems.append(f"{read} (no such command in this MDP)")
+                        continue
+                    note = ""
+                    if command.get("name") == "OnnxCommand":
+                        served = [
+                            field["name"] for field in command.get("state_fields", [])
+                        ]
+                        note = f"; get_command() is {command.get('command_field')}"
+                    else:
+                        served = _NATIVE_COMMAND_FIELDS.get(command.get("name"))
+                    if served is not None and slot["field"] not in served:
+                        problems.append(f"{read} (serves {', '.join(served)}{note})")
     return problems
 
 

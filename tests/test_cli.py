@@ -1,36 +1,73 @@
-"""The build refuses a graph input that reads a traced command by a field the browser
-does not serve, the way ``get_command()`` inside a traced term does."""
+"""The build refuses a graph input the browser cannot serve, such as the ``command`` field
+that ``get_command()`` records inside a traced term."""
 
-from mjswan_playground._cli import _unservable_command_slots
+import importlib.util
+import json
+import re
+from pathlib import Path
+
+from typer.testing import CliRunner
+
+from mjswan_playground import _cli
 
 
 def _manifest(slots: list[dict]) -> dict:
     commands = {
         "clock": {
+            "name": "OnnxCommand",
             "state_fields": [{"name": "step_count"}],
             "command_field": "step_count",
         },
         "motion": {"name": "TrackingCommand"},
+        "pad": {"name": "UiCommand"},
     }
     mdp = {
         "id": "a0",
         "commands": commands,
         "observations": {"actor": {"input_slots": slots}},
     }
-    return {"projects": [{"scenes": [{"mdps": [mdp]}]}]}
+    return {"projects": [{"scenes": [{"id": "s", "mdps": [mdp]}]}]}
 
 
-def test_get_command_slot_is_refused() -> None:
-    problems = _unservable_command_slots(
-        _manifest([{"command": "clock", "field": "command"}])
+def _refused(*slots: tuple[str, str]) -> list[str]:
+    manifest = _manifest([{"command": c, "field": f} for c, f in slots])
+    return _cli._unservable_command_slots(manifest)
+
+
+def test_served_slots_pass() -> None:
+    assert not _refused(
+        ("clock", "step_count"), ("motion", "anchor_quat_w"), ("pad", "command")
     )
-    assert len(problems) == 1
-    assert "clock.command" in problems[0]
 
 
-def test_state_field_and_native_command_slots_pass() -> None:
-    slots = [
-        {"command": "clock", "field": "step_count"},
-        {"command": "motion", "field": "anchor_quat_w"},
-    ]
-    assert _unservable_command_slots(_manifest(slots)) == []
+def test_unserved_slots_are_refused() -> None:
+    for slot in [
+        ("clock", "command"),
+        ("motion", "command"),
+        ("pad", "x"),
+        ("gone", "x"),
+    ]:
+        assert len(_refused(slot)) == 1, slot
+
+
+def test_native_fields_match_the_installed_mjswan() -> None:
+    package = Path(importlib.util.find_spec("mjswan").submodule_search_locations[0])
+    source = (package / "template/src/core/command/TrackingCommand.ts").read_text()
+    body = source.split("getStateField(field: string)", 1)[1].split("\n  }\n", 1)[0]
+    served = set(re.findall(r"case '(\w+)'", body))
+    assert served == set(_cli._NATIVE_COMMAND_FIELDS["TrackingCommand"])
+
+
+def test_build_exits_on_an_unservable_slot(tmp_path, monkeypatch) -> None:
+    class Builder:
+        def build(self, output_dir: Path) -> None:
+            output_dir.mkdir(parents=True)
+            manifest = _manifest([{"command": "clock", "field": "command"}])
+            (output_dir / "manifest.json").write_text(json.dumps(manifest))
+
+    monkeypatch.setattr(_cli, "load", lambda task_id: Builder())
+    result = CliRunner().invoke(
+        _cli.app, ["build", "x", "--output-dir", str(tmp_path / "d")]
+    )
+    assert result.exit_code == 1
+    assert "clock.command" in result.output
