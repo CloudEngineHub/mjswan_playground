@@ -12,11 +12,12 @@ A routine adds one task a day and opens a pull request for it, following [`ROUTI
 A task's pull request ships its preview with `WIP` in place of the link. To publish it:
 
 ```sh
+make sync
 uv run msp build <id>
-uv run mjswan publish dist/<id>
+uv run mjswan publish dist/<id>    # signs you in first if needed
 ```
 
-Then replace `WIP` in its README row with the link, as the other rows have it.
+Then replace `WIP` in its README row with the link, as the other rows have it, in a pull request.
 
 ## One-time setup
 
@@ -38,11 +39,12 @@ Then replace `WIP` in its README row with the link, as the other rows have it.
      MUJOCO_GL=disable
      ```
 
-2. A ruleset on `main` in both repositories that blocks direct pushes, and here also requires `released-mjswan`.
-3. The routine:
+2. In this repository's `main` ruleset, require the `released-mjswan` status check. Commits then reach `main` only through a pull request, yours included. Leave ttktjmt/mjswan's ruleset as it is: its release workflow pushes the version bump to `main`.
+3. The routine, at claude.ai/code/routines:
    - Repositories: ttktjmt/mjswan_playground and ttktjmt/mjswan
    - Environment: `mjswan-daily`
    - Schedule: every day at 04:47 JST
+   - Connectors: none
    - Prompt:
 
      ```
