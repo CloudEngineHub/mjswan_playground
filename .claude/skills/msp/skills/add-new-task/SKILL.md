@@ -134,7 +134,7 @@ uv run mjswan info dist/<id>      # motions are not listed: read dist/<id>/manif
 - Work in a clone at `.cache/mjswan-pr`. Push the branch to ttktjmt/mjswan itself when you can (a cloud session needs it attached with push access), else fork as that section says. Run step 10's review over its diff before opening it, and label it `from-playground`.
 - Finish the port against that PR: add `mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "<head sha>" }` under `[tool.uv.sources]`, `uv lock --upgrade-package mjswan`, then sync, build and parity as usual. The web client builds through nodeenv on first use.
 - The task's pull request is a draft labelled `needs-mjswan` that links the mjswan PR. Nothing is published or merged while the pin is there: the `released-mjswan` check refuses a git-sourced mjswan on `main`. When the mjswan PR gets new commits, move the pin to its new head and verify again.
-- Finish it once `origin/main` locks an mjswan release that contains the change: merge `origin/main`, drop the pin, `uv lock`, then steps 6, 8 and 10 again; remove `needs-mjswan` and mark the PR ready. If the change touched `src/mjswan/template/`, say in the PR that publishing has to wait until mjswan Cloud serves that engine.
+- Finish it once `origin/main` locks an mjswan release that contains the change: merge `origin/main`, drop the pin, `uv lock`, then steps 6 to 8 and 10 again, refilming the preview against the release; remove `needs-mjswan` and mark the PR ready. If the change touched `src/mjswan/template/`, say in the PR that publishing has to wait until mjswan Cloud serves that engine.
 
 ## 10. Final review (replaces "Report")
 
