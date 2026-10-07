@@ -1027,8 +1027,7 @@ def main() -> None:
         try:
             app_dir = ensure_built(task_id, args.dist)
         except Exception as error:
-            # A task that will not build here, such as one behind a gated download,
-            # must not keep the rest of `--all` from being checked.
+            # A task that cannot build here (a gated download) must not stop the rest.
             print(f"[{task_id}] build failed: {error}")
             failed.append(task_id)
             continue

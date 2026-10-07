@@ -1,4 +1,4 @@
-"""Upkie, a wheeled biped, balancing and driving to velocity commands. See ``README.md``."""
+"""Upkie, a wheeled biped, driving to velocity commands. See ``README.md``."""
 
 from __future__ import annotations
 
@@ -16,10 +16,7 @@ TASK_ID = "Mjlab-Velocity-Upkie"
 
 def _action_order(env_cfg, joint_names: list[str]) -> list[str]:
     """The joints in the policy's action layout: term by term, entity order within.
-
-    The legs are one term and the wheels another, so the action vector is not the
-    model's joint order that the checkpoint's metadata lists.
-    """
+    Legs and wheels are separate terms, so it is not the metadata's model order."""
     order = []
     for term in env_cfg.actions.values():
         patterns = [re.compile(p) for p in term.actuator_names]
