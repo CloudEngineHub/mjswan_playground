@@ -1,5 +1,7 @@
 # HUSKY Skateboarding (`husky`)
 
+<img src="../../../assets/husky.gif" width="480" alt="HUSKY Skateboarding preview"/>
+
 Source: https://github.com/TeleHuman/humanoid_skateboarding (**CC BY-NC 4.0**, see
 [License](#license)) ·
 project page: https://husky-humanoid.github.io
@@ -58,4 +60,5 @@ push and both steering directions.
 Upstream's codebase is licensed under [CC BY-NC 4.0](https://github.com/TeleHuman/humanoid_skateboarding/blob/main/LICENSE-CC-BY-NC-4.0.md).
 The demo is on mjswan Cloud under permission granted directly by the HUSKY author; that
 permission does not travel with the files, so please follow the terms of the license for
-your own use.
+your own use. The build ships that license as the project's `LICENSE`, so `mjswan publish`
+warns on it before the upload.

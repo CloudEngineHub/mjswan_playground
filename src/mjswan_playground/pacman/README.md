@@ -1,5 +1,7 @@
 # PAC-MAN Dodgeball (`pacman`)
 
+<img src="../../../assets/pacman.gif" width="480" alt="PAC-MAN Dodgeball preview"/>
+
 Source: https://github.com/lzyang2000/perceptive_cbf_rl (MIT; the G1 model is
 Unitree's, BSD-3-Clause) ·
 project page: https://lzyang2000.github.io/perceptive_cbf_rl

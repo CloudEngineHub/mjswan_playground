@@ -1,5 +1,7 @@
 # G1 Double Spin Kick (`spinkick`)
 
+<img src="../../../assets/spinkick.gif" width="480" alt="G1 Double Spin Kick preview"/>
+
 Source: https://github.com/mujocolab/g1_spinkick_example (Apache-2.0) ·
 reference motion from https://github.com/xbpeng/MimicKit (Apache-2.0)
 

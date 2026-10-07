@@ -41,9 +41,8 @@ def _build(task_id: str, output_dir: Optional[Path]):
         for problem in problems:
             typer.echo(f"  {problem}", err=True)
         typer.echo(
-            "Read a traced command as env.command_manager.get_term(name).<state field> "
-            "and a ui_command as get_command(name); a command the MDP lacks goes in the "
-            "policy's commands=.",
+            "Read a command with get_command(name) or a field it serves; a command the "
+            "MDP lacks goes in the policy's commands=.",
             err=True,
         )
         raise typer.Exit(1)
@@ -94,16 +93,15 @@ def _unservable_command_slots(manifest: dict) -> list[str]:
                     if command is None:
                         problems.append(f"{read} (no such command in this MDP)")
                         continue
-                    note = ""
                     if command.get("name") == "OnnxCommand":
-                        served = [
+                        # `command` is what get_command() reads.
+                        served = ["command"] + [
                             field["name"] for field in command.get("state_fields", [])
                         ]
-                        note = f"; get_command() is {command.get('command_field')}"
                     else:
                         served = _NATIVE_COMMAND_FIELDS.get(command.get("name"))
                     if served is not None and slot["field"] not in served:
-                        problems.append(f"{read} (serves {', '.join(served)}{note})")
+                        problems.append(f"{read} (serves {', '.join(served)})")
     return problems
 
 

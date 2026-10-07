@@ -445,7 +445,8 @@ def setup_builder() -> mjswan.Builder:
     stand_pose = _stand_pose(rl_root / SCENE_XML)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="Microduck")
+    # Both repos are Apache-2.0; this copy names the holder.
+    project = builder.add_project(name="Microduck", license=rl_root / "LICENSE")
 
     for entry in SCENES:
         spec = _scene_spec(entry, rl_root, stand_pose)

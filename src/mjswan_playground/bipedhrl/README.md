@@ -1,5 +1,7 @@
 # H1-2 Velocity Walking (`bipedhrl`)
 
+<img src="../../../assets/bipedhrl.gif" width="480" alt="H1-2 Velocity Walking preview"/>
+
 Source: https://github.com/spaethli/biped_hrl (Apache-2.0; the H1-2 model is Unitree's,
 BSD-3-Clause)
 
@@ -46,12 +48,8 @@ Seven terms, one frame, no history:
 - **The gait clock is a command term.** Upstream's `phase` reads `env.episode_length_buf`,
   which the browser does not serve. [`terms.py`](terms.py) counts control steps in a
   `gait_clock` command that restarts on reset, and the observation reads its `step_count`
-  and the twist's `vel_command_b` directly: the browser serves a traced command to a
-  graph by state field, not through `get_command()`.
-  Against upstream's own `phase` in a one-env mjlab env it agrees to within 1e-5 over
-  1,400 steps, across ten auto-resets and two manual ones. In the browser, the clock runs one step ahead
-  after a fall until the next manual reset: mjswan updates a command once more right
-  after resetting it.
+  and the twist's `vel_command_b`. Against upstream's own `phase` in a one-env mjlab env
+  it agrees to within 1e-5 over 1,400 steps, across ten auto-resets and two manual ones.
 - **The joystick leaves the standing gate alone.** mjswan feeds a traced term the
   command's own state, not the joystick's override, so with the joystick on, `phase` is
   zero while the resampled command is below 0.1, whatever the sliders say. At zero

@@ -32,6 +32,15 @@ own build is missing:
 
     xvfb-run -a uv run --group previews python scripts/record_preview.py husky \\
         --software --chromium /opt/pw-browsers/chromium
+
+Every recording also checks the task works: the app runs on for `--check-seconds` after
+the clip, and the recording fails on a termination other than `time_out`, a root tipped
+past `MAX_TILT_DEG`, NaN state, observations or actions, an observation input that stays
+all zeros, a traced graph that stops running, actions that never change, a stalled step
+loop, a page error, or a slow-motion or choppy clip. It writes `dist/preview/<task-id>.json`
+and a contact sheet, `dist/preview/<task-id>.png`: every frame of the GIF, then one every
+`SHEET_EVERY` seconds of the run after it, failures outlined in red. A failure exits 1
+once every task is filmed.
 """
 
 from __future__ import annotations
@@ -41,7 +50,9 @@ import base64
 import dataclasses
 import functools
 import http.server
+import io
 import json
+import re
 import shutil
 import socketserver
 import subprocess
@@ -64,6 +75,16 @@ MIN_STEP_RATE_RATIO = 0.9
 #: `--software` runs the page's clock at this fraction of real time, so a renderer that
 #: draws a few frames a second still lands one every few control steps of page time.
 SOFTWARE_CLOCK = 0.15
+#: Seconds the app runs on after the clip, checked like the clip: a 4 s GIF misses a fall
+#: that comes later.
+CHECK_SECONDS = 20.0
+#: A root tipped this far from upright has fallen, whatever the task's terminations say.
+MAX_TILT_DEG = 75.0
+#: Share of control steps a traced observation, command or termination graph has to run
+#: on. Each runs every step; an input the browser cannot fill stops it, silently.
+MIN_GRAPH_RUN_RATIO = 0.9
+#: The run after the clip goes on the contact sheet one frame per this many seconds.
+SHEET_EVERY = 2.0
 
 
 @dataclass(frozen=True)
@@ -93,6 +114,10 @@ class Preview:
         seconds: Clip length. 4 s is 60 frames at 15 fps.
         settle: Seconds between finishing the setup and rolling, so camera damping and any
             reset from a policy switch are done before the first frame.
+        upright: Fail when the root tips past `MAX_TILT_DEG`. Off only for a clip that
+            leaves upright on purpose, a flip.
+        ok_terminations: Terminations besides `time_out` the task itself plays out, as a
+            dodgeball hit ends an episode.
     """
 
     steps: tuple[tuple, ...] = ()
@@ -104,6 +129,8 @@ class Preview:
     crop: str = "719:526:120:120"
     seconds: float = 4.0
     settle: float = 2.0
+    upright: bool = True
+    ok_terminations: tuple[str, ...] = ()
 
 
 #: One entry per task in `ALL_TASKS`; a task with no entry is filmed with the defaults.
@@ -117,16 +144,21 @@ PREVIEWS: dict[str, Preview] = {
     # `idle_02` opens the motion list and stands still, so the preview picks its own two:
     # one policy over a sprint and a flip is the point of a tracking task. `ref=0` drops
     # the tracking ghost, which otherwise stands beside the robot and halves its size.
+    # The flip turns the root over, so the tracking terminations judge a fall instead.
     "wbc": Preview(
         motions=("sprint_01", "flip_02"),
         query="ref=0",
         orbit=150,
         crop="719:526:115:122",
         seconds=6.0,
+        upright=False,
     ),
     # Auto throw is armed by default: a ball every 1-4 s, so a 5 s clip catches two.
-    # A wider crop than the rest, to keep the incoming ball in frame.
-    "pacman": Preview(orbit=90, crop="840:614:60:76", seconds=5.0),
+    # A wider crop than the rest, to keep the incoming ball in frame. A hit ends the
+    # episode, as in mjlab: the policy dodges most throws, not every one.
+    "pacman": Preview(
+        orbit=90, crop="840:614:60:76", seconds=5.0, ok_terminations=("ball_hit",)
+    ),
     "microduck": Preview(
         steps=(("number", "Forward (m/s)", 0.35), ("wait", 1)),
         orbit=140,
@@ -188,6 +220,22 @@ def ensure_built(task_id: str, dist: Path) -> Path:
         print(f"[{task_id}] building into {app_dir}")
         load(task_id).build(output_dir=app_dir.resolve())
     return app_dir
+
+
+def per_step_graphs(app_dir: Path) -> set[str]:
+    """The traced graphs the app runs every control step: observation and termination
+    graphs, and a traced command's own. Event and reset graphs run on a reset only."""
+    manifest = json.loads((app_dir / "manifest.json").read_text())
+    paths: set[str] = set()
+    for project in manifest["projects"]:
+        for scene in project["scenes"]:
+            for mdp in scene.get("mdps", []):
+                entries = list((mdp.get("terminations") or {}).values())
+                entries += list((mdp.get("commands") or {}).values())
+                for group in (mdp.get("observations") or {}).values():
+                    entries += group if isinstance(group, list) else [group]
+                paths |= {e.get(k) for e in entries for k in ("fused", "onnx")}
+    return paths - {None}
 
 
 def control_rate(app_dir: Path) -> float:
@@ -306,6 +354,115 @@ _SCALED_CLOCK = """((k) => {
     };
 })(%r);"""
 
+#: The app exposes no handle on its runtime, so the bundle is patched in flight to hand
+#: `_TELEMETRY` the runtime from the top of its step loop.
+_HOOK_AT = "async runLoop(){"
+_HOOK = _HOOK_AT + "window.__recHook&&window.__recHook(this);"
+
+#: Records, never changes, what the app does: per control step whether state,
+#: observations and actions are finite, which observation inputs are all zeros, whether
+#: the actions moved, and the root's height and tilt; every termination; every run of
+#: each traced graph. The root is the free joint carrying the most bodies, the robot's
+#: rather than a ball's.
+_TELEMETRY = """(() => {
+    const rec = (window.__rec = { hooked: false, steps: [], terms: [], runs: {} });
+    const finite = (a) => a.every(Number.isFinite);
+    const rootOf = (m) => {
+        const size = new Int32Array(m.nbody).fill(1);
+        for (let b = m.nbody - 1; b > 0; b--) size[m.body_parentid[b]] += size[b];
+        let adr = null, most = 0;
+        for (let j = 0; j < m.njnt; j++) {
+            const n = size[m.jnt_bodyid[j]];
+            if (m.jnt_type[j] === 0 && n > most) [adr, most] = [m.jnt_qposadr[j], n];
+        }
+        return adr;
+    };
+    window.__recHook = (rt) => {
+        if (rt.__rec) return;
+        rt.__rec = rec.hooked = true;
+        rec.paths = () => [...(rt.policyGraphs?.sessions?.keys() ?? [])];
+        let obs = null, model = null, root = null, last = null;
+        // Loading a policy builds new sessions and a new termination manager.
+        const watch = () => {
+            for (const [path, session] of rt.policyGraphs?.sessions ?? []) {
+                if (session.__rec) continue;
+                session.__rec = true;
+                rec.runs[path] ??= 0;
+                const run = session.run.bind(session);
+                session.run = (...a) => (rec.runs[path]++, run(...a));
+            }
+            const tm = rt.terminationManager;
+            if (tm && !tm.__rec) {
+                tm.__rec = true;
+                const evaluate = tm.evaluate.bind(tm);
+                tm.evaluate = (...a) => {
+                    const r = evaluate(...a);
+                    if (r.done) rec.terms.push({ k: rec.steps.length - 1, reasons: r.reasons });
+                    return r;
+                };
+            }
+        };
+        const infer = rt.runOnnxInference.bind(rt);
+        rt.runOnnxInference = (o) => (watch(), (obs = o), infer(o));
+        const step = rt.executeSimulationSteps.bind(rt);
+        rt.executeSimulationSteps = () => {
+            step();
+            const m = rt.mjModel, d = rt.mjData;
+            if (!m || !d) return;
+            if (m !== model) [model, root] = [m, rootOf(m)];
+            const s = { nan: null, zero: [], same: null };
+            if (!finite(d.qpos) || !finite(d.qvel)) s.nan = "state";
+            for (const [key, v] of Object.entries(obs ?? {})) {
+                if (v.every((x) => x === 0)) s.zero.push(key);
+                if (!finite(v)) s.nan ??= "observation " + key;
+            }
+            const act = rt.policyRunner?.getLastActions();
+            if (act) {
+                if (!finite(act)) s.nan ??= "actions";
+                s.same = !!last && last.length === act.length && act.every((x, i) => x === last[i]);
+                last = Float32Array.from(act);
+            }
+            if (root !== null) {
+                const q = d.qpos, x = q[root + 4], y = q[root + 5];
+                s.z = q[root + 2];
+                s.tilt = (Math.acos(Math.max(-1, Math.min(1, 1 - 2 * (x * x + y * y)))) * 180) / Math.PI;
+            }
+            rec.steps.push(s);
+        };
+    };
+})();"""
+
+
+@dataclass
+class Segment:
+    """What one `film` call saw: where its frames end, and what the app did from the
+    first filmed frame on, the clip's `filmed` steps first and then the run after it."""
+
+    next_index: int
+    motion: str | None = None
+    first_index: int = 0
+    seconds: float = 0.0
+    filmed: int = 0
+    steps: list[dict] = dataclasses.field(default_factory=list)
+    terms: list[dict] = dataclasses.field(default_factory=list)
+    runs: dict[str, int] = dataclasses.field(default_factory=dict)
+    errors: list[str] = dataclasses.field(default_factory=list)
+    rate: float = 0.0
+    fps: float = 0.0
+    #: Screenshots of the run after the clip, one per `SHEET_EVERY` seconds.
+    after: list[bytes] = dataclasses.field(default_factory=list)
+
+
+def _hook_runtime(route, hooked: list[bool]) -> None:
+    """Serve a bundle file with `_HOOK` inserted when it holds the step loop."""
+    response = route.fetch()
+    body = response.text()
+    if _HOOK_AT not in body:
+        route.fulfill(response=response)
+        return
+    hooked.append(True)
+    route.fulfill(response=response, body=body.replace(_HOOK_AT, _HOOK, 1))
+
 
 def film(
     url: str,
@@ -318,17 +475,22 @@ def film(
     start_index: int = 0,
     clock: float = 1.0,
     chromium: str | None = None,
-) -> int:
+    check_seconds: float | None = None,
+) -> Segment:
     """Set the shot up, then write either a framing PNG (`shot`) or a PNG sequence.
 
     One call is one segment: `motion` picks it in the panel, `seconds` overrides the
     recipe's length and `start_index` continues an earlier segment's numbering, so a
-    multi-motion preview concatenates into a single sequence. Returns the next index.
-    `clock` below 1 is `--software`: every wait and the frame pick run on page time.
+    multi-motion preview concatenates into a single sequence. `clock` below 1 is
+    `--software`: every wait and the frame pick run on page time. `check_seconds` records
+    the app from the first frame on and keeps it running that long after the clip;
+    `None` records nothing.
     """
     from playwright.sync_api import sync_playwright
 
     seconds = preview.seconds if seconds is None else seconds
+    segment = Segment(next_index=start_index, motion=motion, first_index=start_index)
+    checked = check_seconds is not None
 
     with sync_playwright() as pw:
         # Headed (see the module docstring), and at 2x even on a 1x display.
@@ -346,14 +508,33 @@ def film(
         if clock < 1:
             context.add_init_script(_SCALED_CLOCK % clock)
         context.add_init_script(_STEP_COUNTER)
+        hooked: list[bool] = []
+        if checked:
+            context.add_init_script(_TELEMETRY)
+            context.route(
+                re.compile(r"/assets/[^/]+\.js$"),
+                functools.partial(_hook_runtime, hooked=hooked),
+            )
         page = context.new_page()
-        page.on("pageerror", lambda e: print(f"  [pageerror] {e}", file=sys.stderr))
+
+        def on_error(error) -> None:
+            print(f"  [pageerror] {error}", file=sys.stderr)
+            segment.errors.append(str(error))
+
+        page.on("pageerror", on_error)
         page.goto(url, wait_until="load")
         page.wait_for_function(
             "() => window.__mjswanReady || window.__mjswanError", timeout=240_000
         )
         if page.evaluate("() => window.__mjswanError"):
             raise SystemExit(f"{url} failed to load its scene")
+        if checked:
+            if not hooked:
+                raise SystemExit(
+                    f"no {_HOOK_AT!r} in this build's bundle, so the run cannot be "
+                    "checked: update `_HOOK_AT` for this mjswan, or pass --no-check"
+                )
+            page.wait_for_function("() => window.__rec.hooked", timeout=60_000)
 
         for step in preview.steps:
             _apply(page, step)
@@ -371,7 +552,7 @@ def film(
         if shot is not None:
             page.screenshot(path=str(shot))
             browser.close()
-            return start_index
+            return segment
 
         if preview.from_reset:
             # The panel's own shortcut, on a window listener, so it still works hidden.
@@ -393,6 +574,9 @@ def film(
             client.send("Page.screencastFrameAck", {"sessionId": payload["sessionId"]})
 
         client.on("Page.screencastFrame", on_frame)
+        if checked:
+            first = page.evaluate("() => window.__rec.steps.length")
+            runs = page.evaluate("() => ({...window.__rec.runs})")
         before = page.evaluate("() => window.__paced + window.__yield / 2")
         client.send(
             "Page.startScreencast",
@@ -406,22 +590,46 @@ def film(
         page.wait_for_timeout(seconds / clock * 1000)
         client.send("Page.stopScreencast")
         after = page.evaluate("() => window.__paced + window.__yield / 2")
+        if checked:
+            segment.filmed = page.evaluate("() => window.__rec.steps.length") - first
+            for _ in range(round(check_seconds / SHEET_EVERY)):
+                page.wait_for_timeout(SHEET_EVERY / clock * 1000)
+                segment.after.append(page.screenshot())
+            segment.seconds = seconds + check_seconds
+            seen = page.evaluate(
+                """(first) => ({
+                    steps: window.__rec.steps.slice(first),
+                    terms: window.__rec.terms
+                        .filter((t) => t.k >= first)
+                        .map((t) => ({ ...t, k: t.k - first })),
+                    runs: window.__rec.runs,
+                    paths: window.__rec.paths(),
+                })""",
+                first,
+            )
+            segment.steps, segment.terms = seen["steps"], seen["terms"]
+            # Only the graphs of the policy still loaded: a setup step may switch it.
+            segment.runs = {
+                path: seen["runs"].get(path, 0) - runs.get(path, 0)
+                for path in seen["paths"]
+            }
         browser.close()
 
     if len(frames) < 2:
         raise SystemExit("the screencast delivered no frames")
-    rate = (after - before) / seconds
+    segment.rate = (after - before) / seconds
+    segment.fps = len(frames) / seconds
     slow = (
         ""
-        if rate >= expected_rate * MIN_STEP_RATE_RATIO
+        if segment.rate >= expected_rate * MIN_STEP_RATE_RATIO
         else (f"  ** slow motion: {expected_rate:.0f}/s expected **")
     )
-    if len(frames) / seconds < FPS:
+    if segment.fps < FPS:
         slow += f"  ** fewer than {FPS} frames per second: frames repeat **"
     label = f" [{motion}]" if motion else ""
     print(
         f"  {len(frames)} frames captured{label}, "
-        f"{rate:.1f} of {expected_rate:.0f} steps/s{slow}"
+        f"{segment.rate:.1f} of {expected_rate:.0f} steps/s{slow}"
     )
 
     # The frame nearest each 1/FPS tick of page time (`clock` times real time).
@@ -434,7 +642,93 @@ def film(
         _, data = min(frames, key=lambda frame: abs(frame[0] - want))
         (frames_dir / f"seq_{index:04d}.png").write_bytes(base64.b64decode(data))
         index += 1
-    return index
+    segment.next_index = index
+    return segment
+
+
+def check_run(
+    segment: Segment,
+    preview: Preview,
+    control_dt: float,
+    expected_rate: float,
+    per_step: set[str],
+) -> list[tuple[list[int], str]]:
+    """What went wrong in `segment`: each failure with the steps it happens at, counted
+    from the first filmed frame, or none when it spans the run. Empty when it passed.
+
+    `per_step` names the graphs that have to run every step (`per_step_graphs`).
+    """
+    failures: list[tuple[list[int], str]] = []
+    steps = segment.steps
+
+    def at(k: int) -> str:
+        after = k >= segment.filmed
+        return f"{k * control_dt:.1f} s" + (" (after the clip)" if after else "")
+
+    failures += [([], f"page error: {error}") for error in segment.errors]
+    if segment.rate < expected_rate * MIN_STEP_RATE_RATIO:
+        failures.append(
+            ([], f"slow motion: {segment.rate:.1f} of {expected_rate:.0f} steps/s")
+        )
+    if segment.fps < FPS:
+        failures.append(
+            ([], f"{segment.fps:.1f} frames/s captured, under {FPS}: frames repeat")
+        )
+    if not steps:
+        return failures + [([], "no control step ran while filming")]
+
+    want = round(segment.seconds / control_dt)
+    if len(steps) < want * MIN_STEP_RATE_RATIO:
+        failures.append(
+            (
+                [],
+                f"the step loop ran {len(steps)} of {want} steps: it stopped or stalled",
+            )
+        )
+    nan = next((k for k, s in enumerate(steps) if s["nan"]), None)
+    if nan is not None:
+        failures.append(([nan], f"{steps[nan]['nan']} went NaN at {at(nan)}"))
+
+    ok = {"time_out", *preview.ok_terminations}
+    bad = [t["k"] for t in segment.terms if not set(t["reasons"]) <= ok]
+    if bad:
+        reasons = {r for t in segment.terms for r in t["reasons"]} - ok
+        failures.append(
+            (
+                bad,
+                f"terminated {len(bad)}x ({', '.join(sorted(reasons))}), first at {at(bad[0])}",
+            )
+        )
+    tilts = [s.get("tilt", 0.0) for s in steps]
+    tipped = [
+        k
+        for k, tilt in enumerate(tilts)
+        if tilt > MAX_TILT_DEG and (k == 0 or tilts[k - 1] <= MAX_TILT_DEG)
+    ]
+    if preview.upright and tipped:
+        failures.append(
+            (
+                tipped,
+                f"root tipped past {MAX_TILT_DEG:g}° {len(tipped)}x, first at "
+                f"{at(tipped[0])}, to {max(tilts):.0f}°",
+            )
+        )
+
+    zeros: dict[str, int] = {}
+    for s in steps:
+        for key in s["zero"]:
+            zeros[key] = zeros.get(key, 0) + 1
+    failures += [
+        ([], f"observation {key!r} all zeros on every step")
+        for key, n in zeros.items()
+        if n == len(steps)
+    ]
+    if len(steps) > 1 and all(s["same"] for s in steps[1:]):
+        failures.append(([], f"actions never changed over {len(steps)} steps"))
+    for path, n in sorted(segment.runs.items()):
+        if path in per_step and n < len(steps) * MIN_GRAPH_RUN_RATIO:
+            failures.append(([], f"{path} ran on {n} of {len(steps)} steps"))
+    return failures
 
 
 def _ffmpeg() -> str:
@@ -477,8 +771,7 @@ def to_gif(frames_dir: Path, out: Path, crop: str) -> None:
         ],
         check=True,
     )
-    shown = out.relative_to(ROOT) if out.is_relative_to(ROOT) else out
-    print(f"  {shown}  {out.stat().st_size / 1e6:.1f} MB")
+    print(f"  {_shown(out)}  {out.stat().st_size / 1e6:.1f} MB")
 
 
 def crop_png(path: Path, crop: str) -> None:
@@ -501,6 +794,149 @@ def crop_png(path: Path, crop: str) -> None:
         check=True,
     )
     cropped.replace(path)
+
+
+def contact_sheet(
+    gif: Path, crop: str, segments: list[Segment], marks: list[set[int]], out: Path
+) -> None:
+    """Tile every frame of `gif`, then each segment's run after the clip, into `out`.
+
+    `marks` holds, per segment, the indices into that segment's frames, clip then after,
+    where a failure starts; those are outlined in red.
+    """
+    from PIL import Image, ImageDraw, ImageSequence
+
+    w, h, columns, header = WIDTH // 3, HEIGHT // 3, 10, 18
+    rows: list = []
+
+    def add(title: str, tiles: list) -> None:
+        rows.append(title)
+        rows.extend(tiles[i : i + columns] for i in range(0, len(tiles), columns))
+
+    with Image.open(gif) as image:
+        clip = [f.convert("RGB").resize((w, h)) for f in ImageSequence.Iterator(image)]
+    cw, ch, cx, cy = map(int, crop.split(":"))
+    for segment, marked in zip(segments, marks):
+        label = f" [{segment.motion}]" if segment.motion else ""
+        frames = range(segment.first_index, min(segment.next_index, len(clip)))
+        add(
+            f"clip{label}",
+            [(clip[i], f"{i / FPS:.2f}s", i in marked) for i in frames],
+        )
+        if segment.after:
+            shots = [
+                Image.open(io.BytesIO(png))
+                .convert("RGB")
+                .crop((cx, cy, cx + cw, cy + ch))
+                .resize((w, h))
+                for png in segment.after
+            ]
+            offset = segment.next_index
+            add(
+                f"after the clip{label}, every {SHEET_EVERY:g} s",
+                [
+                    (shot, f"+{(j + 1) * SHEET_EVERY:g}s", offset + j in marked)
+                    for j, shot in enumerate(shots)
+                ],
+            )
+
+    sheet = Image.new(
+        "RGB",
+        (columns * w, sum(header if isinstance(r, str) else h for r in rows)),
+        "white",
+    )
+    draw = ImageDraw.Draw(sheet)
+    y = 0
+    for row in rows:
+        if isinstance(row, str):
+            draw.text((4, y + 3), row, fill="black")
+            y += header
+            continue
+        for x, (tile, label, marked) in enumerate(row):
+            sheet.paste(tile, (x * w, y))
+            draw.text(
+                (x * w + 3, y + 2),
+                label,
+                fill="white",
+                stroke_width=1,
+                stroke_fill="black",
+            )
+            if marked:
+                draw.rectangle(
+                    (x * w, y, (x + 1) * w - 1, y + h - 1), outline="red", width=4
+                )
+        y += h
+    out.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(out)
+
+
+def report(
+    task_id: str,
+    preview: Preview,
+    segments: list[Segment],
+    control_dt: float,
+    expected_rate: float,
+    per_step: set[str],
+    gif: Path,
+    out_dir: Path,
+) -> list[str]:
+    """Check each segment, write `<task-id>.json` and the contact sheet into `out_dir`,
+    and return the failures."""
+    failures: list[str] = []
+    marks: list[set[int]] = []
+    for segment in segments:
+        found = check_run(segment, preview, control_dt, expected_rate, per_step)
+        label = f"[{segment.motion}] " if segment.motion else ""
+        failures += [label + message for _, message in found]
+        marked = set()
+        for k in (k for ks, _ in found for k in ks):
+            if k < segment.filmed:
+                frame = segment.first_index + round(k * control_dt * FPS)
+                marked.add(min(frame, segment.next_index - 1))
+            elif segment.after:
+                j = int((k - segment.filmed) * control_dt / SHEET_EVERY)
+                marked.add(segment.next_index + min(j, len(segment.after) - 1))
+        marks.append(marked)
+
+    sheet = out_dir / f"{task_id}.png"
+    contact_sheet(gif, preview.crop, segments, marks, sheet)
+    summary = {
+        "task": task_id,
+        "passed": not failures,
+        "failures": failures,
+        "gif": str(gif),
+        "sheet": str(sheet),
+        "segments": [
+            {
+                "motion": s.motion,
+                "seconds": s.seconds,
+                "filmed_steps": s.filmed,
+                "steps": len(s.steps),
+                "steps_per_s": round(s.rate, 1),
+                "frames_per_s": round(s.fps, 1),
+                "terminations": s.terms,
+                "graph_runs": s.runs,
+                "root_z": [round(step["z"], 3) for step in s.steps if "z" in step],
+                "root_tilt": [
+                    round(step["tilt"], 1) for step in s.steps if "tilt" in step
+                ],
+            }
+            for s in segments
+        ],
+    }
+    (out_dir / f"{task_id}.json").write_text(json.dumps(summary, indent=1))
+    filmed = sum(s.filmed for s in segments)
+    steps = sum(len(s.steps) for s in segments)
+    verdict = "passed" if not failures else "FAILED"
+    print(f"  checks {verdict}: {steps} control steps, {filmed} of them filmed")
+    for failure in failures:
+        print(f"    - {failure}")
+    print(f"  {_shown(sheet)}, {_shown(out_dir / f'{task_id}.json')}")
+    return failures
+
+
+def _shown(path: Path) -> Path:
+    return path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
 
 
 def main() -> None:
@@ -546,6 +982,15 @@ def main() -> None:
     parser.add_argument(
         "--chromium", help="a Chromium binary to launch instead of Playwright's own"
     )
+    parser.add_argument(
+        "--check-seconds",
+        type=float,
+        default=CHECK_SECONDS,
+        help=f"how long the app runs on after the clip, checked (default {CHECK_SECONDS:g})",
+    )
+    parser.add_argument(
+        "--no-check", action="store_true", help="film without checking the run"
+    )
     args = parser.parse_args()
 
     tasks = ALL_TASKS if args.all else tuple(args.tasks)
@@ -562,6 +1007,8 @@ def main() -> None:
         "clock": SOFTWARE_CLOCK if args.software else 1.0,
         "chromium": args.chromium,
     }
+    check_seconds = None if args.no_check else args.check_seconds
+    failed: list[str] = []
 
     for task_id in tasks:
         overrides = {
@@ -598,28 +1045,47 @@ def main() -> None:
                 print(f"  {args.shot}")
                 continue
             print(f"[{task_id}] filming {preview.seconds:g}s of {url}")
+            rate = control_rate(app_dir)
+            gif = args.out_dir / f"{task_id}.gif"
             with tempfile.TemporaryDirectory() as tmp:
                 frames_dir = (
                     args.keep_frames / task_id if args.keep_frames else Path(tmp)
                 )
                 # One segment per motion, appended into one sequence; a task without
                 # `motions` is a single segment of whatever the setup left running.
-                segments = preview.motions or (None,)
-                index = 0
-                for motion in segments:
-                    index = film(
-                        url,
-                        preview,
-                        frames_dir=frames_dir,
-                        expected_rate=control_rate(app_dir),
-                        motion=motion,
-                        seconds=preview.seconds / len(segments),
-                        start_index=index,
-                        **browser,
+                motions = preview.motions or (None,)
+                segments: list[Segment] = []
+                for motion in motions:
+                    segments.append(
+                        film(
+                            url,
+                            preview,
+                            frames_dir=frames_dir,
+                            expected_rate=rate,
+                            motion=motion,
+                            seconds=preview.seconds / len(motions),
+                            start_index=segments[-1].next_index if segments else 0,
+                            check_seconds=check_seconds,
+                            **browser,
+                        )
                     )
-                to_gif(frames_dir, args.out_dir / f"{task_id}.gif", preview.crop)
+                to_gif(frames_dir, gif, preview.crop)
+            if check_seconds is not None and report(
+                task_id,
+                preview,
+                segments,
+                1 / rate,
+                rate,
+                per_step_graphs(app_dir),
+                gif,
+                args.dist / "preview",
+            ):
+                failed.append(task_id)
         finally:
             server.shutdown()
+
+    if failed:
+        raise SystemExit(f"checks failed: {', '.join(failed)}")
 
 
 if __name__ == "__main__":

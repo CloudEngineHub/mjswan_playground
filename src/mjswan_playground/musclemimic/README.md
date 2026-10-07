@@ -1,5 +1,7 @@
 # MuscleMimic full body (`musclemimic`)
 
+<img src="../../../assets/musclemimic.gif" width="480" alt="MuscleMimic full body preview"/>
+
 Source: https://github.com/MyoHub/myosuite/tree/ms3 (Apache-2.0) ·
 policy and clips from https://github.com/amathislab/musclemimic
 

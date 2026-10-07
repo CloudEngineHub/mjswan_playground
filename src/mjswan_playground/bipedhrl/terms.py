@@ -62,7 +62,6 @@ def phase(
     env: Any, clock_name: str, steps_per_period: int, command_name: str
 ) -> torch.Tensor:
     """Upstream's ``phase``: sin and cos of the gait clock, zero while standing."""
-    # The browser serves a traced command to a graph by state field, not get_command().
     angle = env.command_manager.get_term(clock_name).step_count * (
         2.0 * math.pi / steps_per_period
     )

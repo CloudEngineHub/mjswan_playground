@@ -36,6 +36,7 @@ def _refused(*slots: tuple[str, str]) -> list[str]:
 def test_served_slots_pass() -> None:
     assert not _refused(
         ("clock", "step_count"),
+        ("clock", "command"),
         ("motion", "anchor_quat_w"),
         ("motion", "command"),
         ("pad", "command"),
@@ -44,7 +45,7 @@ def test_served_slots_pass() -> None:
 
 def test_unserved_slots_are_refused() -> None:
     for slot in [
-        ("clock", "command"),
+        ("clock", "x"),
         ("motion", "x"),
         ("pad", "x"),
         ("gone", "x"),
@@ -52,19 +53,24 @@ def test_unserved_slots_are_refused() -> None:
         assert len(_refused(slot)) == 1, slot
 
 
-def test_native_fields_match_the_installed_mjswan() -> None:
+def _get_state_field(command: str) -> str:
+    """The installed mjswan's browser source for `<command>.getStateField`."""
     package = Path(importlib.util.find_spec("mjswan").submodule_search_locations[0])
-    source = (package / "template/src/core/command/TrackingCommand.ts").read_text()
-    body = source.split("getStateField(field: string)", 1)[1].split("\n  }\n", 1)[0]
-    served = set(re.findall(r"case '(\w+)'", body))
+    source = (package / f"template/src/core/command/{command}.ts").read_text()
+    return source.split("getStateField(field: string)", 1)[1].split("\n  }\n", 1)[0]
+
+
+def test_native_fields_match_the_installed_mjswan() -> None:
+    served = set(re.findall(r"case '(\w+)'", _get_state_field("TrackingCommand")))
     assert served == set(_cli._NATIVE_COMMAND_FIELDS["TrackingCommand"])
+    assert "field === 'command'" in _get_state_field("OnnxCommand")
 
 
 def test_build_exits_on_an_unservable_slot(tmp_path, monkeypatch) -> None:
     class Builder:
         def build(self, output_dir: Path) -> None:
             output_dir.mkdir(parents=True)
-            manifest = _manifest([{"command": "clock", "field": "command"}])
+            manifest = _manifest([{"command": "clock", "field": "phase"}])
             (output_dir / "manifest.json").write_text(json.dumps(manifest))
 
     monkeypatch.setattr(_cli, "load", lambda task_id: Builder())
@@ -72,4 +78,4 @@ def test_build_exits_on_an_unservable_slot(tmp_path, monkeypatch) -> None:
         _cli.app, ["build", "x", "--output-dir", str(tmp_path / "d")]
     )
     assert result.exit_code == 1
-    assert "clock.command" in result.output
+    assert "clock.phase" in result.output
