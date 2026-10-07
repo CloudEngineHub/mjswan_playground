@@ -1,5 +1,7 @@
 # Upkie Velocity (`upkie`)
 
+<img src="../../../assets/upkie.gif" width="480" alt="Upkie Velocity preview"/>
+
 Source: https://github.com/MarcDcls/mjlab_upkie (Apache-2.0; code, model and checkpoint) ·
 robot design after [Upkie](https://github.com/upkie/upkie) by Stéphane Caron
 
