@@ -35,14 +35,17 @@ def _refused(*slots: tuple[str, str]) -> list[str]:
 
 def test_served_slots_pass() -> None:
     assert not _refused(
-        ("clock", "step_count"), ("motion", "anchor_quat_w"), ("pad", "command")
+        ("clock", "step_count"),
+        ("motion", "anchor_quat_w"),
+        ("motion", "command"),
+        ("pad", "command"),
     )
 
 
 def test_unserved_slots_are_refused() -> None:
     for slot in [
         ("clock", "command"),
-        ("motion", "command"),
+        ("motion", "x"),
         ("pad", "x"),
         ("gone", "x"),
     ]:

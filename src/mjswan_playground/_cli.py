@@ -54,6 +54,7 @@ def _build(task_id: str, output_dir: Optional[Path]):
 _NATIVE_COMMAND_FIELDS = {
     "UiCommand": ("command",),
     "TrackingCommand": (
+        "command",
         "is_ready",
         "ref_root_pos_w",
         "ref_root_quat_w",
