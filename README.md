@@ -1,5 +1,7 @@
 # mjswan playground
 
+<a href="https://github.com/ttktjmt/mjswan_playground/actions/workflows/deploy.yml"><img src="https://github.com/ttktjmt/mjswan_playground/actions/workflows/deploy.yml/badge.svg" alt="deploy"/></a>
+
 A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 
 ## Tasks
@@ -26,6 +28,7 @@ uv run msp <subcommand>
 | `list` | List the task IDs | none |
 | `run <task-id>` | Build a task and open it in the browser | `--host` (`localhost`), `--port` (`8080`), `--no-open`, `--output-dir` |
 | `build <task-id>` | Build a task without launching | `--output-dir` |
+| `site [<task-id>...]` | Build every task on the GitHub Pages site into one app | `--no-build`, `--base-path` (`/`), `--dist-dir` (`dist`), `--output-dir` (`dist/_site`) |
 
 ## Python
 
