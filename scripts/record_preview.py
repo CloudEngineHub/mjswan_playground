@@ -183,6 +183,8 @@ PREVIEWS: dict[str, Preview] = {
     ),
     # Wider crop for the taller H1-2. No steps: the twist command resamples every 3-8 s.
     "bipedhrl": Preview(orbit=-30, crop="878:642:41:35"),
+    # Tight crop: the robot is 0.4 m tall under a camera authored at 3 m.
+    "upkie": Preview(orbit=45, crop="540:395:210:170", seconds=5.0),
 }
 
 
@@ -1022,7 +1024,13 @@ def main() -> None:
         }
         preview = dataclasses.replace(PREVIEWS.get(task_id, Preview()), **overrides)
 
-        app_dir = ensure_built(task_id, args.dist)
+        try:
+            app_dir = ensure_built(task_id, args.dist)
+        except Exception as error:
+            # A task that cannot build here (a gated download) must not stop the rest.
+            print(f"[{task_id}] build failed: {error}")
+            failed.append(task_id)
+            continue
         server = serve(app_dir)
         query = f"?{preview.query}" if preview.query else ""
         url = f"http://127.0.0.1:{server.server_address[1]}/{query}"
@@ -1083,7 +1091,7 @@ def main() -> None:
             server.shutdown()
 
     if failed:
-        raise SystemExit(f"checks failed: {', '.join(failed)}")
+        raise SystemExit(f"failed: {', '.join(failed)}")
 
 
 if __name__ == "__main__":

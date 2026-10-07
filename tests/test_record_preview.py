@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 _PATH = Path(__file__).resolve().parents[1] / "scripts" / "record_preview.py"
 _SPEC = importlib.util.spec_from_file_location("record_preview", _PATH)
 record_preview = importlib.util.module_from_spec(_SPEC)
@@ -141,3 +143,17 @@ def test_per_step_graphs_leave_out_reset_and_event_graphs(tmp_path) -> None:
         "mdp/a0/term/terminations.onnx",
         "mdp/a0/command/twist.onnx",
     }
+
+
+def test_a_task_that_will_not_build_leaves_the_rest_to_run(monkeypatch) -> None:
+    built = []
+
+    def ensure_built(task_id, dist):
+        built.append(task_id)
+        raise RuntimeError("gated")
+
+    monkeypatch.setattr(record_preview, "ensure_built", ensure_built)
+    monkeypatch.setattr(sys, "argv", ["record_preview.py", "musclemimic", "wbc"])
+    with pytest.raises(SystemExit, match="failed: musclemimic, wbc"):
+        record_preview.main()
+    assert built == ["musclemimic", "wbc"]

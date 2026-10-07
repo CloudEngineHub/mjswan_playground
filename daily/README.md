@@ -1,11 +1,12 @@
 # Daily tasks
 
-A routine adds one task a day and opens a pull request for it, following [`ROUTINE.md`](ROUTINE.md). It first scouts for trending repositories built on mjlab and puts them at the front of [`backlog.yaml`](backlog.yaml), and ends each run by checking its own work, then publishing a visual report, an Artifact in your claude.ai account. Merging and publishing stay with people.
+A routine adds one task a day and opens a pull request for it, following [`ROUTINE.md`](ROUTINE.md). It first scouts for trending repositories built on mjlab and puts them at the front of [`backlog.yaml`](backlog.yaml). It ends each run by fixing what in the routine got in its way, reviewing every change it made and checking its own work, then publishing a visual report, an Artifact in your claude.ai account. Merging and publishing stay with people.
 
 - `ROUTINE.md`: what each run does, and what it never does.
 - `backlog.yaml`: the queue. The scout's additions arrive as one standing pull request from `claude/daily-backlog`. Merge it to keep them, or edit the branch first; the routine already reads from it while it is open.
+- The routine's fixes to itself arrive as one standing pull request from `claude/daily-routine`. A run follows `main`'s routine, so merge it for the next run to take them.
 - [`released-mjswan.yml`](../.github/workflows/released-mjswan.yml): keeps a task that waits on an unreleased mjswan off `main`.
-- Labels: `daily-task`, `daily-backlog`, `daily-task-skipped`, `needs-mjswan` and `mjswan-bump` here; `from-playground` on ttktjmt/mjswan.
+- Labels: `daily-task`, `daily-backlog`, `daily-routine`, `daily-task-skipped`, `needs-mjswan` and `mjswan-bump` here; `from-playground` on ttktjmt/mjswan.
 
 ## Publishing a task
 

@@ -5,10 +5,8 @@ from __future__ import annotations
 import importlib
 import sys
 from pathlib import Path
-from unittest import mock
 
-from mjlab.utils.spec_config import CollisionCfg
-
+from mjswan_playground._compat import collision_defaults
 from mjswan_playground._deps import ensure_repo
 
 REPO_URL = "https://github.com/spaethli/biped_hrl.git"
@@ -49,20 +47,6 @@ def register_tasks(root: Path) -> None:
             )
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
-    with mock.patch("mjlab.utils.spec_config.CollisionCfg", _collision_cfg):
+    # ponytail: drop the shim once REPO_COMMIT's robot constants set the 1.6 fields.
+    with collision_defaults():
         importlib.import_module(TASK_PACKAGE)
-
-
-# ponytail: upstream's robot constants omit the CollisionCfg fields mjlab 1.6 made
-# required; drop this once REPO_COMMIT sets them.
-_COLLISION_DEFAULTS = {"contype": 1, "conaffinity": 1, "condim": 3, "priority": 0}
-
-
-def _collision_cfg(**kwargs) -> CollisionCfg:
-    """The pre-1.6 defaults, also for geoms a dict leaves unmatched. Patterns match
-    first-wins, so the catch-all goes last."""
-    for name, default in _COLLISION_DEFAULTS.items():
-        value = kwargs.setdefault(name, default)
-        if isinstance(value, dict):
-            kwargs[name] = {**value, ".*": value.get(".*", default)}
-    return CollisionCfg(**kwargs)
