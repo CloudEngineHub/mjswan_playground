@@ -161,7 +161,7 @@ def site_cmd(
         Optional[list[str]],
         typer.Argument(
             metavar="TASK_ID...",
-            help="Only these tasks. Default: every task.",
+            help="Only these tasks. Default: every task on the site.",
             show_default=False,
         ),
     ] = None,
@@ -180,7 +180,7 @@ def site_cmd(
         typer.Option(help="Where to write the site. Default: <dist-dir>/_site."),
     ] = None,
 ) -> None:
-    """Build every task and merge them into one app: the site GitHub Pages serves."""
+    """Build the GitHub Pages site: every task on it, merged into one app."""
     if not (base_path.startswith("/") and base_path.endswith("/")):
         raise typer.BadParameter(
             "starts and ends with /, e.g. /mjswan_playground/", param_hint="--base-path"
@@ -191,6 +191,12 @@ def site_cmd(
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
     if task_ids:
+        if left_out := [task for task in task_ids if task in _site.NOT_ON_SITE]:
+            for task in left_out:
+                typer.echo(
+                    f"{task} is not on the site: {_site.NOT_ON_SITE[task]}.", err=True
+                )
+            raise typer.Exit(1)
         if unknown := [task for task in task_ids if task not in order]:
             typer.echo(
                 f"Unknown task {', '.join(unknown)}. Available: {', '.join(order)}",

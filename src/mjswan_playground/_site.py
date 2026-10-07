@@ -1,4 +1,4 @@
-"""Every task in one app: the site the deploy workflow publishes to GitHub Pages.
+"""The tasks in one app: the site the deploy workflow publishes to GitHub Pages.
 
 Each task is built on its own (``msp build``), then the builds are merged: their
 projects side by side under one ``manifest.json``, in the order README's Tasks table
@@ -18,6 +18,12 @@ README = Path(__file__).resolve().parents[2] / "README.md"
 #: GitHub Pages refuses a published site larger than 1 GB.
 SIZE_LIMIT = 1_000_000_000
 SIZE_WARNING = 800_000_000
+#: Tasks the site leaves out, and why. They keep their README row, and build and run
+#: on their own.
+NOT_ON_SITE = {
+    "musclemimic": "its walking clip comes from a gated Hugging Face dataset, and the "
+    "deploy workflow has no Hub login",
+}
 
 _ROW = re.compile(
     r"^\| \[`([a-z][a-z0-9_]*)`\]\(src/mjswan_playground/\1/README\.md\) \|", re.M
@@ -29,8 +35,9 @@ class SiteError(Exception):
 
 
 def task_order(readme: Path = README) -> list[str]:
-    """The task ids in the order README's Tasks table lists them: the site's order,
-    its first row the project the app opens on."""
+    """The site's tasks in the order README's Tasks table lists them, the first the
+    project the app opens on. Every registry task needs a row, those the site leaves
+    out included."""
     if not readme.exists():
         raise SiteError(
             f"{readme} is missing: the site takes its task order from the repository's "
@@ -48,7 +55,7 @@ def task_order(readme: Path = README) -> list[str]:
         raise SiteError(
             f"README's Tasks table sets the site's order, and it has {'; '.join(problems)}."
         )
-    return ids
+    return [task for task in ids if task not in NOT_ON_SITE]
 
 
 def merge(builds: list[Path], output_dir: Path) -> list[dict]:

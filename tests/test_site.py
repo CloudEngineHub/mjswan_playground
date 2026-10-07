@@ -25,7 +25,12 @@ def _build(root: Path, name: str, *project_ids: str, **header) -> Path:
 
 
 def test_readme_lists_every_task_once() -> None:
-    assert sorted(_site.task_order()) == sorted(ALL_TASKS)
+    on_site = set(ALL_TASKS) - set(_site.NOT_ON_SITE)
+    assert sorted(_site.task_order()) == sorted(on_site)
+
+
+def test_the_site_leaves_out_registered_tasks_only() -> None:
+    assert set(_site.NOT_ON_SITE) <= set(ALL_TASKS)
 
 
 def test_a_task_without_a_readme_row_is_refused(tmp_path) -> None:
@@ -90,3 +95,13 @@ def test_site_merges_without_building(tmp_path, monkeypatch) -> None:
     merged = json.loads((tmp_path / "_site" / "manifest.json").read_text())
     assert [p["id"] for p in merged["projects"]] == ["second", "first"]
     assert engines == ["/p/"]
+
+
+def test_site_says_why_it_leaves_a_task_out(monkeypatch) -> None:
+    monkeypatch.setattr(_site, "task_order", lambda: ["one"])
+    monkeypatch.setattr(_site, "NOT_ON_SITE", {"two": "a reason"})
+
+    result = CliRunner().invoke(_cli.app, ["site", "two"])
+
+    assert result.exit_code == 1
+    assert "two is not on the site: a reason." in result.output

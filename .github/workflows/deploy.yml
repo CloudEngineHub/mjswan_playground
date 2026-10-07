@@ -49,11 +49,12 @@ jobs:
             echo build=false >> "$GITHUB_OUTPUT"
           fi
 
-      # The registry imports nothing heavy, so the runner's own Python reads it.
+      # README's order, less the tasks _site.NOT_ON_SITE leaves out. Nothing heavy is
+      # imported, so the runner's own Python reads them.
       - name: Task ids
         id: tasks
         run: |
-          tasks=$(PYTHONPATH=src python3 -c 'import json; from mjswan_playground.registry import ALL_TASKS; print(json.dumps(list(ALL_TASKS)))')
+          tasks=$(PYTHONPATH=src python3 -c 'import json; from mjswan_playground._site import task_order; print(json.dumps(task_order()))')
           echo "tasks=$tasks" >> "$GITHUB_OUTPUT"
 
   # A runner per task: pacman and bipedhrl both import their upstream as a top-level `src`.
@@ -63,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         task: ${{ fromJSON(needs.plan.outputs.tasks) }}
     steps:

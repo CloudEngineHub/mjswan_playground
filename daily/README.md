@@ -6,7 +6,7 @@ A routine adds one task a day and opens a pull request for it, following [`ROUTI
 - `backlog.yaml`: the queue. The scout's additions arrive as one standing pull request from `claude/daily-backlog`. Merge it to keep them, or edit the branch first; the routine already reads from it while it is open.
 - The routine's fixes to itself arrive as one standing pull request from `claude/daily-routine`. A run follows `main`'s routine, so merge it for the next run to take them.
 - [`released-mjswan.yml`](../.github/workflows/released-mjswan.yml): keeps a task that waits on an unreleased mjswan off `main`.
-- [`deploy.yml`](../.github/workflows/deploy.yml): builds every task into one app on each pull request and publishes it to GitHub Pages from `main`. Its `ready` check fails when a task does not build or load.
+- [`deploy.yml`](../.github/workflows/deploy.yml): builds the tasks into one app on each pull request and publishes it to GitHub Pages from `main`, leaving out those `NOT_ON_SITE` in [`_site.py`](../src/mjswan_playground/_site.py) names. Its `ready` check fails when a task does not build or load.
 - Labels: `daily-task`, `daily-backlog`, `daily-routine`, `daily-task-skipped`, `needs-mjswan` and `mjswan-bump` here; `from-playground` on ttktjmt/mjswan.
 
 ## Publishing a task

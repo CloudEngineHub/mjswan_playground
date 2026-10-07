@@ -28,7 +28,7 @@ uv run msp <subcommand>
 | `list` | List the task IDs | none |
 | `run <task-id>` | Build a task and open it in the browser | `--host` (`localhost`), `--port` (`8080`), `--no-open`, `--output-dir` |
 | `build <task-id>` | Build a task without launching | `--output-dir` |
-| `site [<task-id>...]` | Build every task into one app, the site GitHub Pages serves | `--no-build`, `--base-path` (`/`), `--dist-dir` (`dist`), `--output-dir` (`dist/_site`) |
+| `site [<task-id>...]` | Build every task on the GitHub Pages site into one app | `--no-build`, `--base-path` (`/`), `--dist-dir` (`dist`), `--output-dir` (`dist/_site`) |
 
 ## Python
 
