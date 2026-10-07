@@ -1608,6 +1608,7 @@ dev = [
     { name = "ruff" },
 ]
 previews = [
+    { name = "pillow" },
     { name = "playwright" },
 ]
 
@@ -1632,7 +1633,10 @@ dev = [
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "ruff", specifier = "==0.16.0" },
 ]
-previews = [{ name = "playwright", specifier = ">=1.55" }]
+previews = [
+    { name = "pillow", specifier = ">=10" },
+    { name = "playwright", specifier = ">=1.55" },
+]
 
 [[package]]
 name = "mjviser"

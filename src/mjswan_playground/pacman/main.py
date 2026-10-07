@@ -199,7 +199,7 @@ def setup_builder() -> mjswan.Builder:
     contract = upstream.deployed_contract(root)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="PAC-MAN")
+    project = builder.add_project(name="PAC-MAN", license=root / "LICENSE")
     _add_dodge_scene(project, root, contract)
     _add_walk_scene(project, root, contract)
     return builder

@@ -124,7 +124,9 @@ def setup_builder() -> mjswan.Builder:
     joint_names, default_joint_pos = _robot_joints(model)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="HUSKY Skateboarding")
+    project = builder.add_project(
+        name="HUSKY Skateboarding", license=root / "LICENSE-CC-BY-NC-4.0.md"
+    )
     scene = project.add_scene(
         name="Unitree G1 on a Skateboard",
         spec=spec,

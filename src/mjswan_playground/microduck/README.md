@@ -1,5 +1,7 @@
 # Microduck (`microduck`)
 
+<img src="../../../assets/microduck.gif" width="480" alt="Microduck preview"/>
+
 Source: https://github.com/pollen-robotics/microduck_rl (Apache-2.0, **3D models
 CC BY-SA-NC**, see [License](#license)) ·
 robot and policies from https://github.com/pollen-robotics/microduck (Apache-2.0)
@@ -151,4 +153,5 @@ permission does not travel with the files, so publish your own copy only under t
 of the license. The build declares it as a scene attribution, so every
 built scene carries [`LICENSE.3d-models`](LICENSE.3d-models) beside its `scene.mjz`, and
 `mjswan publish` warns on it (`CC-BY-NC-SA-4.0`, the SPDX spelling of the same license at
-the version upstream leaves unstated) before the upload.
+the version upstream leaves unstated) before the upload. The project's own `LICENSE` is
+the code's Apache-2.0.

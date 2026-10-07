@@ -22,7 +22,7 @@ Any other agent can follow `SKILL.md` directly; it is plain Markdown.
 
 ## The pipeline
 
-Step `00` reads mjswan's skill at the version `uv.lock` pins, and its stages run inside these. Three are gates (`03` pre-flight, `06` build and parity, `08` verify); a run ends in a review and one pull request, or in a stop that says what would unblock it.
+Step `00` reads mjswan's skill at the version `uv.lock` pins, and its stages run inside these. Four are gates (`03` pre-flight, `06` build and parity, `07` the preview's run check, `08` verify); a run ends in a review and one pull request, or in a stop that says what would unblock it. Filming checks the task in the browser, and a failure sends the port back to `06` until a round is clean.
 
 ```mermaid
 ---
@@ -31,12 +31,13 @@ config:
 ---
 flowchart LR
   S0["00<br>load mjswan's skill<br>at the locked version"] --> S1["01<br>intake<br>id, license, branch"] --> S2["02<br>pin and shape"] --> S3["03<br>find tasks<br>pre-flight"] --> S4["04<br>policies<br>and clips"]
-  S4 --> S5["05<br>generate"] --> S6["06<br>build, info<br>parity"] --> S7["07<br>wire in"] --> S8["08<br>verify"] --> S10["10<br>review<br>simplify-comments"] --> S11["11<br>pull request"]
+  S4 --> S5["05<br>generate"] --> S6["06<br>build, info<br>parity"] --> S7["07<br>wire in, film<br>check the run"] --> S8["08<br>verify"] --> S10["10<br>review<br>simplify-comments"] --> S11["11<br>pull request"]
+  S7 -.->|a check fails:<br>fix, rebuild| S6
   S3 -.-> S9["09<br>mjswan PR<br>generic gaps only"]
   S6 -.-> S9
   S9 -.-> D["draft PR<br>needs-mjswan"]
   classDef hot stroke:#4db6c4,stroke-width:2px
-  class S3,S6,S8 hot
+  class S3,S6,S7,S8 hot
 ```
 
 ## What it writes
@@ -62,6 +63,7 @@ Nothing else binary is committed: checkpoints, clips and upstream code are fetch
 - a dependency conflict on `mujoco` or `mjlab`, reported verbatim;
 - a checkpoint or clip that is not published anywhere pinned (a `.pt` on someone's disk);
 - an upstream whose env config cannot be adapted: the `husky` / `microduck` shape, proposed but not built;
+- a preview whose run still fails its checks after five rounds of fixes;
 - in unattended mode, any question the caller left unanswered, a license the caller's answer does not cover, or more than one mjlab task with a published checkpoint.
 
 A stop commits nothing and opens nothing.

@@ -27,7 +27,7 @@ For each open pull request labelled `needs-mjswan`, which links one ttktjmt/mjsw
 
 ## C. mjswan release bump
 
-PyPI has a stable mjswan newer than the one `main` locks, and no open PR is labelled `mjswan-bump`: on `claude/mjswan-bump-<version>`, raise the floor in `pyproject.toml` (and the `mjlab` pin if mjswan's `mjlab` extra moved), `uv lock`, build every task, run `make test`, and open the PR labelled `mjswan-bump`.
+PyPI has a stable mjswan newer than the one `main` locks, and no open PR is labelled `mjswan-bump`: on `claude/mjswan-bump-<version>`, raise the floor in `pyproject.toml` (and the `mjlab` pin if mjswan's `mjlab` extra moved), `uv lock`, build every task, run `make test`, check every task's run with `scripts/record_preview.py --all --out-dir` a scratch directory (msp:add-new-task step 7 has the cloud flags), and open the PR labelled `mjswan-bump` with each task's check result.
 
 ## D. One new task
 

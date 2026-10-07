@@ -1,5 +1,7 @@
 # H1-2 Velocity Walking (`bipedhrl`)
 
+<img src="../../../assets/bipedhrl.gif" width="480" alt="H1-2 Velocity Walking preview"/>
+
 Source: https://github.com/spaethli/biped_hrl (Apache-2.0; the H1-2 model is Unitree's,
 BSD-3-Clause)
 
