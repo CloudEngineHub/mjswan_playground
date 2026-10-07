@@ -1,13 +1,16 @@
-"""CLI entry point for the playground: list, run and build the tasks."""
+"""CLI entry point for the playground: list, run and build the tasks, and the site."""
 
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
 
+from mjswan_playground import _site
 from mjswan_playground.registry import ALL_TASKS, load
 
 app = typer.Typer(
@@ -150,3 +153,80 @@ def build_cmd(
     """Build a task into a dist directory without launching it."""
     _, path = _build(task_id, output_dir)
     typer.echo(str(path))
+
+
+@app.command("site")
+def site_cmd(
+    task_ids: Annotated[
+        Optional[list[str]],
+        typer.Argument(
+            metavar="TASK_ID...",
+            help="Only these tasks. Default: every task.",
+            show_default=False,
+        ),
+    ] = None,
+    no_build: Annotated[
+        bool,
+        typer.Option("--no-build", help="Merge the builds already in --dist-dir."),
+    ] = False,
+    base_path: Annotated[
+        str, typer.Option(help="URL path the site is served from.")
+    ] = "/",
+    dist_dir: Annotated[
+        Path, typer.Option(help="Where each task's build is, as <dist-dir>/<task-id>.")
+    ] = Path("dist"),
+    output_dir: Annotated[
+        Optional[Path],
+        typer.Option(help="Where to write the site. Default: <dist-dir>/_site."),
+    ] = None,
+) -> None:
+    """Build every task and merge them into one app: the site GitHub Pages serves."""
+    if not (base_path.startswith("/") and base_path.endswith("/")):
+        raise typer.BadParameter(
+            "starts and ends with /, e.g. /mjswan_playground/", param_hint="--base-path"
+        )
+    try:
+        order = _site.task_order()
+    except _site.SiteError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+    if task_ids:
+        if unknown := [task for task in task_ids if task not in order]:
+            typer.echo(
+                f"Unknown task {', '.join(unknown)}. Available: {', '.join(order)}",
+                err=True,
+            )
+            raise typer.Exit(1)
+        order = [task for task in order if task in task_ids]
+
+    dist_dir = dist_dir.resolve()
+    if not no_build:
+        for task_id in order:
+            # A fresh interpreter per task: pacman and bipedhrl both import their
+            # upstream as a top-level `src`, so one process can hold only one of them.
+            command = [sys.executable, "-m", "mjswan_playground", "build", task_id]
+            command += ["--output-dir", str(dist_dir / task_id)]
+            if subprocess.run(command).returncode:
+                typer.echo(
+                    f"Building {task_id} failed, so the site was not made.", err=True
+                )
+                raise typer.Exit(1)
+
+    site = (output_dir or dist_dir / "_site").resolve()
+    try:
+        projects = _site.merge([dist_dir / task_id for task_id in order], site)
+        _site.install_engine(site, base_path)
+    except _site.SiteError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+    for project in projects:
+        megabytes = _site.size(site / project["id"]) / 1e6
+        typer.echo(f"{project['id']:<28}{megabytes:8.1f} MB")
+    total = _site.size(site)
+    typer.echo(f"{'site, engine included':<28}{total / 1e6:8.1f} MB")
+    if total > _site.SIZE_LIMIT:
+        typer.echo("GitHub Pages serves at most 1 GB.", err=True)
+        raise typer.Exit(1)
+    if total > _site.SIZE_WARNING:
+        typer.echo("Warning: the site is nearing GitHub Pages' 1 GB.", err=True)
+    typer.echo(str(site))

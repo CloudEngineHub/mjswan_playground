@@ -1,11 +1,12 @@
 # Daily tasks
 
-A routine adds one task a day and opens a pull request for it, following [`ROUTINE.md`](ROUTINE.md). It first scouts for trending repositories built on mjlab and puts them at the front of [`backlog.yaml`](backlog.yaml). It ends each run by fixing what in the routine got in its way, reviewing every change it made and checking its own work, then publishing a visual report, an Artifact in your claude.ai account. Merging and publishing stay with people.
+A routine adds one task a day and opens a pull request for it, following [`ROUTINE.md`](ROUTINE.md). It first scouts for trending repositories built on mjlab and puts them at the front of [`backlog.yaml`](backlog.yaml). It ends each run by fixing what in the routine got in its way, reviewing every change it made and checking its own work, then publishing a visual report, an Artifact in your claude.ai account. Merging and publishing stay with people, and merging a task is what puts it on the [GitHub Pages site](https://ttktjmt.github.io/mjswan_playground/).
 
 - `ROUTINE.md`: what each run does, and what it never does.
 - `backlog.yaml`: the queue. The scout's additions arrive as one standing pull request from `claude/daily-backlog`. Merge it to keep them, or edit the branch first; the routine already reads from it while it is open.
 - The routine's fixes to itself arrive as one standing pull request from `claude/daily-routine`. A run follows `main`'s routine, so merge it for the next run to take them.
 - [`released-mjswan.yml`](../.github/workflows/released-mjswan.yml): keeps a task that waits on an unreleased mjswan off `main`.
+- [`deploy.yml`](../.github/workflows/deploy.yml): builds every task into one app on each pull request and publishes it to GitHub Pages from `main`. Its `ready` check fails when a task does not build or load.
 - Labels: `daily-task`, `daily-backlog`, `daily-routine`, `daily-task-skipped`, `needs-mjswan` and `mjswan-bump` here; `from-playground` on ttktjmt/mjswan.
 
 ## Publishing a task
@@ -40,7 +41,7 @@ Then replace `WIP` in its README row with the link, as the other rows have it, i
      MUJOCO_GL=disable
      ```
 
-2. In this repository's `main` ruleset, require the `released-mjswan` status check. Commits then reach `main` only through a pull request, yours included. Leave ttktjmt/mjswan's ruleset as it is: its release workflow pushes the version bump to `main`.
+2. In this repository's settings, set the Pages source to GitHub Actions, and in the `main` ruleset require the `released-mjswan` and `ready` status checks (`ready` is listed once `deploy` has run). Commits then reach `main` only through a pull request, yours included. Leave ttktjmt/mjswan's ruleset as it is: its release workflow pushes the version bump to `main`.
 3. The routine, at claude.ai/code/routines:
    - Repositories: ttktjmt/mjswan_playground and ttktjmt/mjswan
    - Environment: `mjswan-daily`
