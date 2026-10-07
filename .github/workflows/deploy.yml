@@ -1,6 +1,6 @@
 name: deploy
 
-# Every task in one mjswan app (msp site), published to GitHub Pages from main. A pull
+# The tasks in one mjswan app (msp site), published to GitHub Pages from main. A pull
 # request builds and loads the same site without publishing it.
 on:
   push:
@@ -112,7 +112,7 @@ jobs:
         with:
           path: dist
 
-      - name: Merge every task into one app
+      - name: Merge the tasks into one app
         run: uv run --frozen msp site --no-build --base-path "/${{ github.event.repository.name }}/"
 
       - name: Open every task the way Pages serves it
