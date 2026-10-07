@@ -1,5 +1,7 @@
 # WBC-Mjlab G1 (`wbc`)
 
+<img src="../../../assets/wbc.gif" width="480" alt="WBC-Mjlab G1 preview"/>
+
 Source: https://github.com/wbc-mjlab/wbc-mjlab (Apache-2.0) ·
 policy and clips from https://github.com/wbc-mjlab/wbc-g1-deploy (Apache-2.0) ·
 the authors' own browser demo: https://wbc-mjlab.github.io/wbc-demo/

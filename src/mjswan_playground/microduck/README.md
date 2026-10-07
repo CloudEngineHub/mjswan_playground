@@ -1,5 +1,7 @@
 # Microduck (`microduck`)
 
+<img src="../../../assets/microduck.gif" width="480" alt="Microduck preview"/>
+
 Source: https://github.com/pollen-robotics/microduck_rl (Apache-2.0, **3D models
 CC BY-SA-NC**, see [License](#license)) ·
 robot and policies from https://github.com/pollen-robotics/microduck (Apache-2.0)

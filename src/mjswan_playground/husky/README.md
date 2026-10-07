@@ -1,5 +1,7 @@
 # HUSKY Skateboarding (`husky`)
 
+<img src="../../../assets/husky.gif" width="480" alt="HUSKY Skateboarding preview"/>
+
 Source: https://github.com/TeleHuman/humanoid_skateboarding (**CC BY-NC 4.0**, see
 [License](#license)) ·
 project page: https://husky-humanoid.github.io
