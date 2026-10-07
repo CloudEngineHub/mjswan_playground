@@ -1,6 +1,6 @@
 # Daily tasks
 
-A routine adds one task a day and opens a pull request for it, following [`ROUTINE.md`](ROUTINE.md). It first scouts for trending repositories built on mjlab and puts them at the front of [`backlog.yaml`](backlog.yaml). Merging and publishing stay with people.
+A routine adds one task a day and opens a pull request for it, following [`ROUTINE.md`](ROUTINE.md). It first scouts for trending repositories built on mjlab and puts them at the front of [`backlog.yaml`](backlog.yaml), and ends each run with a visual report, an Artifact in your claude.ai account. Merging and publishing stay with people.
 
 - `ROUTINE.md`: what each run does, and what it never does.
 - `backlog.yaml`: the queue. The scout's additions arrive as one standing pull request from `claude/daily-backlog`. Merge it to keep them, or edit the branch first; the routine already reads from it while it is open.
@@ -51,4 +51,4 @@ Then replace `WIP` in its README row with the link, as the other rows have it, i
      Do today's daily run for ttktjmt/mjswan_playground exactly as daily/ROUTINE.md on its main branch says. You may push to claude/ branches of ttktjmt/mjswan_playground and ttktjmt/mjswan, open pull requests and issues in both, and add the labels that file names. Never merge, and never push to main.
      ```
 
-4. Run it once by hand and read the run before leaving the schedule on. A finished run only means the session ended: check the pull requests and issues it opened.
+4. Run it once by hand and read the run before leaving the schedule on. A finished run only means the session ended: check its report and the pull requests and issues it opened.

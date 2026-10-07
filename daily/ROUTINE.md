@@ -44,4 +44,16 @@ Merge anything; push to `main` of either repository; edit `daily/backlog.yaml` a
 
 ## Report
 
-End with the entries the scout added and why, the waiting PRs touched, the new task's id with its PR or issue URL, and the mjswan PR URL if one was opened or reused.
+End every run, a stopped one included, by publishing one Artifact titled `Daily run <YYYY-MM-DD>`, written in Japanese for the owner, then close with its link and a two-line summary. Build it to be read at a glance, pictures first:
+
+- At the top, one card per part, A to D: what it did, or why it did nothing. A stop leads, with the step, the error verbatim and what would unblock it.
+- The new task, whether it reached a pull request or stopped:
+  - msp:add-new-task's steps 00 to 11 as a strip, each marked done, skipped, or where the run stopped;
+  - the preview GIF and its contact sheet, `dist/preview/<id>.png`, published as the page's own files;
+  - a chart of the checked run from `dist/preview/<id>.json`: root height and tilt over the control steps, the filmed part shaded, every termination marked;
+  - the preview's rounds as a table, each failure beside its fix;
+  - parity, with the terms traced, dropped and skipped; its sources and licenses; and its pull request or issue, with the mjswan PR if one was opened or reused.
+- The scout's new backlog entries as a table: repository, the evidence it trends, license.
+- The waiting PRs touched, each with what changed. After a bump, every task's check as a pass-or-fail grid, naming each first failure.
+
+Build and publish it the way the Artifact tool's own instructions say, with the images as supporting files and the charts drawn from the data, and put nothing secret on the page. Without the Artifact tool, end with the same content in Markdown and send the contact sheet as a file.
