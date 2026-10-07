@@ -1,9 +1,4 @@
-"""The tasks in one app: the site the deploy workflow publishes to GitHub Pages.
-
-Each task is built on its own (``msp build``), then the builds are merged: their
-projects side by side under one ``manifest.json``, in the order README's Tasks table
-lists them, with one engine built for the path the site is served from.
-"""
+"""The GitHub Pages site: the tasks' builds merged into one mjswan app."""
 
 from __future__ import annotations
 
@@ -18,8 +13,7 @@ README = Path(__file__).resolve().parents[2] / "README.md"
 #: GitHub Pages refuses a published site larger than 1 GB.
 SIZE_LIMIT = 1_000_000_000
 SIZE_WARNING = 800_000_000
-#: Tasks the site leaves out, and why. They keep their README row, and build and run
-#: on their own.
+#: Tasks the site leaves out, and why. They still build and run on their own.
 NOT_ON_SITE = {
     "musclemimic": "its walking clip comes from a gated Hugging Face dataset, and the "
     "deploy workflow has no Hub login",
@@ -31,13 +25,11 @@ _ROW = re.compile(
 
 
 class SiteError(Exception):
-    """Builds the site cannot be assembled from."""
+    """The site cannot be made from the README or the builds."""
 
 
 def task_order(readme: Path = README) -> list[str]:
-    """The site's tasks in the order README's Tasks table lists them, the first the
-    project the app opens on. Every registry task needs a row, those the site leaves
-    out included."""
+    """The site's tasks in README's order. Every registry task needs exactly one row."""
     if not readme.exists():
         raise SiteError(
             f"{readme} is missing: the site takes its task order from the repository's "
@@ -99,8 +91,7 @@ def merge(builds: list[Path], output_dir: Path) -> list[dict]:
     merged = []
     for index, (build, project) in enumerate(projects):
         shutil.copytree(build / project["id"], output_dir / project["id"])
-        # The app opens on the flagged project and lists it first, so a build's own
-        # flag would pull its project ahead of the README's first row.
+        # Only the first project may carry `default`, the flag the app opens on.
         entry = {key: value for key, value in project.items() if key != "default"}
         merged.append({**entry, "default": True} if index == 0 else entry)
     (output_dir / "manifest.json").write_text(

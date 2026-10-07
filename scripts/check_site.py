@@ -6,9 +6,8 @@ its base path, with no COOP/COEP headers.
 
 A project fails when the app never reports ready, reports an error, opens another
 project than its link names, or logs a page or console error within `SETTLE_SECONDS`
-of ready. `--chrome` launches the installed Google Chrome (GitHub's runners have one),
-`--chromium` an executable such as `/opt/pw-browsers/chromium`. In a GitHub Actions job
-the results also go to the job summary. Exits 1 when any project fails.
+of ready. In a GitHub Actions job the results also go to the job summary. Exits 1
+when any project fails.
 """
 
 from __future__ import annotations
@@ -31,7 +30,6 @@ from playwright.sync_api import sync_playwright
 
 from mjswan_playground._site import size
 
-#: A project loads in 5 to 8 s with software WebGL; this is the limit, not the budget.
 READY_TIMEOUT_MS = 120_000
 #: How long the app runs on after ready, so an error in its first steps shows up.
 SETTLE_SECONDS = 3
@@ -80,7 +78,7 @@ def check(browser, url: str, project: dict) -> Result:
         pass
     result.seconds = time.monotonic() - start
     page.wait_for_timeout(SETTLE_SECONDS * 1000)
-    # The app rewrites the query to what it opened, the first project for an id it lacks.
+    # The app rewrites the query to the project it opened: the first for an unknown id.
     result.opened = page.evaluate(
         "() => new URLSearchParams(location.search).get('project')"
     )
@@ -142,8 +140,7 @@ def main() -> None:
                 browser = playwright.chromium.launch(
                     channel="chrome" if args.chrome else None,
                     executable_path=args.chromium,
-                    # Without a GPU, WebGL runs on SwiftShader, which Chrome gates behind
-                    # this flag.
+                    # GPU-less WebGL: Chrome runs SwiftShader only with these flags.
                     args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
                 )
                 results = [

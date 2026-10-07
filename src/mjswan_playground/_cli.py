@@ -208,8 +208,7 @@ def site_cmd(
     dist_dir = dist_dir.resolve()
     if not no_build:
         for task_id in order:
-            # A fresh interpreter per task: pacman and bipedhrl both import their
-            # upstream as a top-level `src`, so one process can hold only one of them.
+            # A process per task: pacman and bipedhrl both import a top-level `src`.
             command = [sys.executable, "-m", "mjswan_playground", "build", task_id]
             command += ["--output-dir", str(dist_dir / task_id)]
             if subprocess.run(command).returncode:

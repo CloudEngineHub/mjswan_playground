@@ -1,7 +1,6 @@
 name: deploy
 
-# The tasks in one mjswan app (msp site), published to GitHub Pages from main. A pull
-# request builds and loads the same site without publishing it.
+# The site's tasks as one mjswan app (msp site): checked on PRs, published from main.
 on:
   push:
     branches: [main]
@@ -49,15 +48,14 @@ jobs:
             echo build=false >> "$GITHUB_OUTPUT"
           fi
 
-      # README's order, less the tasks _site.NOT_ON_SITE leaves out. Nothing heavy is
-      # imported, so the runner's own Python reads them.
+      # _site imports nothing heavy, so the runner's own Python reads the task ids.
       - name: Task ids
         id: tasks
         run: |
           tasks=$(PYTHONPATH=src python3 -c 'import json; from mjswan_playground._site import task_order; print(json.dumps(task_order()))')
           echo "tasks=$tasks" >> "$GITHUB_OUTPUT"
 
-  # A runner per task: pacman and bipedhrl both import their upstream as a top-level `src`.
+  # A runner per task: pacman and bipedhrl both import a top-level `src`.
   build:
     needs: plan
     if: needs.plan.outputs.build == 'true'
@@ -74,8 +72,7 @@ jobs:
         with:
           enable-cache: true
 
-      # Pinned upstream checkouts, Hub downloads and conversions: a run reaches GitHub
-      # and the Hub for them only when the task's sources or the lock change.
+      # The tasks' pinned upstream checkouts, conversions and Hub downloads.
       - uses: actions/cache@v6
         with:
           path: |
