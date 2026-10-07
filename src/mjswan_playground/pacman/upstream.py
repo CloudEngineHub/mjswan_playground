@@ -10,7 +10,7 @@ from types import ModuleType
 
 from mjlab.managers import observation_manager
 
-from mjswan_playground._compat import collision_defaults
+from mjswan_playground._compat import collision_defaults, dropping_env_ids
 from mjswan_playground._deps import ensure_repo
 
 REPO_URL = "https://github.com/lzyang2000/perceptive_cbf_rl.git"
@@ -63,18 +63,7 @@ def register_tasks(root: Path) -> None:
         # Upstream's TimeOrderingObservationManager, rebound here by its import.
         (observation_manager.ObservationManager, "compute_group"),
     ):
-        setattr(cls, name, _dropping_env_ids(vars(cls)[name]))
-
-
-def _dropping_env_ids(method):
-    """1.6 passes the reset env ids; 1.5.3 acted on every env on reset, so drop them.
-    Not ``functools.wraps``: mjlab checks the signature, which would follow it."""
-    kept = method.__code__.co_argcount
-
-    def wrapper(*args, env_ids=None, **kwargs):
-        return method(*args[:kept], **kwargs)
-
-    return wrapper
+        setattr(cls, name, dropping_env_ids(vars(cls)[name]))
 
 
 def deployed_contract(root: Path) -> ModuleType:

@@ -22,3 +22,14 @@ def _collision_cfg(**kwargs) -> CollisionCfg:
         if isinstance(value, dict):
             kwargs[name] = {**value, ".*": value.get(".*", default)}
     return CollisionCfg(**kwargs)
+
+
+def dropping_env_ids(method):
+    """1.6 passes the reset env ids; before it, a term acted on every env, so drop them.
+    Not ``functools.wraps``: mjlab checks the signature, which would follow it."""
+    kept = method.__code__.co_argcount
+
+    def wrapper(*args, env_ids=None, **kwargs):
+        return method(*args[:kept], **kwargs)
+
+    return wrapper
