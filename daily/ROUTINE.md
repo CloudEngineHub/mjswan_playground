@@ -2,7 +2,7 @@
 
 What the "mjswan playground daily" routine does each morning. Its prompt only points here, so changing the routine is a pull request against this file.
 
-Each run is a fresh cloud session with ttktjmt/mjswan_playground and ttktjmt/mjswan checked out. It asks nothing: what this file and the backlog leave open is a stop. The parts run in order.
+Each run is a fresh cloud session with ttktjmt/mjswan_playground and ttktjmt/mjswan checked out. It asks nothing: what this file and the backlog leave open is a stop. The parts run in order, and the run ends only after part E has checked its work and the report is published.
 
 ## A. Scout for trending tasks
 
@@ -38,10 +38,37 @@ Skipped while three or more `needs-mjswan` PRs are open.
 3. Label the PR `daily-task`.
 4. On a stop: open, or update, an issue labelled `daily-task-skipped` and titled `<id>: <reason>`, with the step, the error verbatim and what would unblock it.
 
+## E. Check the run's work
+
+Before the report, check every result of this run against GitHub and the files, never against memory. Fix what is off and check it again: a result is done only once its check passes. One that cannot be fixed this run leads the report as a failure, with what is wrong.
+
+- Every branch this run pushed: its remote head is the local commit, and the working tree is clean.
+- Every pull request this run opened or updated: it targets `main` and carries its labels (`daily-backlog`, `daily-task`, `mjswan-bump`, or `needs-mjswan` on a draft). Its checks have finished green on its current head: wait for them, up to 30 minutes. Root-cause a red check, fix it, push and wait again; one that is red on `main` too is noted, not fixed here. A `needs-mjswan` draft's `released-mjswan` check is red by design.
+- The new task's pull request holds the whole task:
+  - `src/mjswan_playground/<id>/`, with a README that opens with the GIF;
+  - the registry line, the README row, `assets/<id>.gif` and its `PREVIEWS` entry;
+  - nothing from `.cache/` or `dist/`.
+
+  Its last preview round passed (`"passed": true` in `dist/preview/<id>.json`), and the committed GIF is that round's. A fresh worktree of the pushed head passes `make sync`, `make test` and `uv run msp build <id>`, so nothing the build needs was left uncommitted.
+- `daily/backlog.yaml` on the backlog branch parses, and every new entry has every field.
+- A stop's `daily-task-skipped` issue exists, with the step, the error verbatim and what would unblock it.
+
 ## Never
 
 Merge anything; push to `main` of either repository; edit `daily/backlog.yaml` anywhere but on `claude/daily-backlog`; run mjswan's release workflow; run `mjswan login` or `mjswan publish`. Publishing stays with a person.
 
 ## Report
 
-End with the entries the scout added and why, the waiting PRs touched, the new task's id with its PR or issue URL, and the mjswan PR URL if one was opened or reused.
+End every run, a stopped one included, by publishing one Artifact titled `Daily run <YYYY-MM-DD>`, written in Japanese for the owner, then close with its link and a two-line summary. Build it to be read at a glance, pictures first:
+
+- At the top, one card per part, A to D: what it did, or why it did nothing. A stop leads, with the step, the error verbatim and what would unblock it.
+- The new task, whether it reached a pull request or stopped:
+  - msp:add-new-task's steps 00 to 11 as a strip, each marked done, skipped, or where the run stopped;
+  - the preview GIF and its contact sheet, `dist/preview/<id>.png`, published as the page's own files;
+  - a chart of the checked run from `dist/preview/<id>.json`: root height and tilt over the control steps, the filmed part shaded, every termination marked;
+  - the preview's rounds as a table, each failure beside its fix;
+  - parity, with the terms traced, dropped and skipped; its sources and licenses; and its pull request or issue, with the mjswan PR if one was opened or reused.
+- The scout's new backlog entries as a table: repository, the evidence it trends, license.
+- The waiting PRs touched, each with what changed. After a bump, every task's check as a pass-or-fail grid, naming each first failure.
+
+Build and publish it the way the Artifact tool's own instructions say, with the images as supporting files and the charts drawn from the data, and put nothing secret on the page. Then read the published page back with the Artifact tool, and republish until every card, image and chart is on it. Without the Artifact tool, end with the same content in Markdown and send the contact sheet as a file.

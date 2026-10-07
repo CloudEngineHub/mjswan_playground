@@ -100,7 +100,6 @@ src/mjswan_playground/<id>/
 - The README follows [reference/task-readme.md](reference/task-readme.md).
 - The project carries upstream's license file verbatim: `builder.add_project(name=..., license=<checkout> / "LICENSE")`, and `project.set_notice(<checkout> / "NOTICE")` beside it when upstream ships one. A checkpoint from elsewhere whose terms you could not read leaves the project without one, and the pull request says so.
 - A shim for an upstream version gap carries `# ponytail: <what>; drop once <condition>.` (pacman's precedent). A gap in mjswan itself gets no shim: step 9.
-- A term in `terms.py` reads an mjlab command as `env.command_manager.get_term(name).<state field>`, never `get_command(name)`. Only a `mjswan.ui_command` is read with `get_command(name)`.
 
 ## 6. Build, inspect, parity
 
@@ -114,7 +113,7 @@ uv run mjswan info dist/<id>      # motions are not listed: read dist/<id>/manif
 - A term that will not trace but does nothing in the play config (disabled, or zero ranges) is dropped from `env_cfg` and listed under "What differs from upstream", not sent to step 9. Name the mjswan gap behind it in the pull request.
 - The parity script runs under `MUJOCO_GL=disable uv run --with onnxruntime python`, since the playground's own environment may lack `onnxruntime`. It checks the env `main.py` builds: register the task the way `main.py` does, apply the same `env_cfg` edits, import `mjswan_playground.<id>.terms` if it exists, and for a tracking task set the motion command's `motion_file` to a clip the build bundles, since the env loads it on construction.
 - `run_parity` in mjswan 0.11.1 marks a termination that is not native `OK ... over 0 steps` without comparing it. Report those terminations as unchecked by parity.
-- `msp build` fails on a graph input the browser cannot serve, and names it. The usual one is `get_command(name)` inside a traced term: it records the field `command`, which no mjlab command serves in the browser. The browser never runs such a graph, while parity still passes. Copy the term into `terms.py` if it is upstream's, and read `get_term(name).<state field>` instead; the error names the state field `get_command()` reads.
+- `msp build` fails on a graph input that reads a command field the browser does not serve, and names it with the fields that command does serve. The browser would never run that graph, while parity still passes. Copy the term into `terms.py` if it is upstream's, and read one of those fields instead.
 
 ## 7. Wire it in
 
@@ -159,4 +158,5 @@ It touches comments and docstrings only. Finish with `make format` and `make tes
 - Commit on the task's branch as `Add <id>: <what it shows>` (`Add musclemimic: a 354-muscle body tracking a clip with the public checkpoint`), push, and open a pull request against `main` under the same title.
 - The body, in this order: what the task shows, its sources and licenses; the `mjswan info` tree; terms traced and the parity result (`report.summary()` verbatim if anything failed), with the terminations parity left unchecked; terms skipped or dropped, each with what unblocks it; what differs from upstream; the preview's rounds, each failure with its fix and then the clean round's `checks passed` line; and what its frames show, adding that browser behaviour past those seconds is unverified: parity matches the graphs to mjlab, while mjlab integrates with `mujoco_warp` and the browser runs MuJoCo's WASM build.
 - With a step 9 pin: a draft, labelled `needs-mjswan`, linking the mjswan PR.
+- Wait for the pull request's checks to finish on the pushed head, and fix a red one before reporting.
 - Never merge it and never publish. Tell the user the PR URL, anything you stopped on, and `uv run mjswan publish dist/<id>` for the author to run.
