@@ -16,6 +16,7 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 | [`spinkick`](src/mjswan_playground/spinkick/README.md) | Unitree G1 | A double spin kick motion tracking ([g1_spinkick_example](https://github.com/mujocolab/g1_spinkick_example)) | <a href="https://mjswan.com/s/-wXxa8L"><img src="assets/spinkick.gif" width="200"/></a><br />[mjswan.com/s/-wXxa8L](https://mjswan.com/s/-wXxa8L) |
 | [`bipedhrl`](src/mjswan_playground/bipedhrl/README.md) | Unitree H1-2 | Walking to velocity commands with the checkpoint run on the real robot ([biped_hrl](https://github.com/spaethli/biped_hrl)) | <img src="assets/bipedhrl.gif" width="200"/><br />WIP |
 | [`upkie`](src/mjswan_playground/upkie/README.md) | Upkie | A wheeled biped balancing and driving to velocity commands ([mjlab_upkie](https://github.com/MarcDcls/mjlab_upkie)) | <img src="assets/upkie.gif" width="200"/><br />WIP |
+| [`duet`](src/mjswan_playground/duet/README.md) | Unitree G1 | Walking and squatting down to a 0.18 m crouch with the lower-body policy its paper deploys ([DUET](https://github.com/bae-air-lab/DUET)) | <img src="assets/duet.gif" width="200"/><br />WIP |
 
 ## CLI
 

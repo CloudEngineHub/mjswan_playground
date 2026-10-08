@@ -4,15 +4,21 @@ What the "mjswan playground daily" routine does each morning. Its prompt only po
 
 Each run is a fresh cloud session with ttktjmt/mjswan_playground and ttktjmt/mjswan checked out. It asks nothing: what this file and the backlog leave open is a stop. The parts run in order, and the run ends only after part G has checked its work and the report is published.
 
-## A. Scout for trending tasks
+## A. Scout and rank the backlog
 
-A task that has just caught on is worth porting before the rest of the queue. Look for repositories built on mjlab that are drawing attention now, and put them at the front of the backlog.
+The backlog is ranked on two things weighed equally: how much attention a task draws, and how likely an unattended run is to port it without a change to mjswan that only it would use. A task that is famous but hard, or easy but little known, waits behind one that is fairly well known and fairly easy.
 
-1. Search what appeared or spread in the last 30 days: the `mjlab` topic on GitHub (github.com/topics/mjlab, sorted by recently updated and by stars), mjlab's "Show and tell" discussions, and the web for posts, project pages and papers about mjlab releases (X, Reddit, Hacker News, YouTube, arXiv). Read GitHub through its web pages and plain `git` on public repositories: the session's GitHub tools reach only the attached ones.
-2. A repository is trending when it was created or first released in the last 30 days and has 100 or more stars, or when a post about it spread widely (a front page, or thousands of views).
-3. Vet each one as the backlog's entries were: it registers mjlab tasks; a trained policy is public at a pinned source (git, the Hub, a public W&B run), and so is a tracking task's clip unless the ONNX carries it; its actuators are mjlab's own; and the license of everything the build fetches is known. Any license will do, as long as the entry states it: an NC or SA one is the author's to weigh when publishing. Drop what is already in the backlog, in `mjswan_playground.registry.ALL_TASKS`, in a PR, or in a `daily-task-skipped` issue.
-4. Put each one that passes at the top of `daily/backlog.yaml`, the one drawing the most attention first, with every field filled and a `found` line giving the date and the evidence (stars, the post). While fewer than three entries are left untried, also append the best other candidates the search turned up.
-5. Commit on `claude/daily-backlog`, cut from `main` or with `main` merged in, and open or update its PR, labelled `daily-backlog`, listing each new entry with its evidence. Nothing found: change nothing.
+1. Search for repositories built on mjlab: the `mjlab` topic on GitHub (github.com/topics/mjlab, sorted by stars and by recently updated), a GitHub search for `mjlab` sorted by stars, mjlab's "Show and tell" discussions, and the web for posts, project pages and papers about mjlab releases (X, Reddit, Hacker News, YouTube, arXiv). Read GitHub through its web pages and plain `git` on public repositories: the session's GitHub tools reach only the attached ones.
+2. Vet each repository that is not already in the backlog, in `mjswan_playground.registry.ALL_TASKS`, in a PR, or in a `daily-task-skipped` issue:
+   - its env config is mjlab's `ManagerBasedRlEnvCfg`, registered with mjlab or buildable from upstream's code for the port to register;
+   - a trained policy is public at a pinned source (git, a release asset, the Hub, a public W&B run), and so is a tracking task's clip unless the ONNX carries it;
+   - mjswan can run its actuators: mjlab's own classes, or a subclass that mjswan runs as its base (an `IdealPdActuatorCfg` subclass runs as PD within its effort limit), with the entry naming what that drops;
+   - the license of everything the build fetches is known. Any license will do, as long as the entry states it: an NC or SA one is the author's to weigh when publishing.
+3. Score each one that passes, and every untried entry again with its stars refreshed:
+   - `popularity`: 3 for 1,000 stars or more, or a post that reached a front page or 100k views; 2 for 200 to 999 stars, or a post with thousands of views; 1 for 50 to 199 stars; 0 below 50.
+   - `ease`: 3 when mjswan runs it as it is, with mjlab's own action, actuator and command classes and at most a few `terms.py` rewrites or version shims; 2 when it needs several task-specific rewrites on the playground side (command bindings, stateful terms recast as commands, its own registry), a simulation the browser may not keep up with (physics above 500 Hz or control above 50 Hz), or a generic mjswan extension (msp:add-new-task step 9) with little else to rewrite; 1 for a generic extension on top of several rewrites, or a policy whose task or license is unverified; 0 when it needs a change to mjswan that only it would use, such as an action term its own repository defines, or has no usable policy.
+4. Order `daily/backlog.yaml` by `popularity` plus `ease`, highest first. An entry with `ease` 0, which an unattended run will stop on, goes after every other. Break a tie with a robot or task type the playground does not have yet, then with more stars. A new entry gets every field filled, its two scores with their evidence, and a `found` line giving the date.
+5. Commit on `claude/daily-backlog`, cut from `main` or with `main` merged in, and open or update its PR, labelled `daily-backlog`, listing each new or moved entry with its scores. No new entry and no change in order: change nothing.
 
 Until a person merges that PR, the backlog for part D is the one on its branch.
 
@@ -89,7 +95,7 @@ End every run, a stopped one included, by publishing one Artifact titled `Daily 
   - a chart of the checked run from `dist/preview/<id>.json`: root height and tilt over the control steps, the filmed part shaded, every termination marked;
   - the preview's rounds as a table, each failure beside its fix;
   - parity, with the terms traced, dropped and skipped; its sources and licenses; and its pull request or issue, with the mjswan PR if one was opened or reused.
-- The scout's new backlog entries as a table: repository, the evidence it trends, license.
+- The scout's new and moved backlog entries as a table: repository, `popularity` and `ease` with their evidence, license.
 - The waiting PRs touched, each with what changed. After a bump, every task's check as a pass-or-fail grid, naming each first failure.
 - Part E's problems, each with its cause and the change, and its pull request. Part F's findings for each branch, applied or left, with its `net:` line.
 
