@@ -23,7 +23,7 @@ it: [`upstream.py`](upstream.py) puts the checkout's `src/` on `sys.path` and im
 
 | From `mjlab_upkie` | Used as |
 |---|---|
-| `Mjlab-Velocity-Upkie` (`play=True`) | the scene, the observations, both action terms, the command, the terminations and the events |
+| `Mjlab-Velocity-Upkie` (`play=True`) | the scene, the observations, both action terms, the command, the terminations and every event but `push_robot` |
 | `logs/rsl_rl/upkie_velocity/bests/default.onnx` | the policy (22 → 6), already exported; its mjlab metadata gives the joints and the rest pose |
 | `LICENSE` | the project's `LICENSE` |
 
@@ -54,9 +54,11 @@ The action drives the hips and knees by position (scale 1) and the wheels by vel
 - **mjlab 1.6.0.** Upstream pins 1.3.0. Its robot constants build `CollisionCfg` without
   the fields 1.6.0 made required, so `upstream.py` fills in 1.3.0's defaults while
   importing it. Against 1.3.0, the code this task runs differs only where nothing changes
-  in play: interval events now fire before the command update and the auto-reset (the
-  `push_robot` intensity is 0 in play), `bad_orientation` clamps its `acos` argument, and
-  the terrain no longer adds origin marker sites.
+  in play: `bad_orientation` clamps its `acos` argument, and the terrain no longer adds
+  origin marker sites.
+- **No `push_robot`.** Upstream's play config keeps the push at intensity 0, so it never
+  pushes; only the training curriculum raises it. `main.py` drops the term, as mjlab's
+  own play configs do.
 - **No encoder bias.** Neither the task nor the checkpoint carries one.
 - **One randomized robot, not a population.** The foot friction (0.8 to 1.2) is drawn once
   from the browser's seeded PRNG, where mjlab draws it per env.
