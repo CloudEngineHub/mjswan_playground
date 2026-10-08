@@ -15,9 +15,9 @@ The playground already resolves what upstream imports, but upstream is not a pac
 
 - `pacman`: `upstream.py` holds `resolve_root()`, an `ensure_repo` checkout (`MJSWAN_PACMAN_ROOT`), and `register_tasks(root)`, which puts the root first on `sys.path` (upstream imports itself as the top-level `src`) and imports its task package. Upstream is on mjlab 1.5.3; the shims for 1.6 sit under one `# ponytail:` comment that says when to drop them. The ONNX checkpoints and the deployed contract (`deploy/common/g1_deploy_constants.py`, loaded by path) come from the same checkout, and the terms that do not trace are in `terms.py`.
 
-## data-only: out of scope for this skill
+## data-only: only after a precedent
 
-The package is never imported: the scene compiles from XML in a pinned checkout, the terms are picked from `mjlab.envs.mdp` by hand, and `build_single_entity_trace_env` traces them. This skill stops and proposes the shape rather than building it.
+The package is never imported: the scene compiles from XML in a pinned checkout, the terms are picked from `mjlab.envs.mdp` by hand, and `build_single_entity_trace_env` traces them. This skill builds one only for a robot a task here already runs this way, by following that task's files, as a separate task with its own id; otherwise it stops and proposes the shape. There is no mjlab env to run parity against, so the preview is the check.
 
 - `husky`: upstream ships the scene as XML generated from its own `scene_cfg` (`test_scene/mjlab_scene.xml`), so everything the demo needs is data.
 - `microduck`: every env config drives the robot through BAM (`FrictionDRBamActuatorCfg`), which the browser has no counterpart for. The MJCF already carries the position actuators the servos run, which upstream's own `infer_policy.py` drives.
