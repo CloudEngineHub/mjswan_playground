@@ -27,7 +27,7 @@ imports `src.tasks.duet.config.g1_23dof`, which registers the task.
 |---|---|
 | `Unitree-G1-23Dof-Duet-Flat` (`play=True`) | the scene, the observations, the action term, the commands, the terminations and the events |
 | `exported/policy.onnx` | the policy (71 → 13), model_15500, already exported |
-| `exported/deploy_contract.json` | the action joints, their offsets and the height range the checkpoint was trained on |
+| `exported/deploy_contract.json` | the action joints and their offsets, the arms' default pose, and the height range the checkpoint was trained on |
 | `LICENCE` | the project's `LICENSE` |
 
 ## What the policy reads
@@ -46,11 +46,15 @@ Eight terms, one frame, no history:
 
 ## What differs from upstream
 
-- **The arms hold still.** Play sets upstream's `UpperBodyPoseActionCfg`, the arm
-  disturbance generator, to keep the arms at their default pose, and mjswan has no
-  counterpart for that task-specific action, so it is dropped. Two training-side terms
-  read it and go with it: the critic's `arm_traj_vel` and the `arm_traj_speed` and
-  `arm_traj_accel` metrics.
+- **The arms are held by their actuators, not by an action term.** Play sets upstream's
+  `UpperBodyPoseActionCfg`, the arm disturbance generator, to hold the arms at their
+  default pose, and mjswan has no counterpart for that task-specific action, so it is
+  dropped with the training-side terms that read it: the critic's `arm_traj_vel` and the
+  `arm_traj_speed` and `arm_traj_accel` metrics. Without it, mjlab and the browser both
+  leave the arm targets at 0 rad, so [`main.py`](main.py) shifts each arm position
+  actuator's setpoint by the default pose. A zero target then applies
+  `kp * (default - q) - kv * qdot`, the force the generator applies in play, where its
+  target stays at the default pose to within 1e-8.
 - **The gait clock is a command term**, shared with `bipedhrl`. Upstream's `phase` reads
   `env.episode_length_buf`, which the browser does not serve;
   [`_gait_clock.py`](../_gait_clock.py) counts control steps in a `gait_clock` command
