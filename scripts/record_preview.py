@@ -62,7 +62,7 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 
-from mjswan_playground.registry import ALL_TASKS, load
+from mjswan_playground.registry import ALL_TASKS
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -221,7 +221,12 @@ def ensure_built(task_id: str, dist: Path) -> Path:
     app_dir = dist / task_id
     if not (app_dir / "manifest.json").exists():
         print(f"[{task_id}] building into {app_dir}")
-        load(task_id).build(output_dir=app_dir.resolve())
+        # A process per task, as `msp site` does: pacman, bipedhrl and duet each import
+        # a top-level `src` of their own.
+        command = [sys.executable, "-m", "mjswan_playground", "build", task_id]
+        command += ["--output-dir", str(app_dir.resolve())]
+        if subprocess.run(command).returncode:
+            raise RuntimeError(f"msp build {task_id} failed")
     return app_dir
 
 
