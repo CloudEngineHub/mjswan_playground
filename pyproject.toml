@@ -45,7 +45,7 @@ build-backend = "hatchling.build"
 packages = ["src/mjswan_playground"]
 
 [tool.uv.sources]
-mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "d60262420118260b1aef7d5c6be7630311ef4582" }
+mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "d3a5a808bd36f665fa6c347b9e37898880cfe73b" }
 myosuite = { git = "https://github.com/MyoHub/myosuite", branch = "ms3" }
 spinkick-example = { git = "https://github.com/mujocolab/g1_spinkick_example", rev = "f1c4b230bd1a76c44e801e49f079212b6c6487da" }
 
