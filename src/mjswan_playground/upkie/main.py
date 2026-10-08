@@ -32,6 +32,8 @@ def setup_builder() -> mjswan.Builder:
     policy = onnx.load(str(root / upstream.POLICY_ONNX))
     contract = read_mjlab_metadata(policy)
     env_cfg = load_env_cfg(TASK_ID, play=True)
+    # Upstream's play config pushes at intensity 0; mjlab's own play configs drop it.
+    del env_cfg.events["push_robot"]
     joint_names = _action_order(env_cfg, list(contract.joint_names))
     default_pos = dict(zip(contract.joint_names, contract.default_joint_pos))
 
