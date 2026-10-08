@@ -19,10 +19,11 @@ import onnx
 from mjlab.envs.mdp import observations as obs_fns
 from mjlab.envs.mdp import terminations as term_fns
 from mjlab.managers.scene_entity_config import SceneEntityCfg
+from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 from mjswan.envs.mdp.actions import JointPositionActionCfg
 from mjswan.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
 from mjswan.managers.termination_manager import TerminationTermCfg
-from mjswan.mjlab import build_single_entity_trace_env
+from mjswan.mjlab import apply_mjlab_sim_options, build_single_entity_trace_env
 
 from mjswan_playground._deps import ensure_repo
 from mjswan_playground._trace import CommandValues
@@ -47,14 +48,10 @@ ROOT_JOINT = "trunk_base_freejoint"
 TRACKED_BODY = "trunk_base"
 BALL_JOINT = "ball_free"
 
-#: ``sim.mujoco.timestep`` (0.005) * ``decimation`` (4): 50 Hz. The XMLs carry no
-#: ``<option>``, so both halves travel in the spec.
-CONTROL_DT = 0.02
-TIMESTEP = 0.005
-#: The rest of mjlab's ``MujocoCfg``; MuJoCo's XML defaults are Euler and 100/50.
-INTEGRATOR = mujoco.mjtIntegrator.mjINT_IMPLICITFAST
-SOLVER_ITERATIONS = 10
-SOLVER_LS_ITERATIONS = 20
+#: mjlab's velocity env, which every upstream env config extends: its simulation settings,
+#: which the XMLs leave out, and its 50 Hz control rate.
+VELOCITY_ENV = make_velocity_env_cfg()
+CONTROL_DT = VELOCITY_ENV.sim.mujoco.timestep * VELOCITY_ENV.decimation
 
 #: The keyframe every scene resets to: upstream's STAND2 / ``HOME_FRAME``.
 STAND_KEY = "STAND"
@@ -264,9 +261,8 @@ def _scene_spec(
     *,
     tracing: bool = False,
 ) -> mujoco.MjSpec:
-    """The scene as the browser compiles it: upstream's solver settings (the XMLs carry
-    no ``<option>``), the wheel friction its inference script writes by hand, and one
-    keyframe.
+    """The scene as the browser compiles it: upstream's simulation settings, the wheel
+    friction its inference script writes by hand, and one keyframe.
 
     STAND has to be the *only* keyframe: the browser resets to the first one, and so does
     the tracing env, whose ``default_joint_pos`` ``joint_pos_rel`` bakes in. Upstream's
@@ -282,10 +278,7 @@ def _scene_spec(
 
     spec = mujoco.MjSpec.from_file(str(rl_root / xml))
     if not tracing:
-        spec.option.timestep = TIMESTEP
-        spec.option.integrator = INTEGRATOR
-        spec.option.iterations = SOLVER_ITERATIONS
-        spec.option.ls_iterations = SOLVER_LS_ITERATIONS
+        apply_mjlab_sim_options(spec, VELOCITY_ENV.sim)
     if scene.wheels:
         for joint in spec.joints:
             if joint.name.startswith("passive_"):
