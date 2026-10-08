@@ -49,7 +49,7 @@ def _hold_claws(env_cfg: Any, contract: dict) -> None:
     """
     claws = contract["unactuated_joints"]
     if any(claws.values()):
-        raise ValueError(f"A claw is held off zero, the target ctrl starts at: {claws}")
+        raise ValueError(f"The claws hold {claws}, but a position target starts at 0.")
     articulation = env_cfg.scene.entities["robot"].articulation
     (servo,) = articulation.actuators
     articulation.actuators = (

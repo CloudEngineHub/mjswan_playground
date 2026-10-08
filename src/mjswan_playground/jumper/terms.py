@@ -150,7 +150,6 @@ def _update_posture(self: Any, env_ids: Any = None) -> None:
 def bind_posture_override(term: Any) -> None:
     term._resample_command = types.MethodType(_resample_posture, term)
     term._update_command = types.MethodType(_update_posture, term)
-    term._update_metrics = types.MethodType(lambda self: None, term)
 
 
 def _posture_ui(cfg: Any) -> dict[str, Any]:
