@@ -1562,7 +1562,7 @@ wheels = [
 [[package]]
 name = "mjswan"
 version = "0.11.3"
-source = { git = "https://github.com/ttktjmt/mjswan?rev=080874fbfc15cfbd2a8a6801f7e2251da0a41fab#080874fbfc15cfbd2a8a6801f7e2251da0a41fab" }
+source = { git = "https://github.com/ttktjmt/mjswan?rev=d60262420118260b1aef7d5c6be7630311ef4582#d60262420118260b1aef7d5c6be7630311ef4582" }
 dependencies = [
     { name = "mujoco" },
     { name = "nodeenv" },
@@ -1611,7 +1611,7 @@ previews = [
 [package.metadata]
 requires-dist = [
     { name = "mjlab", specifier = "==1.6.0" },
-    { name = "mjswan", git = "https://github.com/ttktjmt/mjswan?rev=080874fbfc15cfbd2a8a6801f7e2251da0a41fab" },
+    { name = "mjswan", git = "https://github.com/ttktjmt/mjswan?rev=d60262420118260b1aef7d5c6be7630311ef4582" },
     { name = "myosuite", extras = ["musclemimic"], marker = "extra == 'musclemimic'", git = "https://github.com/MyoHub/myosuite?branch=ms3" },
     { name = "onnx", specifier = ">=1.20.0" },
     { name = "onnxconverter-common", marker = "extra == 'musclemimic'", specifier = ">=1.16" },
