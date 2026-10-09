@@ -19,7 +19,7 @@ WALK_TASK_ID = "Unitree-G1-AMP-Flat"
 WALK_POLICY_ONNX = "deploy/ckpts/walk_policy.onnx"
 
 CAMERA = "head_camera_single"
-COMMAND_NAME = "twist"
+COMMAND_TERM = "command"
 ACTOR_GROUP = "actor"
 DEPTH_GROUP = "depth"
 DEPTH_TERM = "head_depth"
@@ -156,6 +156,8 @@ def _add_dodge_scene(project: mjswan.ProjectHandle, root, contract) -> None:
     observations = adapt_observations(env_cfg.observations[ACTOR_GROUP])[
         DEFAULT_OBS_GROUP_KEY
     ]
+    # Zero, as deployed dodge feeds it. See README.
+    observations.terms[COMMAND_TERM] = ObservationTermCfg(func=terms.zero_command)
     observations.terms[DEPTH_TERM] = ObservationTermCfg(
         func=terms.ball_depth,
         params=depth_params,
@@ -167,8 +169,8 @@ def _add_dodge_scene(project: mjswan.ProjectHandle, root, contract) -> None:
         name="Link-CBF Dodge",
         policy=onnx.load(str(root / DODGE_POLICY_ONNX)),
         observations=observations,
-        # Zero, no controls: deployed dodge ignores the operator. See README.
-        commands={COMMAND_NAME: mjswan.ui_command([])},
+        # No controls: deployed dodge ignores the operator.
+        commands={},
         policy_joint_names=[f"robot/{name}" for name in contract.POLICY_JOINT_NAMES],
         default_joint_pos=[float(value) for value in contract.DEFAULT_POS],
     )

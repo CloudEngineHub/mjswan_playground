@@ -1,10 +1,11 @@
-"""The two terms the dodge task cannot take from upstream as they are. See ``README.md``.
+"""The terms the dodge task cannot take from upstream as they are. See ``README.md``.
 
 * :func:`ball_depth`: the browser has no render, so the image is ray-sphere
   intersections instead (as upstream's own ``web-demo`` branch does).
 * :func:`throw_ball`: upstream's launch geometry, on an interval event: mjswan has no
   ``mode="step"`` for its per-env countdown.
 * :func:`add_camera_pose_sensors`: frame sensors giving the term the camera pose.
+* :func:`zero_command`: the velocity command the deployed dodge mode feeds, zero.
 """
 
 from __future__ import annotations
@@ -226,3 +227,8 @@ def throw_ball(
         torch.cat([velocity_xy, velocity_z, torch.zeros(1, 3, device=device)], dim=-1),
         env_ids=env_ids,
     )
+
+
+def zero_command(env) -> torch.Tensor:
+    """The velocity command ``(vx, vy, yaw rate)`` as deployed dodge feeds it: zero."""
+    return torch.zeros(env.num_envs, 3)

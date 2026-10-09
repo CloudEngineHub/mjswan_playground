@@ -10,10 +10,11 @@ import mujoco
 import onnx
 from mjlab.envs.mdp import observations as obs_fns
 from mjlab.envs.mdp import terminations as term_fns
+from mjlab.sim import MujocoCfg, SimulationCfg
 from mjswan.envs.mdp.actions import JointPositionActionCfg
 from mjswan.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
 from mjswan.managers.termination_manager import TerminationTermCfg
-from mjswan.mjlab import build_single_entity_trace_env
+from mjswan.mjlab import apply_mjlab_sim_options, build_single_entity_trace_env
 
 from mjswan_playground._deps import ensure_repo
 from mjswan_playground._trace import CommandValues
@@ -28,8 +29,12 @@ ROBOT_XML = "src/mjlab_husky/asset_zoo/robots/skateboard/xmls/g1.xml"
 POLICY_ONNX = "ckpts/test.onnx"
 
 ENTITY = "robot"
-#: `sim.mujoco.timestep` (0.005) * `decimation` (4): 50 Hz, the rate the policy trained at.
-CONTROL_DT = 0.02
+#: Copied from `unitree_g1_skater_env_cfg`: importing it needs upstream's own rsl_rl.
+SIM = SimulationCfg(
+    mujoco=MujocoCfg(timestep=0.005, iterations=10, ls_iterations=20, ccd_iterations=50)
+)
+DECIMATION = 4
+CONTROL_DT = SIM.mujoco.timestep * DECIMATION
 #: `G1SkaterManagerBasedRlEnvCfg.cycle_time`: seconds per push -> steer cycle.
 CYCLE_TIME = 6.0
 #: `G1SkaterManagerBasedRlEnvCfg`: frames the observation group stacks.
@@ -44,22 +49,6 @@ def _resolve_husky_root() -> Path:
         marker=SCENE_XML,
         root_env_var="MJSWAN_HUSKY_ROOT",
     )
-
-
-def _scene_spec(scene_xml: Path) -> mujoco.MjSpec:
-    """``unitree_g1_skater_env_cfg``'s solver settings, written into the spec.
-
-    mjlab applies its ``MujocoCfg`` to a compiled model at startup; the browser compiles
-    from the bundled XML, so they have to travel in the spec. The integrator included:
-    MuJoCo's XML default is Euler, not what the policy trained on.
-    """
-    spec = mujoco.MjSpec.from_file(str(scene_xml))
-    spec.option.timestep = 0.005
-    spec.option.integrator = mujoco.mjtIntegrator.mjINT_IMPLICITFAST
-    spec.option.iterations = 10
-    spec.option.ls_iterations = 20
-    spec.option.ccd_iterations = 50
-    return spec
 
 
 def _robot_joints(model: mujoco.MjModel) -> tuple[list[str], list[float]]:
@@ -119,7 +108,8 @@ def _trace_spec(robot_xml: Path, default_joint_pos: list[float]) -> mujoco.MjSpe
 def setup_builder() -> mjswan.Builder:
     root = _resolve_husky_root()
 
-    spec = _scene_spec(root / SCENE_XML)
+    spec = mujoco.MjSpec.from_file(str(root / SCENE_XML))
+    apply_mjlab_sim_options(spec, SIM)
     model = spec.compile()
     joint_names, default_joint_pos = _robot_joints(model)
 
