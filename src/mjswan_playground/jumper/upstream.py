@@ -1,5 +1,5 @@
-"""The jumper checkout: pinned clone, its tasks registered with mjlab, each policy's
-deploy contract, and the edits every play config needs."""
+"""The jumper checkout: pinned clone, its posture task registered with mjlab, each
+policy's deploy contract, and the edits every play config needs."""
 
 from __future__ import annotations
 
@@ -18,7 +18,6 @@ REPO_COMMIT = "61d065219fca767f3142c8f10aff59eae5a5a004"
 TASK_ID = "Jumper-Posture"
 #: model_74800 exported by upstream's scripts/export.py, with layout.json beside it.
 POLICY_ONNX = "tasks/jumper/posture/out/example/actor.onnx"
-CONTRACT = "tasks/jumper/posture/out/example/layout.json"
 
 
 def resolve_root() -> Path:
@@ -29,10 +28,6 @@ def resolve_root() -> Path:
         marker=POLICY_ONNX,
         root_env_var="MJSWAN_JUMPER_ROOT",
     )
-
-
-def deployed_contract(root: Path) -> dict:
-    return json.loads((root / CONTRACT).read_text())
 
 
 def export(root: Path, task: str) -> Path:
@@ -68,31 +63,22 @@ def play_env_cfg(root: Path, task: str) -> Any:
     return env_cfg
 
 
-def register(task_id: str, env_cfg: Any) -> str:
-    """Register ``env_cfg`` with mjlab as ``task_id``, for train and play alike."""
-    import mjlab.tasks.registry as registry
-    from mjlab.rl import RslRlOnPolicyRunnerCfg
-
-    if task_id not in registry.list_tasks():
-        # Only the runner's obs_groups and clip_actions reach the browser, and upstream's
-        # runner config sets neither; it also sets a field only its vendored rsl_rl has.
-        registry.register_mjlab_task(
-            task_id=task_id,
-            env_cfg=env_cfg,
-            play_env_cfg=env_cfg,
-            rl_cfg=RslRlOnPolicyRunnerCfg(),
-        )
-    return task_id
-
-
 def register_tasks(root: Path) -> None:
     """Register upstream's ``jumper.posture`` play config with mjlab as ``TASK_ID``."""
     import mjlab.tasks.registry as registry
+    from mjlab.rl import RslRlOnPolicyRunnerCfg
 
     if TASK_ID in registry.list_tasks():
         return
-    module = import_module(root, "tasks.jumper.posture.env_cfg")
-    register(TASK_ID, module.env_cfg(play=True))
+    play = import_module(root, "tasks.jumper.posture.env_cfg").env_cfg(play=True)
+    # Only the runner's obs_groups and clip_actions reach the browser, and upstream's
+    # runner config sets neither; it also sets a field only its vendored rsl_rl has.
+    registry.register_mjlab_task(
+        task_id=TASK_ID,
+        env_cfg=play,
+        play_env_cfg=play,
+        rl_cfg=RslRlOnPolicyRunnerCfg(),
+    )
 
 
 def as_base(cls: type, cfg: Any) -> Any:

@@ -1,25 +1,27 @@
 """Upstream's two high jumps, on terms the browser can trace.
 
 ``jumper.jump`` adds the policy's residual to a recorded jump. Its command keeps the go
-instant in a counter mjlab reads off ``episode_length_buf``, its spawn rides on an env
-side channel, and its action reads the recording itself. The command is restated with
+instant in a counter mjlab reads off ``episode_length_buf``, its spawn phase rides on an
+env side channel, and its action reads the recording itself. The command is restated with
 its own counter and spawn, and publishes the residual's baseline for mjswan's
 ``joint_position_reference`` action; its terms are restated over its ``go_step``.
 
 ``jumper.ref_free_jump`` observes only the robot. Its ``jump`` command feeds play nothing
-but ``back_home``, which ends an episode once the robot has stood at home for a while
-after landing, judged from the feet's contact forces; both go, so each episode is one
-jump that ends on its 2.5 s time-out.
+but ``back_home``, which ends an episode once the robot has landed and held its home
+pose for a while; both go, so each episode is one jump that ends on its 2.5 s time-out.
 """
 
 from __future__ import annotations
 
+import functools
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import torch
 from mjlab.envs.mdp.actions import JointPositionActionCfg
+from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.utils.lab_api.math import sample_uniform
 from mjswan import CommandBinding, register_command
 from mjswan.envs.mdp.actions import ReferenceJointPositionActionCfg
@@ -29,35 +31,14 @@ from . import servos, upstream
 SCENE_ID = "Jumper-Jump"
 #: Each policy's upstream task, in the order the scene lists them.
 POLICIES = {"Jump": "jump", "Jump (no reference)": "ref_free_jump"}
-#: Play's spawn phase: the jump starts at the reset.
-SPAWN_PHASE = (0.0, 0.01)
-
-_UPSTREAM: dict[str, Any] = {}
 
 
-def _jump_modules(root: Path) -> tuple[Any, Any, Any]:
-    """Upstream's jump command, observations and recording, imported once."""
-    if not _UPSTREAM:
-        _UPSTREAM["commands"] = upstream.import_module(
-            root, "tasks.jumper.jump.mdp.commands"
-        )
-        _UPSTREAM["obs"] = upstream.import_module(
-            root, "tasks.jumper.jump.mdp.observations"
-        )
-        reference = upstream.import_module(root, "tasks.jumper.jump.mdp.reference")
-        home = upstream.import_module(root, "tasks.jumper.common.constants").HOME
-        _UPSTREAM["ref"] = reference.JumpReference(
-            reference.JUMP_REF_NPZ, "cpu", list(home)
-        )
-    return _UPSTREAM["commands"], _UPSTREAM["obs"], _UPSTREAM["ref"]
-
-
+@functools.cache
 def jump_clock_cfg(root: Path) -> type:
     """``JumpMotionCommandCfg`` restated with its own counter and spawn. Made once
     upstream is importable: it subclasses upstream's command to keep its recording."""
-    if "cfg" in _UPSTREAM:
-        return _UPSTREAM["cfg"]
-    commands, obs, _ = _jump_modules(root)
+    commands = upstream.import_module(root, "tasks.jumper.jump.mdp.commands")
+    obs = upstream.import_module(root, "tasks.jumper.jump.mdp.observations")
     gait = list(obs._GAIT_COL)
 
     class JumpClockCommand(commands.JumpMotionCommand):
@@ -102,15 +83,11 @@ def jump_clock_cfg(root: Path) -> type:
 
     @dataclass(kw_only=True)
     class JumpClockCommandCfg(commands.JumpMotionCommandCfg):
-        spawn_phase: tuple[float, float] = SPAWN_PHASE
-
-        def __post_init__(self) -> None:
-            self.class_type = JumpClockCommand
+        spawn_phase: tuple[float, float]
 
         def build(self, env: Any) -> Any:
             return JumpClockCommand(self, env)
 
-    _UPSTREAM["cfg"] = JumpClockCommandCfg
     return JumpClockCommandCfg
 
 
@@ -123,57 +100,73 @@ register_command(
 )
 
 
-def _t_since_go(env: Any, command_name: str) -> torch.Tensor:
-    """``time_since_go``: ``episode_length_buf`` against the command's ``go_step``."""
-    go_step = env.command_manager.get_term(command_name).go_step
-    return (env.episode_length_buf - go_step) * env.step_dt
-
-
 # --- Upstream's terms (tasks/jumper/jump/mdp/), over the command's go_step ---
 
 
+def _since_go(env: Any, command_name: str) -> tuple[Any, torch.Tensor]:
+    """The command's recording and its ``time_since_go``, over the ``go_step`` field: the
+    browser serves a command's state fields, not its properties."""
+    command = env.command_manager.get_term(command_name)
+    return command.reference, (env.episode_length_buf - command.go_step) * env.step_dt
+
+
 def jump_phase(env: Any, command_name: str = "jump") -> torch.Tensor:
-    return _UPSTREAM["ref"].phase(_t_since_go(env, command_name)).unsqueeze(1)
+    ref, t_since_go = _since_go(env, command_name)
+    return ref.phase(t_since_go).unsqueeze(1)
 
 
 def ref_future(
     env: Any, command_name: str = "jump", offsets: tuple[float, ...] = ()
 ) -> torch.Tensor:
-    obs, ref = _UPSTREAM["obs"], _UPSTREAM["ref"]
-    t_since_go = _t_since_go(env, command_name)
-    home = obs._HOME_VEC.to(t_since_go.device)
+    from tasks.jumper.jump.mdp.observations import _GAIT_COL, _HOME_VEC
+
+    ref, t_since_go = _since_go(env, command_name)
+    home = _HOME_VEC.to(t_since_go.device)
     cols = [
-        ref.sample(ref.index_of(t_since_go + dt))["q"][:, obs._GAIT_COL] - home
+        ref.sample(ref.index_of(t_since_go + dt))["q"][:, _GAIT_COL] - home
         for dt in offsets
     ]
     return torch.cat(cols, dim=1)
 
 
 def reference_diverged(
-    env: Any, command_name: str = "jump", threshold: float = 6.0, asset_cfg: Any = None
+    env: Any,
+    command_name: str = "jump",
+    threshold: float = 6.0,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    ref = _UPSTREAM["ref"]
-    q = ref.sample(ref.index_of(_t_since_go(env, command_name)))["q"]
-    robot = env.scene[asset_cfg.name if asset_cfg is not None else "robot"]
+    ref, t_since_go = _since_go(env, command_name)
+    q = ref.sample(ref.index_of(t_since_go))["q"]
+    robot = env.scene[asset_cfg.name]
     return ((robot.data.joint_pos - q) ** 2).sum(dim=1) > threshold
+
+
+def time_out(env: Any, steps: int) -> torch.Tensor:
+    """mjlab's ``time_out`` at ``steps``: the scene traces every policy's terms against
+    the first policy's env, whose episode length mjlab's would read."""
+    return env.episode_length_buf >= steps
 
 
 def play_env_cfg(root: Path, task: str) -> tuple[Any, dict[str, tuple[int, ...]]]:
     """A jump's play config as the browser runs it, and its strided terms' offsets."""
     env_cfg = upstream.play_env_cfg(root, task)
     upstream.drop_training_terms(env_cfg)
-    env_cfg.events.pop("reset_from_reference", None)
+    spawn = env_cfg.events.pop("reset_from_reference")
     servos.hold_claws(env_cfg, upstream.contract(root, task))
+    step_dt = env_cfg.sim.mujoco.timestep * env_cfg.decimation
+    timeout = env_cfg.terminations["time_out"]
+    timeout.func = time_out
+    timeout.params = {"steps": math.ceil(env_cfg.episode_length_s / step_dt)}
     if task == "jump":
-        _, obs, _ = _jump_modules(root)
         old = env_cfg.commands["jump"]
         env_cfg.commands["jump"] = jump_clock_cfg(root)(
-            entity_name=old.entity_name, motion_file=old.motion_file
+            entity_name=old.entity_name,
+            motion_file=old.motion_file,
+            spawn_phase=spawn.params["phase_range"],
         )
         terms = env_cfg.observations["actor"].terms
         terms["jump_phase"].func = jump_phase
         terms["ref_future"].func = ref_future
-        terms["ref_future"].params.setdefault("offsets", obs.FUTURE_OFFSETS)
         env_cfg.terminations["reference_diverged"].func = reference_diverged
         return env_cfg, {}
     # The action's prior feedforward is zero at this checkpoint's step count.
@@ -183,7 +176,7 @@ def play_env_cfg(root: Path, task: str) -> tuple[Any, dict[str, tuple[int, ...]]
     env_cfg.commands.pop("jump")
     env_cfg.terminations.pop("back_home")
     offsets = upstream.unstride(env_cfg)
-    servos.observe_reset_force(env_cfg, "actuator_force")
+    servos.observe_reset_force(env_cfg)
     return env_cfg, offsets
 
 
@@ -193,8 +186,7 @@ def actions(task: str, env_cfg: Any) -> dict[str, Any] | None:
     if task != "jump":
         return None
     action = env_cfg.actions["joint_pos"]
-    # Built here rather than adapted from mjlab's term, so prefixed here as the adapter
-    # would, to match the policy's joint names.
+    # Built rather than adapted, so prefixed as the adapter would.
     return {
         "joint_pos": ReferenceJointPositionActionCfg(
             entity_name="robot",

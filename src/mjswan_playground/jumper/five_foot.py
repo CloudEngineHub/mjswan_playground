@@ -24,16 +24,12 @@ SCENE_ID = "Jumper-Five-Foot"
 TASK = "five_foot"
 
 
-def _standing(self: Any) -> torch.Tensor:
-    vel = self._env.command_manager.get_command(self.cfg.velocity_command_name)
-    return torch.norm(vel[:, :3], dim=1, keepdim=True) < self.cfg.stand_threshold
-
-
 def _resample_body_pose(self: Any, env_ids: Any) -> None:
     """``BodyPoseCommand._resample_command`` at ``N=1``, without ``Tensor.uniform_`` or
     per-env writes; it draws in upstream's order: pitch, roll, twist, then neutral."""
     del env_ids
-    standing = _standing(self)
+    vel = self._env.command_manager.get_command(self.cfg.velocity_command_name)
+    standing = torch.norm(vel[:, :3], dim=1, keepdim=True) < self.cfg.stand_threshold
     n, device = self.num_envs, self.device
     axes = []
     for stand, move in (
@@ -106,7 +102,7 @@ register_command(
 )
 
 
-def play_env_cfg(root: Path) -> tuple[Any, dict[str, tuple[int, ...]]]:
+def play_env_cfg(root: Path) -> Any:
     """``jumper.five_foot``'s play config as the browser runs it."""
     pose = upstream.import_module(root, "tasks.jumper.five_foot.mdp.pose_command")
     env_cfg = upstream.play_env_cfg(root, TASK)
@@ -114,7 +110,7 @@ def play_env_cfg(root: Path) -> tuple[Any, dict[str, tuple[int, ...]]]:
     # The claw's trigger and `play --hold` are step-mode events, and the arm's hold
     # writes a position target: the held actuators stand in.
     for name in ("gripper_teleop", "claw_hold", "hold_carried_arm"):
-        env_cfg.events.pop(name, None)
+        env_cfg.events.pop(name)
     contract = upstream.contract(root, TASK)
     servos.hold_unactuated(env_cfg, contract)
     # Play's operator terms read a keyboard or a pad; the browser's panel does instead.
@@ -124,8 +120,5 @@ def play_env_cfg(root: Path) -> tuple[Any, dict[str, tuple[int, ...]]]:
     env_cfg.commands["body_pose"] = upstream.as_base(
         pose.BodyPoseCommandCfg, env_cfg.commands["body_pose"]
     )
-    offsets = upstream.unstride(env_cfg)
-    servos.observe_reset_force(
-        env_cfg, "actuator_force", hold=contract["unactuated_joints"]
-    )
-    return env_cfg, offsets
+    servos.observe_reset_force(env_cfg, hold=contract["unactuated_joints"])
+    return env_cfg

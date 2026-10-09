@@ -84,15 +84,7 @@ class ClipCommand(CommandTerm):
         self._anchor_pos = table(clip["body_pos_w"][:, anchor])
         self._anchor_quat = table(clip["body_quat_w"][:, anchor])
         self._support_z = table(clip["body_pos_w"][:, support, 2])
-        n = self.num_envs
-        self.time_steps = torch.zeros(n, 1, device=self.device)
-        self.phase = torch.zeros(n, 2, device=self.device)
-        self.joint_pos = torch.zeros(n, self._joint_pos.shape[1], device=self.device)
-        self.joint_vel = torch.zeros_like(self.joint_pos)
-        self.future_joint_pos = self.joint_pos.repeat(1, len(cfg.horizons))
-        self.anchor_pos_w = torch.zeros(n, 3, device=self.device)
-        self.anchor_quat_w = torch.zeros(n, 4, device=self.device)
-        self.support_body_z = torch.zeros(n, len(support), device=self.device)
+        self.time_steps = torch.zeros(self.num_envs, 1, device=self.device)
         self._read_frame()
 
     @property
@@ -103,7 +95,7 @@ class ClipCommand(CommandTerm):
         """The rows at ``time_steps``: ``MotionCommand``'s properties, as fields."""
         last = self.total - 1
         index = self.time_steps[:, 0].long()
-        angle = self.time_steps * (2.0 * math.pi / max(self.total, 1))
+        angle = self.time_steps * (2.0 * math.pi / self.total)
         self.phase = torch.cat([torch.sin(angle), torch.cos(angle)], dim=-1)
         self.joint_pos = self._joint_pos[index]
         self.joint_vel = self._joint_vel[index]
@@ -122,7 +114,7 @@ class ClipCommand(CommandTerm):
 
     def _update_command(self, env_ids: torch.Tensor | None = None) -> None:
         del env_ids
-        # `clip_end` ends the episode on the last frame, where `MotionCommand` wraps.
+        # `clip_end` ends the episode on the step `MotionCommand` would resample.
         self.time_steps = (self.time_steps + 1.0).clamp(max=float(self.total - 1))
         self._read_frame()
 
@@ -189,10 +181,8 @@ def ref_tilt_error(
     """The anchor is the root body, so the robot's half is its projected gravity."""
     asset = env.scene[asset_cfg.name]
     quat = _clip(env, command_name).anchor_quat_w
-    down = torch.zeros_like(quat[:, :3]) + torch.tensor(
-        [0.0, 0.0, -1.0], device=quat.device
-    )
-    return quat_apply_inverse(quat, down) - asset.data.projected_gravity_b
+    ref = quat_apply_inverse(quat, asset.data.gravity_vec_w)
+    return ref - asset.data.projected_gravity_b
 
 
 # --- mjlab's tracking terminations (mjlab/tasks/tracking/mdp/terminations.py) ---
@@ -217,16 +207,10 @@ def bad_anchor_ori(
 
 
 def bad_motion_body_pos_z_only(
-    env: Any,
-    command_name: str,
-    threshold: float,
-    body_names: tuple[str, ...],
-    asset_cfg: SceneEntityCfg,
+    env: Any, command_name: str, threshold: float, asset_cfg: SceneEntityCfg
 ) -> torch.Tensor:
     """``body_pos_relative_w``'s height is the reference body's own: its anchor alignment
-    moves the anchor to the reference's height and turns about z only. ``asset_cfg``
-    resolves ``body_names``, in their order."""
-    del body_names
+    moves the anchor to the reference's height and turns about z only."""
     asset = env.scene[asset_cfg.name]
     robot_z = asset.data.body_link_pos_w[:, asset_cfg.body_ids, 2]
     error = torch.abs(_clip(env, command_name).support_body_z - robot_z)
@@ -261,15 +245,18 @@ def reset_to_clip_start(
     )
 
 
-def _play_clip(env_cfg: Any, support_body_names: tuple[str, ...]) -> None:
+def _play_clip(env_cfg: Any) -> None:
     """Swap the task's ``MotionCommandCfg`` for the clip command, in place."""
     motion = env_cfg.commands["motion"]
     terms = env_cfg.observations["actor"].terms
+    terminations = env_cfg.terminations
+    feet = terminations["ee_body_pos"]
+    support = tuple(feet.params.pop("body_names"))
     env_cfg.commands["motion"] = ClipCommandCfg(
         motion_file=motion.motion_file,
         body_names=tuple(motion.body_names),
         anchor_body_name=motion.anchor_body_name,
-        support_body_names=support_body_names,
+        support_body_names=support,
         horizons=tuple(terms["ref_future"].params["horizons"]),
     )
     for name, func in {
@@ -280,15 +267,11 @@ def _play_clip(env_cfg: Any, support_body_names: tuple[str, ...]) -> None:
         "ref_tilt_error": ref_tilt_error,
     }.items():
         terms[name].func = func
-    terminations = env_cfg.terminations
     terminations["anchor_pos"].func = bad_anchor_pos_z_only
     terminations["anchor_ori"].func = bad_anchor_ori
-    feet = terminations["ee_body_pos"]
     feet.func = bad_motion_body_pos_z_only
-    if tuple(feet.params["body_names"]) != support_body_names:
-        raise ValueError("ee_body_pos bounds other bodies than the clip command reads.")
     feet.params["asset_cfg"] = SceneEntityCfg(
-        "robot", body_names=support_body_names, preserve_order=True
+        "robot", body_names=support, preserve_order=True
     )
     clip = np.load(motion.motion_file)
     terminations["clip_end"] = TerminationTermCfg(
@@ -321,7 +304,6 @@ def play_env_cfg(root: Path, task: str) -> Any:
     """``jumper.<task>``'s play config as the browser runs it."""
     env_cfg = upstream.play_env_cfg(root, task)
     upstream.drop_training_terms(env_cfg)
-    feet = upstream.import_module(root, "tasks.jumper.common.dance.env").SUPPORT_FEET
-    _play_clip(env_cfg, tuple(feet))
-    servos.observe_reset_force(env_cfg, "actuator_force")
+    _play_clip(env_cfg)
+    servos.observe_reset_force(env_cfg)
     return env_cfg

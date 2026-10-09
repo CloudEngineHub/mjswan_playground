@@ -25,7 +25,8 @@ def play_env_cfg() -> tuple[Any, dict[str, tuple[int, ...]]]:
     from tasks.jumper.posture.mdp.commands import PostureCommandCfg
 
     env_cfg = load_env_cfg(TASK_ID, play=True)
-    servos.hold_claws(env_cfg, upstream.deployed_contract(root))
+    upstream.drop_training_terms(env_cfg)
+    servos.hold_claws(env_cfg, upstream.contract(root, "posture"))
     # Play's operator terms read a keyboard or a pad; the browser's panel does instead.
     env_cfg.commands["twist"] = upstream.as_base(
         UniformVelocityCommandCfg, env_cfg.commands["twist"]
@@ -37,7 +38,7 @@ def play_env_cfg() -> tuple[Any, dict[str, tuple[int, ...]]]:
     env_cfg.scene.sensors = tuple(s for s in env_cfg.scene.sensors if s.name != "tof")
     offsets = upstream.unstride(env_cfg)
     terms.clock_gait_phase(env_cfg)
-    servos.observe_reset_force(env_cfg, "actuator_force")
+    servos.observe_reset_force(env_cfg)
     return env_cfg, offsets
 
 
@@ -78,30 +79,22 @@ def setup_builder() -> mjswan.Builder:
     scene = project.add_scene_mjlab(TASK_ID, env_cfg=env_cfg)
     _add_policy(scene, root, "posture", "model_74800", env_cfg, offsets)
 
-    env_cfg, offsets = five_foot.play_env_cfg(root)
-    scene = project.add_scene_mjlab(
-        upstream.register(five_foot.SCENE_ID, env_cfg), env_cfg=env_cfg
-    )
-    _add_policy(scene, root, five_foot.TASK, "model_86600", env_cfg, offsets)
+    env_cfg = five_foot.play_env_cfg(root)
+    scene = project.add_scene_mjlab(five_foot.SCENE_ID, env_cfg=env_cfg)
+    _add_policy(scene, root, five_foot.TASK, "model_86600", env_cfg, {})
 
     # One robot, one rate: every tracking policy shares a scene, each on its own clip.
-    scene = None
     for i, (name, task) in enumerate(dance.POLICIES.items()):
         env_cfg = dance.play_env_cfg(root, task)
-        if scene is None:
-            scene = project.add_scene_mjlab(
-                upstream.register(dance.SCENE_ID, env_cfg), env_cfg=env_cfg
-            )
+        if i == 0:
+            scene = project.add_scene_mjlab(dance.SCENE_ID, env_cfg=env_cfg)
         _add_policy(scene, root, task, name, env_cfg, {}, default=i == 0)
 
     # Both jumps at 200 Hz, on one scene.
-    scene = None
     for i, (name, task) in enumerate(jump.POLICIES.items()):
         env_cfg, offsets = jump.play_env_cfg(root, task)
-        if scene is None:
-            scene = project.add_scene_mjlab(
-                upstream.register(jump.SCENE_ID, env_cfg), env_cfg=env_cfg
-            )
+        if i == 0:
+            scene = project.add_scene_mjlab(jump.SCENE_ID, env_cfg=env_cfg)
         actions = jump.actions(task, env_cfg)
         _add_policy(
             scene, root, task, name, env_cfg, offsets, default=i == 0, actions=actions

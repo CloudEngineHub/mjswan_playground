@@ -1,12 +1,9 @@
 """The jumper's servos as the browser runs them.
 
-Upstream drives every joint through one ``ServoCurveActuatorCfg``, an explicit PD that
-holds the joints its action leaves out at the position target an event writes. The
-browser applies PD to the action's joints alone and zeroes every other ``ctrl``, so those
-joints get MuJoCo position actuators of the same gains here, biased to hold their pose at
-``ctrl = 0``. And mjlab's reset clears every position target, so the first observation of
-an episode carries the servos pushing toward it; the browser resets to the keyframe
-instead, and its torque is restated here for that one observation.
+The browser applies PD to the action's joints alone and zeroes every other ``ctrl``, so
+the joints upstream's one servo also holds get position actuators of its gains, biased to
+hold their pose at ``ctrl = 0``. mjlab's reset clears every position target, so an
+episode's first ``actuator_force`` is restated as that reset leaves it.
 """
 
 from __future__ import annotations
@@ -44,16 +41,13 @@ class HeldPositionActuatorCfg(BuiltinPositionActuatorCfg):
         return actuator
 
 
-def hold_unactuated(env_cfg: Any, contract: dict) -> None:
-    """Hold the joints the action leaves out where the deploy contract says they stay,
-    with actuators of the servos' gains and limit, and reset them there."""
+def _split_servo(env_cfg: Any, contract: dict) -> dict[str, float]:
+    """Keep the servo on the action's joints, and hold the rest where the deploy contract
+    says they stay with actuators of its gains and limit. Returns the holds."""
     hold = {name: float(value) for name, value in contract["unactuated_joints"].items()}
-    default = contract["default_joint_pos"]
-    if any(default[name] != value for name, value in hold.items()):
-        raise ValueError("A held joint's default pose is not its hold.")
-    entity = env_cfg.scene.entities["robot"]
-    (servo,) = entity.articulation.actuators
-    entity.articulation.actuators = (
+    articulation = env_cfg.scene.entities["robot"].articulation
+    (servo,) = articulation.actuators
+    articulation.actuators = (
         replace(servo, target_names_expr=tuple(contract["action_joint_order"])),
         HeldPositionActuatorCfg(
             target_names_expr=tuple(hold),
@@ -64,12 +58,25 @@ def hold_unactuated(env_cfg: Any, contract: dict) -> None:
             hold=hold,
         ),
     )
-    # Upstream's one actuator lists every joint in model order, and the observed forces
-    # are read in actuator order: keep it.
-    entity.sort_actuators = True
-    # mjlab's reset leaves a joint outside every event where it was; the browser's
-    # puts it back at the keyframe. Upstream's joint reset is zero-width, so widened to
-    # every joint it writes the default pose, the hold, in both.
+    return hold
+
+
+def hold_claws(env_cfg: Any, contract: dict) -> None:
+    """Hold the claws at 0 rad, where their position target starts."""
+    if any(_split_servo(env_cfg, contract).values()):
+        raise ValueError("A claw holds away from 0, where a position target starts.")
+
+
+def hold_unactuated(env_cfg: Any, contract: dict) -> None:
+    """Hold the joints the action leaves out, and reset them there."""
+    hold = _split_servo(env_cfg, contract)
+    default = contract["default_joint_pos"]
+    if any(default[name] != value for name, value in hold.items()):
+        raise ValueError("A held joint's default pose is not its hold.")
+    # `ctrl` in joint order, as upstream's one actuator has it.
+    env_cfg.scene.entities["robot"].sort_actuators = True
+    # The browser resets every joint to the keyframe; widened to every joint, upstream's
+    # zero-width reset does the same in mjlab.
     reset = env_cfg.events["reset_robot_joints"]
     if any(reset.params[k] != (0.0, 0.0) for k in ("position_range", "velocity_range")):
         raise ValueError("The joint reset randomizes, and would move the held joints.")
@@ -100,15 +107,13 @@ def servo_force(
     )
 
 
-def observe_reset_force(
-    env_cfg: Any, term_name: str, *, hold: dict[str, float] | None = None
-) -> None:
-    """Point the ``actuator_force`` term ``term_name`` at :func:`servo_force`, over the
-    same actuators in the same order and with the servos' gains. Each actuator drives the
-    joint it is named after, in the joints' model order; ``hold`` names the joints whose
-    reset target is not 0."""
+def observe_reset_force(env_cfg: Any, hold: dict[str, float] | None = None) -> None:
+    """Point the ``actuator_force`` term at :func:`servo_force`, over the same actuators
+    in the same order and with the servos' gains. Each actuator drives the joint it is
+    named after, in the joints' model order; ``hold`` names the joints whose reset target
+    is not 0."""
     hold = hold or {}
-    term = env_cfg.observations["actor"].terms[term_name]
+    term = env_cfg.observations["actor"].terms["actuator_force"]
     servo = env_cfg.scene.entities["robot"].articulation.actuators[0]
     spec = env_cfg.scene.entities["robot"].spec_fn()
     joints = [j.name for j in spec.joints if j.type != mujoco.mjtJoint.mjJNT_FREE]
@@ -125,26 +130,3 @@ def observe_reset_force(
         "damping": float(servo.damping),
         "effort_limit": float(servo.effort_limit),
     }
-
-
-def hold_claws(env_cfg: Any, contract: dict) -> None:
-    """Hold the claws with MuJoCo position actuators of the servos' gains.
-
-    Upstream's servo PD holds them at their target, which no action moves. The browser
-    applies PD to the action's joints alone, so the claws would hang unpowered.
-    """
-    claws = contract["unactuated_joints"]
-    if any(claws.values()):
-        raise ValueError(f"The claws hold {claws}, but a position target starts at 0.")
-    articulation = env_cfg.scene.entities["robot"].articulation
-    (servo,) = articulation.actuators
-    articulation.actuators = (
-        replace(servo, target_names_expr=tuple(contract["action_joint_order"])),
-        BuiltinPositionActuatorCfg(
-            target_names_expr=tuple(claws),
-            stiffness=servo.stiffness,
-            damping=servo.damping,
-            effort_limit=servo.effort_limit,
-            armature=servo.armature,
-        ),
-    )
