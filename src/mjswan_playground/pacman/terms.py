@@ -1,4 +1,4 @@
-"""The two terms the dodge task cannot take from upstream as they are. See ``README.md``.
+"""The terms the dodge task cannot take from upstream as they are. See ``README.md``.
 
 * :func:`ball_depth`: the browser has no render, so the image is ray-sphere
   intersections instead (as upstream's own ``web-demo`` branch does).
@@ -229,7 +229,6 @@ def throw_ball(
     )
 
 
-def zero_command(env, width: int) -> torch.Tensor:
-    """The dodge mode's velocity command, zero, as deployed. It reads nothing off the
-    env, so the build bakes it as a constant."""
-    return torch.zeros(env.num_envs, width)
+def zero_command(env) -> torch.Tensor:
+    """The velocity command ``(vx, vy, yaw rate)`` as deployed dodge feeds it: zero."""
+    return torch.zeros(env.num_envs, 3)
