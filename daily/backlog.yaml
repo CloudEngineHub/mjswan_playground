@@ -38,6 +38,34 @@
     keeps up.
   found: '2026-10-07: created 2026-09-28; 1361 stars, trendshift, posts on X'
 
+- id: microduck_playground
+  repo: https://github.com/Vottivott/microduck-playground
+  commit: f010ef1cefcad49c05c20a4a78f840af83a643b9
+  task: Mjlab-Running-Flat-MicroDuck
+  policy: Hugging Face HannesVonEssen/microduck-running at 9f45af1f4b04252f3aa1f4c056fa7fa0d4b35e4c, policy.onnx (sha256 007707dd7779b2756ded67c58b2e9f94fe5071794a48c2b5a20d5f8d841efbeb; obs 61, actions 14, 50 Hz; iteration 12195)
+  license: Apache-2.0 for the code and every Hugging Face policy; the 3D files, the robot meshes from pollen-robotics/microduck_rl among them, are CC BY-NC-SA 4.0 (LICENSE-HARDWARE, NOTICE), as in the microduck task
+  popularity: '1: 64 stars (2026-10-08)'
+  ease: '2: no mjswan change, on microduck''s data-only shape (the XML''s <position> servos in place of BAM), plus the two training lags the policy needs; checked in plain MuJoCo and in the browser'
+  notes: >-
+    Microduck sprinting at about 2 m/s, a separate task from microduck. Follow
+    microduck's main.py: the scene from src/mjlab_microduck/robot/microduck/scene_walk.xml
+    (what the running task trained on), STAND as the only keyframe with the root at
+    0.125 m, mjlab's velocity sim settings, the XML's <position> servos (kp 0.55,
+    +/-0.96 N*m), and robotd's 61 values with twist(3), head(4) and body(6), head and body
+    zero. Two training lags are not optional: joint_vel one control step back
+    (history_steps=(1,)) and the 3-6 physics-step command delay as a filterexact filter on
+    every servo with a 30 ms time constant, its act starting at STAND. Without them the
+    policy falls within 2 s. Checked 2026-10-08: in plain MuJoCo, 0 falls in 5 x 120 s at
+    1.65 m/s (2.05 m/s, max tilt 17 deg; with 20 ms, 2-8 falls per 120 s); a browser
+    prototype passed record_preview (1308 control steps, 0 terminations, max tilt 14.3
+    deg). The policy runs at its own pace whatever the forward command (3% of training
+    at exact zero): keep a forward slider from 0 to 2.2 m/s anyway, lateral and yaw
+    padded with zeros. The other experiments share the contract and are follow-ups:
+    stilts need the stilt geometry from stilt_constants.py (which imports BAM), the
+    swing a tendon seat and a swing-plane cue, the basketball an LSTM with two state
+    tensors, the ladder and chimney climbs and the jumps their stages.
+  found: '2026-10-08: GitHub mjlab topic, 64 stars; eight experiments with ONNX on the Hub'
+
 - id: tasknpoint
   repo: https://github.com/wernerb43/tasknpoint
   commit: b8faaf284e0cef8021b94e2219492dbd54efba0c
