@@ -17,6 +17,7 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 | [`bipedhrl`](src/mjswan_playground/bipedhrl/README.md) | Unitree H1-2 | Walking to velocity commands with the checkpoint run on the real robot ([biped_hrl](https://github.com/spaethli/biped_hrl)) | <a href="https://mjswan.com/s/AacPm-T"><img src="assets/bipedhrl.gif" width="200"/></a><br />[mjswan.com/s/AacPm-T](https://mjswan.com/s/AacPm-T) |
 | [`upkie`](src/mjswan_playground/upkie/README.md) | Upkie | A wheeled biped balancing and driving to velocity commands ([mjlab_upkie](https://github.com/MarcDcls/mjlab_upkie)) | <img src="assets/upkie.gif" width="200"/><br />WIP |
 | [`duet`](src/mjswan_playground/duet/README.md) | Unitree G1 | Walking and squatting down to a 0.18 m crouch ([DUET](https://github.com/bae-air-lab/DUET)) | <img src="assets/duet.gif" width="200"/><br />WIP |
+| [`jumper`](src/mjswan_playground/jumper/README.md) | Jumper | A crab robot walking while it holds a commanded twist, pitch, roll and body height ([Jumper](https://github.com/KingKongRobotics/jumper)) | <img src="assets/jumper.gif" width="200"/><br />WIP |
 
 ## CLI
 
