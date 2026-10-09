@@ -5,6 +5,7 @@
 * :func:`throw_ball`: upstream's launch geometry, on an interval event: mjswan has no
   ``mode="step"`` for its per-env countdown.
 * :func:`add_camera_pose_sensors`: frame sensors giving the term the camera pose.
+* :func:`zero_command`: the velocity command the deployed dodge mode feeds, zero.
 """
 
 from __future__ import annotations
@@ -226,3 +227,9 @@ def throw_ball(
         torch.cat([velocity_xy, velocity_z, torch.zeros(1, 3, device=device)], dim=-1),
         env_ids=env_ids,
     )
+
+
+def zero_command(env, width: int) -> torch.Tensor:
+    """The dodge mode's velocity command, zero, as deployed. It reads nothing off the
+    env, so the build bakes it as a constant."""
+    return torch.zeros(env.num_envs, width)

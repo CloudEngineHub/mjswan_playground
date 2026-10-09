@@ -55,7 +55,7 @@ Both start from the same proprio group, six of mjlab's own MDP functions at
 |---|---|---|
 | `base_ang_vel` | 3 | the `imu_ang_vel` sensor |
 | `projected_gravity` | 3 | `projected_gravity_b` |
-| `command` | 3 | the `twist` command |
+| `command` | 3 | the `twist` command; a constant zero in the dodge scene |
 | `joint_pos` / `joint_vel` | 29 each | `joint_pos_rel` / `joint_vel_rel` |
 | `actions` | 29 | the previous action |
 
@@ -115,12 +115,12 @@ makes the same trade.
   upstream's own params, both threat types mixed 50/50) on the 1–4 s interval its play
   config already throws at. Its aim jitter draws uniformly rather than normally, because
   `sample_uniform` is what the build-time RNG spy records.
-- **The dodge scene has no velocity sliders.** The velocity command is still in the
-  vector (it is upstream's term), but it reads **zero**, because that is the deployed
-  dodge mode: on hardware the policy ignores the operator's velocity outright
-  (`deploy/policy/dodge_policy.py`). Upstream's sim-play command is a goal tracker in a
-  ball-avoiding CBF filter, its goal pinned 0.5 m behind the robot so it backpedals, a
-  training-time construct the robot never runs.
+- **The dodge scene has no velocity sliders.** The velocity command keeps its place in
+  the vector, but a constant term ([`terms.zero_command`](terms.py)) fills it with
+  **zero**, because that is the deployed dodge mode: on hardware the policy ignores the
+  operator's velocity outright (`deploy/policy/dodge_policy.py`). Upstream's sim-play
+  command is a goal tracker in a ball-avoiding CBF filter, its goal pinned 0.5 m behind
+  the robot so it backpedals, a training-time construct the robot never runs.
 - **The walk scene is the operator's.** `UniformVelocityCommand` resamples a twist every
   3–8 s, zeroes 5 % of envs into standing and puts a quarter under heading control; the
   browser gets three sliders over the play config's own ranges instead (forward
