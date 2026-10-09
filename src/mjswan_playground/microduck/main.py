@@ -17,12 +17,10 @@ import mujoco
 import numpy as np
 import onnx
 from mjlab.envs.mdp import observations as obs_fns
-from mjlab.envs.mdp import terminations as term_fns
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 from mjswan.envs.mdp.actions import JointPositionActionCfg
 from mjswan.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
-from mjswan.managers.termination_manager import TerminationTermCfg
 from mjswan.mjlab import apply_mjlab_sim_options, build_single_entity_trace_env
 
 from mjswan_playground._deps import ensure_repo
@@ -49,7 +47,7 @@ TRACKED_BODY = "trunk_base"
 BALL_JOINT = "ball_free"
 
 #: mjlab's velocity env, which every upstream env config extends: its simulation settings,
-#: which the XMLs leave out, and its 50 Hz control rate.
+#: which the XMLs leave out, its 50 Hz control rate and its fall termination.
 VELOCITY_ENV = make_velocity_env_cfg()
 CONTROL_DT = VELOCITY_ENV.sim.mujoco.timestep * VELOCITY_ENV.decimation
 
@@ -72,10 +70,6 @@ BALL_RADIUS = 0.035
 #: Upstream licenses the STL meshes (21 of the 26 MB each scene compiles in) under
 #: Creative Commons BY-SA-NC, not the Apache-2.0 its code and the policies carry.
 MODELS_LICENSE = Path(__file__).parent / "LICENSE.3d-models"
-
-#: ``make_velocity_env_cfg``'s fall termination, which upstream drops on the policies
-#: that start or end on the ground.
-FELL_OVER_ANGLE_DEG = 70.0
 
 #: The final command ranges the curricula reach (what a finished policy has seen) as
 #: the sliders that drive them: ``(name, label, range)``.
@@ -475,11 +469,8 @@ def setup_builder() -> mjswan.Builder:
         for policy in entry.policies:
             terminations = {}
             if policy.fell_over:
-                # `make_velocity_env_cfg`'s own, which upstream keeps for this task.
-                terminations["fell_over"] = TerminationTermCfg(
-                    func=term_fns.bad_orientation,
-                    params={"limit_angle": math.radians(FELL_OVER_ANGLE_DEG)},
-                )
+                # Upstream drops it only where a policy starts or ends on the ground.
+                terminations["fell_over"] = VELOCITY_ENV.terminations["fell_over"]
             commands, observations = _mdp(policy, joints)
             scene.add_policy(
                 name=policy.name,
