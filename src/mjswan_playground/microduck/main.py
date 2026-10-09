@@ -46,9 +46,9 @@ ROOT_JOINT = "trunk_base_freejoint"
 TRACKED_BODY = "trunk_base"
 BALL_JOINT = "ball_free"
 
-#: mjlab's velocity env, which every upstream env config extends: its simulation settings,
-#: which the XMLs leave out, its 50 Hz control rate and its fall termination.
+#: mjlab's velocity env, which every upstream env config extends.
 VELOCITY_ENV = make_velocity_env_cfg()
+#: 50 Hz.
 CONTROL_DT = VELOCITY_ENV.sim.mujoco.timestep * VELOCITY_ENV.decimation
 
 #: The keyframe every scene resets to: upstream's STAND2 / ``HOME_FRAME``.

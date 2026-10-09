@@ -29,13 +29,11 @@ ROBOT_XML = "src/mjlab_husky/asset_zoo/robots/skateboard/xmls/g1.xml"
 POLICY_ONNX = "ckpts/test.onnx"
 
 ENTITY = "robot"
-#: `unitree_g1_skater_env_cfg`'s simulation settings, which the XML leaves out, and its
-#: decimation. Restated, since upstream's package needs its own copy of rsl_rl to import.
+#: Copied from `unitree_g1_skater_env_cfg`: importing it needs upstream's own rsl_rl.
 SIM = SimulationCfg(
     mujoco=MujocoCfg(timestep=0.005, iterations=10, ls_iterations=20, ccd_iterations=50)
 )
 DECIMATION = 4
-#: 50 Hz, the rate the policy trained at.
 CONTROL_DT = SIM.mujoco.timestep * DECIMATION
 #: `G1SkaterManagerBasedRlEnvCfg.cycle_time`: seconds per push -> steer cycle.
 CYCLE_TIME = 6.0
@@ -51,14 +49,6 @@ def _resolve_husky_root() -> Path:
         marker=SCENE_XML,
         root_env_var="MJSWAN_HUSKY_ROOT",
     )
-
-
-def _scene_spec(scene_xml: Path) -> mujoco.MjSpec:
-    """The scene with upstream's simulation settings, which mjlab applies to the
-    compiled model at startup and the browser takes from the spec."""
-    spec = mujoco.MjSpec.from_file(str(scene_xml))
-    apply_mjlab_sim_options(spec, SIM)
-    return spec
 
 
 def _robot_joints(model: mujoco.MjModel) -> tuple[list[str], list[float]]:
@@ -118,7 +108,8 @@ def _trace_spec(robot_xml: Path, default_joint_pos: list[float]) -> mujoco.MjSpe
 def setup_builder() -> mjswan.Builder:
     root = _resolve_husky_root()
 
-    spec = _scene_spec(root / SCENE_XML)
+    spec = mujoco.MjSpec.from_file(str(root / SCENE_XML))
+    apply_mjlab_sim_options(spec, SIM)
     model = spec.compile()
     joint_names, default_joint_pos = _robot_joints(model)
 
