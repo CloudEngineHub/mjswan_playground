@@ -12,7 +12,7 @@ The backlog is ranked on two things weighed equally: how much attention a task d
 2. Vet each repository that is not already in the backlog, in `mjswan_playground.registry.ALL_TASKS`, in a PR, or in a `daily-task-skipped` issue:
    - its env config is mjlab's `ManagerBasedRlEnvCfg`, registered with mjlab or buildable from upstream's code for the port to register;
    - a trained policy is public at a pinned source (git, a release asset, the Hub, a public W&B run), and so is a tracking task's clip unless the ONNX carries it;
-   - mjswan can run its actuators: mjlab's own classes, or a subclass that mjswan runs as its base (an `IdealPdActuatorCfg` subclass runs as PD within its effort limit), with the entry naming what that drops;
+   - mjswan can run its actuators: mjlab's own classes, or a subclass that mjswan runs as its base (an `IdealPdActuatorCfg` subclass runs as PD within its effort limit), with the entry naming what that drops; or, for a robot a task here already runs data-only, the actuators that task runs (`microduck`: BAM in training, the MJCF's `<position>` servos in the browser), with the entry naming the training lags the policy needs;
    - the license of everything the build fetches is known. Any license will do, as long as the entry states it: an NC or SA one is the author's to weigh when publishing.
 3. Score each one that passes, and every untried entry again with its stars refreshed:
    - `popularity`: 3 for 1,000 stars or more, or a post that reached a front page or 100k views; 2 for 200 to 999 stars, or a post with thousands of views; 1 for 50 to 199 stars; 0 below 50.

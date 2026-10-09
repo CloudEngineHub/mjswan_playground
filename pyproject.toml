@@ -9,7 +9,7 @@ authors = [{ name = "mjswan Developers" }]
 # pre-built wheel for 3.13+.
 requires-python = ">=3.10, <3.13"
 dependencies = [
-    "mjswan>=0.11.3",
+    "mjswan>=0.11.5",
     "mjlab==1.6.0",
     "torch>=2.9.1",
     "onnx>=1.20.0",
@@ -45,7 +45,6 @@ build-backend = "hatchling.build"
 packages = ["src/mjswan_playground"]
 
 [tool.uv.sources]
-mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "0779c54d46d955f77263b55cff736e129277e4b5" }
 myosuite = { git = "https://github.com/MyoHub/myosuite", branch = "ms3" }
 spinkick-example = { git = "https://github.com/mujocolab/g1_spinkick_example", rev = "f1c4b230bd1a76c44e801e49f079212b6c6487da" }
 
