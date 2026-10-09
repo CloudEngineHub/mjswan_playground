@@ -18,6 +18,7 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 | [`upkie`](src/mjswan_playground/upkie/README.md) | Upkie | A wheeled biped balancing and driving to velocity commands ([mjlab_upkie](https://github.com/MarcDcls/mjlab_upkie)) | <a href="https://mjswan.com/s/BIPHv2M"><img src="assets/upkie.gif" width="200"/></a><br />[mjswan.com/s/BIPHv2M](https://mjswan.com/s/BIPHv2M) |
 | [`duet`](src/mjswan_playground/duet/README.md) | Unitree G1 | Walking and squatting down to a 0.18 m crouch ([DUET](https://github.com/bae-air-lab/DUET)) | <img src="assets/duet.gif" width="200"/><br />WIP |
 | [`jumper`](src/mjswan_playground/jumper/README.md) | Jumper | A crab robot walking while it holds a commanded twist, pitch, roll and body height ([Jumper](https://github.com/KingKongRobotics/jumper)) | <img src="assets/jumper.gif" width="200"/><br />WIP |
+| [`microduck_playground`](src/mjswan_playground/microduck_playground/README.md) | Microduck | Sprinting at up to about 2 m/s with a community running policy ([microduck-playground](https://github.com/Vottivott/microduck-playground)) | <img src="assets/microduck_playground.gif" width="200"/><br />WIP |
 
 ## CLI
 
