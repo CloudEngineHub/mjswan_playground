@@ -406,9 +406,14 @@ _TELEMETRY = """(() => {
                 tm.__rec = true;
                 const evaluate = tm.evaluate.bind(tm);
                 tm.evaluate = (...a) => {
+                    const k = rec.steps.length - 1;
+                    const note = (r) => {
+                        if (r.done) rec.terms.push({ k, reasons: r.reasons });
+                        return r;
+                    };
+                    // Async in mjswan 0.11.5: `done` read off the promise is undefined.
                     const r = evaluate(...a);
-                    if (r.done) rec.terms.push({ k: rec.steps.length - 1, reasons: r.reasons });
-                    return r;
+                    return r instanceof Promise ? r.then(note) : note(r);
                 };
             }
         };
