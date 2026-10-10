@@ -3,6 +3,11 @@ proprioception every policy here reads."""
 
 from __future__ import annotations
 
+import contextlib
+import importlib.util
+import re
+import sys
+import types
 from pathlib import Path
 
 import mjswan
@@ -29,6 +34,8 @@ REPO_COMMIT = "f010ef1cefcad49c05c20a4a78f840af83a643b9"
 ROBOT_DIR = "src/mjlab_microduck/robot/microduck"
 #: The walking model and its STAND keyframe, the pose actions offset from.
 WALK_SCENE_XML = f"{ROBOT_DIR}/scene_walk.xml"
+#: Every collision mesh, plus a floor.
+ALLCOLLISIONS_SCENE_XML = f"{ROBOT_DIR}/scene.xml"
 
 #: Training delays each servo command by 3 to 6 physics steps (15 to 30 ms) through BAM,
 #: which the browser lacks; a first-order filter on each servo stands in for it.
@@ -45,6 +52,130 @@ def resolve_root() -> Path:
         marker=WALK_SCENE_XML,
         root_env_var="MJSWAN_MICRODUCK_PLAYGROUND_ROOT",
     )
+
+
+@contextlib.contextmanager
+def _stub_modules(stubs: dict[str, dict[str, object]]):
+    saved = {name: sys.modules.get(name) for name in stubs}
+    for name, attrs in stubs.items():
+        module = types.ModuleType(name)
+        module.__path__ = []
+        module.__dict__.update(attrs)
+        sys.modules[name] = module
+    try:
+        yield
+    finally:
+        for name, module in saved.items():
+            if module is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = module
+
+
+def load_upstream(
+    root: Path, relpath: str, stubs: dict[str, dict[str, object]] | None = None
+) -> types.ModuleType:
+    """Run one upstream module from the checkout with ``mjlab_microduck`` stubbed out:
+    its package imports BAM and builds mjlab 1.3.0 configs, neither of which loads
+    against this mjlab. ``stubs`` adds or overrides stubbed modules and what they hold.
+    Writes no bytecode into the shared checkout."""
+    constants = {
+        "MICRODUCK_WALK_XML": root / ROBOT_DIR / "robot_walk.xml",
+        "MICRODUCK_ALLCOLLISIONS_XML": root / ROBOT_DIR / "robot_allcollisions.xml",
+        "MICRODUCK_WALK_ROBOT_CFG": types.SimpleNamespace(
+            spec_fn=lambda: mujoco.MjSpec.from_file(str(root / WALK_SCENE_XML))
+        ),
+        "FULL_COLLISION": None,
+        "HOME_FRAME": None,
+        "actuators": None,
+    }
+    all_stubs = {
+        "mjlab_microduck": {},
+        "mjlab_microduck.robot": {},
+        "mjlab_microduck.robot.microduck_constants": constants,
+        **(stubs or {}),
+    }
+    name = "mjlab_microduck." + relpath.removeprefix("src/mjlab_microduck/")
+    spec = importlib.util.spec_from_file_location(
+        name.removesuffix(".py").replace("/", "."), root / relpath
+    )
+    module = importlib.util.module_from_spec(spec)
+    dont_write = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        with _stub_modules(all_stubs):
+            spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = dont_write
+    return module
+
+
+_FOOT_COLLISION = re.compile(r"^(left|right)_foot_collision$")
+
+
+def full_collision(spec: mujoco.MjSpec, robot_body: str = TRACKED_BODY) -> None:
+    """Upstream's ``FULL_COLLISION`` under mjlab 1.3.0, which this mjlab can no longer
+    build: in the robot, only ``*_collision`` geoms collide, at condim 1, and the feet
+    at condim 3, priority 1 and friction 1.
+
+    They also go to group 3, hidden: the hulls ``long_jump_robot`` adds set their class
+    after creation, so they keep group 0 and would be drawn over the visual meshes.
+    """
+    stack = [spec.body(robot_body)]
+    while stack:
+        body = stack.pop()
+        stack.extend(body.bodies)
+        for geom in body.geoms:
+            colliding = geom.name.endswith("_collision")
+            geom.contype = geom.conaffinity = int(colliding)
+            if not colliding:
+                continue
+            geom.group = 3
+            foot = bool(_FOOT_COLLISION.match(geom.name))
+            geom.condim = 3 if foot else 1
+            geom.priority = int(foot)
+            if foot:
+                geom.friction[0] = 1.0
+
+
+_MESH_FIELDS = (
+    "file", "content_type", "scale", "refpos", "refquat", "inertia", "maxhullvert",
+    "smoothnormal", "uservert", "usernormal", "userface", "userfacenormal",
+)  # fmt: skip
+
+
+def own_collision_meshes(spec: mujoco.MjSpec) -> None:
+    """Give each collision geom a mesh no rendered geom shares.
+
+    mjswan's renderer turns the vertices of every mesh a rendered geom (group < 3) uses
+    to three.js's y-up in place, in the model the physics reads, so a collision geom on
+    the same mesh collides with a hull rotated 90 degrees.
+    # ponytail: drop once mjswan copies the vertices before turning them.
+    """
+    rendered = {
+        geom.meshname
+        for geom in spec.geoms
+        if geom.type == mujoco.mjtGeom.mjGEOM_MESH and geom.group < 3
+    }
+    copies: dict[str, str] = {}
+    for geom in spec.geoms:
+        if geom.type != mujoco.mjtGeom.mjGEOM_MESH or geom.meshname not in rendered:
+            continue
+        if not (geom.contype or geom.conaffinity):
+            continue
+        if geom.group < 3:
+            raise ValueError(
+                f"Geom {geom.name!r} is rendered and collides, so mjswan's renderer "
+                "turns the hull it collides with; split it into a visual and a "
+                "collision geom."
+            )
+        if geom.meshname not in copies:
+            source = spec.mesh(geom.meshname)
+            copy = spec.add_mesh(name=f"{geom.meshname}_collision")
+            for field in _MESH_FIELDS:
+                setattr(copy, field, getattr(source, field))
+            copies[geom.meshname] = copy.name
+        geom.meshname = copies[geom.meshname]
 
 
 def hub_policy(repo_id: str, filename: str, revision: str) -> onnx.ModelProto:
@@ -113,13 +244,13 @@ def proprioception(joints: SceneEntityCfg) -> dict[str, ObservationTermCfg]:
     }
 
 
-def servo_action() -> dict[str, JointPositionActionCfg]:
-    """``ctrl = default + action`` into the XML's own ``<position>`` servos."""
+def servo_action(scale: float = 1.0) -> dict[str, JointPositionActionCfg]:
+    """``ctrl = default + scale * action`` into the XML's own ``<position>`` servos."""
     return {
         "joint_pos": JointPositionActionCfg(
             entity_name="",
             actuator_names=(".*",),
-            scale=1.0,
+            scale=scale,
             use_default_offset=True,
         )
     }
