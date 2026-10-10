@@ -1,1 +1,1 @@
-"""KingKong Robotics' jumper crab robot walking with a commanded body posture."""
+"""KingKong Robotics' jumper crab robot, with every policy upstream ships."""

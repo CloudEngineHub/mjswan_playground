@@ -126,7 +126,7 @@ uv run mjswan info dist/<id>      # motions are not listed: read dist/<id>/manif
 
 ## 8. Verify
 
-`make format` and `make test` (the registry and README tests pick up the new id). Then delete this task's checkouts and conversions under `.cache/` and build once more: the build has to fetch everything it needs by itself.
+`make format` and `make test` (the registry and README tests pick up the new id). Then delete this task's checkouts and conversions under `.cache/`, and its Hub downloads under `~/.cache/huggingface/hub/` (`hf_hub_download` caches there), and build once more: the build has to fetch everything it needs by itself.
 
 ## 9. When the gap is mjswan's
 

@@ -19,7 +19,7 @@
   task: 'jumper.posture (upstream''s own registry id; the port registers it with mjlab)'
   policy: tasks/jumper/posture/out/example/actor.onnx (obs 415, actions 20); deploy contract in layout.json beside it, and model_74800.pt
   license: Apache-2.0 for the code, robot assets and checkpoints (LICENSE, NOTICE); the copies vendored under rl/ carry their own (mjlab Apache-2.0, rsl_rl BSD-3-Clause), and NOTICE names the third-party files
-  popularity: '3: 1361 stars (2026-10-07) nine days after it was created; trendshift; posts on X'
+  popularity: '3: 2211 stars (2026-10-09), 1361 on 2026-10-07, created 2026-09-28; trendshift; posts on X'
   ease: '2: no mjswan change; its own registry, a strided history, a gait clock and a posture command to rewrite; physics at 1 kHz and control at 200 Hz'
   notes: >-
     A 22-joint crab robot holding a commanded twist, pitch, roll and body height. Upstream
@@ -44,7 +44,7 @@
   task: Mjlab-Running-Flat-MicroDuck
   policy: Hugging Face HannesVonEssen/microduck-running at 9f45af1f4b04252f3aa1f4c056fa7fa0d4b35e4c, policy.onnx (sha256 007707dd7779b2756ded67c58b2e9f94fe5071794a48c2b5a20d5f8d841efbeb; obs 61, actions 14, 50 Hz; iteration 12195)
   license: Apache-2.0 for the code and every Hugging Face policy; the 3D files, the robot meshes from pollen-robotics/microduck_rl among them, are CC BY-NC-SA 4.0 (LICENSE-HARDWARE, NOTICE), as in the microduck task
-  popularity: '1: 64 stars (2026-10-08)'
+  popularity: '1: 64 stars (2026-10-09)'
   ease: '2: no mjswan change, on microduck''s data-only shape (the XML''s <position> servos in place of BAM), plus the two training lags the policy needs; checked in plain MuJoCo and in the browser'
   notes: >-
     Microduck sprinting at about 2 m/s, a separate task from microduck. Follow
@@ -72,7 +72,7 @@
   task: Mjlab-MultiTarget-Tracking-Flat-Unitree-G1
   policy: deploy/policies/kicks_no_ori.onnx (inputs obs 157, which_motion, time_step; five clips baked in)
   license: MIT; the clips were retargeted from video with PromptHMR and GMR, source videos not stated
-  popularity: '1: 58 stars (2026-10-07); arXiv 2606.26215'
+  popularity: '1: 59 stars (2026-10-09); arXiv 2606.26215'
   ease: '1: several rewrites (a command binding, the which_motion input, five clip rebuilds), and a sub-project that requires Python 3.13 where the playground runs below 3.13'
   notes: >-
     A G1 kicking a commanded target point with one of five kicks. The task lives in the
@@ -80,13 +80,35 @@
     MultiTargetMotionCommandCfg is task-specific and needs a command binding, and the
     extra which_motion input needs its own in_keys and five clip rebuilds.
 
+- id: teleopit
+  repo: https://github.com/BotRunner64/Teleopit
+  commit: f9263865c581802ad531854b8e547e2403a945f3
+  task: General-Tracking-G1 (register_mjlab_task in train_mimic/tasks/tracking/config/registry.py)
+  policy: Hugging Face 12e21/Teleopit-models at 94cf996444fea6894b87c28e86606cd4c2f1408f (tag v0.5.0), checkpoints/track_g1.onnx (inputs obs [1, 167] and obs_history [1, 10, 167]; actions 29)
+  license: Apache-2.0 for the code; MIT for the Hub models and the Hub datasets 12e21/Teleopit-datasets (their cards); the G1 XML from archives/robot_assets.tar.gz on the models repo (GMR's Unitree G1, BSD-3-Clause meshes); the sample BVH clips look like LAFAN1 (CC BY-NC-ND 4.0), so take the clip from the MIT datasets
+  popularity: '1: 195 stars (2026-10-09); mjlab Show and tell #892'
+  ease: '1: a generic extension (the second input is an unflattened 10-frame history, obs_history [1, 10, 167], which mjswan does not feed as 3-D yet) on top of several rewrites: a command binding for its own MotionCommand, a clip rebuilt from an h5 shard, and shims for mjlab==1.4.0'
+  notes: >-
+    A whole-body G1 tracker for teleoperation, BeyondMimic-style, with mjlab's own
+    JointPositionActionCfg and G1 actuators (get_g1_robot_cfg, G1_ACTION_SCALE); 200 Hz
+    physics, decimation 4. The env deletes the XML's actuators and keyframes. The
+    actor_history group has history_length=10 and flatten_history_dim=False and feeds
+    obs_history through a temporal CNN encoder baked into the ONNX: it needs its own
+    in_keys and a 3-D feed, which is the mjswan extension (step 9). MotionCommand reads
+    precomputed h5 shards: pin 12e21/Teleopit-datasets at
+    73e76665a851d39a989044bc162c6d6b496ce854 and convert one motion from
+    data/datasets/pico_record/shard_000.h5 or teleopit_bench_mocap, not the seed/ shards
+    (Bones SEED, terms unverified). Play mode samples from the clip start with no pose or
+    velocity ranges.
+  found: '2026-10-09: mjlab Show and tell #892; 195 stars'
+
 - id: homierl
   repo: https://github.com/Nagi-ovo/mjlab-homierl
   commit: 14f88418aa3d2ae046da4b14dae8135cebff6b05
   task: Mjlab-Homie-Unitree-H1
   policy: Hugging Face Nagi-ovo/HOMIERL-loco, policy.onnx (unverified; pin a revision)
   license: Apache-2.0; reproduces OpenHomie (CC BY-NC-SA 4.0) and reuses its values; the Hub model's license is unverified
-  popularity: '0: 32 stars (2026-10-07)'
+  popularity: '0: 32 stars (2026-10-09)'
   ease: '1: the Hub checkpoint''s task and license are unverified; a command binding, the passive arm action dropped, and shims for mjlab<1.6.0'
   notes: >-
     An H1 walking and squatting to a commanded height while its upper body is disturbed.
@@ -101,7 +123,7 @@
   task: WujiHand_Reorient
   policy: release v2026.9.27 asset wuji-mjlab-v2026.9.27-assets.zip (sha256 de01b29921b69ea38100a29416c324b384905e1ae4ebbfa40d769be948fc2d39), reorient/checkpoints/hand1/policy.onnx (obs 207, actions 20); joint order and default pose in its config.json
   license: Apache-2.0 for the code and checkpoints (the bundle's NOTICE); the hand meshes are MIT (wuji-technology/wuji-description)
-  popularity: '2: 244 stars (2026-10-07); X post on its release (2026-06-02); shown at ICRA'
+  popularity: '2: 247 stars (2026-10-09); X post on its release (2026-06-02); shown at ICRA'
   ease: '0: JointPositionOffsetEMAActionCfg, defined in the repository, smooths its target with an EMA and holds a 0.4 s warmup, which no mjswan action does'
   notes: >-
     A 20-joint Wuji hand turning a cube to commanded orientations. Besides the action
@@ -113,13 +135,48 @@
     config.json.
   found: '2026-10-07: 244 stars, X post on its release, ICRA demo'
 
+- id: rc_wheelleg
+  repo: https://github.com/zeitvex/RC_WheelLeg
+  commit: 1bc9aa5999f2cd13f729dc647ed0b8b5e0879e8e
+  task: Robot-Rough-v0 (05_software/train/rc_mjlab/src/robot/__init__.py)
+  policy: 05_software/train/rc_mjlab/model_6800.onnx in git (obs 53, actions 16; the README's final competition rough-terrain policy)
+  license: MIT for the whole repository (root LICENSE), covering the code, the MJCF and meshes under rc_mjlab/mjcf and the ONNX files; the vendored mjlab copy is Apache-2.0
+  popularity: '1: 142 stars (2026-10-09), created 2026-08-01'
+  ease: '0: JointPositionDelayedLowPassActionCfg and JointVelocityDelayedLowPassActionCfg, defined in the repository (src/robot/mdp/lowpass_actions.py), delay the raw action 0 to 2 steps and low-pass it (5 Hz legs, 15 Hz wheels), which no mjswan action does'
+  notes: >-
+    A 16-DoF wheel-legged quadruped built for ROBOCON: legs under
+    BuiltinPositionActuatorCfg, wheels under BuiltinVelocityActuatorCfg, both mjlab's.
+    200 Hz physics with impratio 100 and an elliptic cone, 50 Hz control. Depends on PyPI
+    mjlab>=1.0.0 with a vendored 1.4.0 copy and overrides mujoco>=3.8.0.dev0.
+    UniformThresholdVelocityCommandCfg needs a command binding; the rough terrain comes
+    from terrains/competition_terrains.py. The training runner is HIM, but the ONNX
+    takes one 53-wide frame. An actuator filter might approximate the low-pass, as
+    microduck_playground does for its command delay; unverified.
+  found: '2026-10-09: GitHub search for mjlab, 142 stars'
+
+- id: vibe
+  repo: https://github.com/lok-i/vibe
+  commit: ed4ee6c581af9a7effcb53ee219d10784a839ca3
+  task: Vibe-Dodge-ConeFast-ImgFeat-Ext (also Repose-BigCubeFloor, PerLoco-OmRe, PerLoco-Grail and Uolm, each ImgFeat-Ext)
+  policy: Hugging Face lkrajan/vibe at b599ddb4478411fa3456a7cd21cd9f0d4951991d (tag v0.1.0), <task>/checkpoint.pt (.pt only; upstream's export-agent writes ONNX, sha256 in release.json)
+  license: BSD-3-Clause for the code; NVIDIA Open Model License for the checkpoints (they adapt a frozen SONIC base); OmniRetarget clips MIT, GRAIL under NVIDIA terms; the Theia-tiny encoder under its own model card
+  popularity: '1: 54 stars (2026-10-09); arXiv 2609.09918 with a project page and live demo'
+  ease: '0: every released policy reads frozen ViT features from a rendered head camera on top of a SONIC base tied to Mocke''s obs and action contract, which only this task would use in mjswan; no ONNX upstream'
+  notes: >-
+    G1 perceptive whole-body control: dodging, cube reorientation, terrain locomotion and
+    loco-manipulation. Pins mjlab==1.4.0 with git dependencies orcs, mocke and an rsl_rl
+    fork; actions are mjlab's JointPositionActionCfg. The browser would need camera
+    rendering, the Theia encoder and the SONIC motion command. The privileged
+    Orcs-*-AdaptSonic twins have no released checkpoints.
+  found: '2026-10-09: GitHub mjlab topic (recently updated), 54 stars'
+
 - id: inhand
   repo: https://github.com/Msornerrrr/in-hand-rotation-mjlab
   commit: 14004fe3bd5ee2ed51d8b7348ca5da34338c7f1e
   task: Mjlab-Leap-Left-Custom-HandCube-Rotate
   policy: ckpts/leap_left_custom_model_4900.pt (convert at build time)
   license: Apache-2.0; the LEAP hand MJCF is MIT
-  popularity: '0: 34 stars (2026-10-07)'
+  popularity: '0: 34 stars (2026-10-09)'
   ease: '0: JointPositionDeltaActionCfg, defined in the repository, integrates its target, which no mjswan action does'
   notes: >-
     A LEAP hand spinning a cube in its palm. Written for mjlab 1.1 (DelayedActuatorCfg,
@@ -134,7 +191,7 @@
   task: Mini2S-Walk-Flat
   policy: none upstream; Hugging Face robomotic/XGO is a third party's (unverified)
   license: Apache-2.0 for code and robot models; the third-party checkpoint's license is unverified
-  popularity: '0: 17 stars (2026-10-07)'
+  popularity: '0: 17 stars (2026-10-09)'
   ease: '0: no policy upstream, and the third-party checkpoint''s license is unverified'
   notes: >-
     The XGO Mini2S, a palm-sized robot dog, walking to velocity commands. mjlab==1.2.0:
