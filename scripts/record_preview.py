@@ -164,6 +164,8 @@ PREVIEWS: dict[str, Preview] = {
         orbit=140,
         crop="719:526:121:68",
     ),
+    # No steps: Forward defaults to 1.0, so the duck is already running.
+    "microduckpg": Preview(orbit=140, crop="719:526:121:68"),
     # Lowered camera: from the authored view a standing body is foreshortened into
     # mostly floor. 4.84 s is the 484-frame clip, so the GIF is exactly one episode.
     "musclemimic": Preview(
