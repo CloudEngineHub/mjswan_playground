@@ -261,10 +261,11 @@ def control_rate(app_dir: Path) -> float:
 
 
 def _labelled_input(page, label: str, selector: str) -> str:
-    """CSS id of the `selector` input on the panel row labelled `label`.
+    """CSS selector, by id, of the `selector` input on the panel row labelled `label`.
 
     Mantine generates those ids, so they are read back off the DOM (and assigned when the
-    widget has none) rather than guessed.
+    widget has none) rather than guessed. An attribute selector, as the viewer controls'
+    ids (`viewer:Scene/Camera/Track camera`) are no valid `#id`.
     """
     element_id = page.evaluate(
         """([label, selector]) => {
@@ -280,7 +281,7 @@ def _labelled_input(page, label: str, selector: str) -> str:
     )
     if not element_id:
         raise SystemExit(f"no {selector} on the panel row labelled {label!r}")
-    return f"#{element_id}"
+    return f'[id="{element_id}"]'
 
 
 def _apply(page, step: tuple) -> None:
