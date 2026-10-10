@@ -443,11 +443,11 @@ stands 106 (41%). A browser-order replay of the built scene agrees over 256 atte
 reach the top, 82% hand off, 48% stand, 14% fall. The usual misses are in the get-up:
 the duck lands on its back across the desk edge and wriggles onto the desktop over several
 seconds, then the get-up leaves it lying there or rolls it back over the edge. The first
-attempt after picking Climb is seeded and always the same: it hands off at 21.8 s and
-stands from 24 s on, which is what the preview films. Get up stands from its recorded
-handoff within 3 s and holds; replayed from all 50 of upstream's recorded handoffs, it
-stands in 24 and falls in 4. The panel's "Servo gearbox friction" box switches the
-friction off, which leaves most attempts draped over the desk edge.
+attempt after picking Climb is seeded and always the same: it tops the ladder at about
+8 s, which the preview films, hands off at 21.8 s and stands from 24 s on. Get up stands
+from its recorded handoff within 3 s and holds; replayed from all 50 of upstream's
+recorded handoffs, it stands in 24 and falls in 4. The panel's "Servo gearbox friction"
+box switches the friction off, which leaves most attempts draped over the desk edge.
 
 ## Chimney Climb
 

@@ -20,8 +20,10 @@ Two things here are not obvious:
 
 Adding a task: register it in `mjswan_playground.registry`, then add a `Preview` below.
 The defaults film whatever the app opens with; `steps` drives the control panel first (the
-same widgets a visitor would touch), `orbit` swings the camera, `crop` frames it. Dial a
-new one in with `--shot`, which stops after the setup and writes the framing as a PNG:
+same widgets a visitor would touch), `orbit` swings the camera, `crop` frames it. A tuple
+of them, each opening its own `scene`, cuts those scenes into one GIF. Dial a new one in
+with `--shot`, which stops after the setup and writes the framing as a PNG (`--scene`
+picks the cut):
 
     uv run --group previews python scripts/record_preview.py husky --shot /tmp/f.png \\
         --orbit 150 --crop 960:702:0:0    # the whole frame, to find the crop from
@@ -92,6 +94,7 @@ class Preview:
     """How one task's preview is filmed.
 
     Attributes:
+        scene: Scene id to open, the app's ``?scene=``; empty opens the first.
         steps: Control-panel actions, applied before the panel is hidden. Each is one of
             ``("select", <input id>, <option>)`` for the scene/policy/motion pickers,
             ``("number", <slider label>, <value>)``, ``("checkbox", <label>, <bool>)``,
@@ -113,13 +116,15 @@ class Preview:
             centres the robot and drops the empty sky above it.
         seconds: Clip length. 4 s is 60 frames at 15 fps.
         settle: Seconds between finishing the setup and rolling, so camera damping and any
-            reset from a policy switch are done before the first frame.
+            reset from a policy switch are done before the first frame. Without
+            `from_reset`, also about how far into the scene's run the clip starts.
         upright: Fail when the root tips past `MAX_TILT_DEG`. Off only for a clip that
             leaves upright on purpose, a flip.
         ok_terminations: Terminations besides `time_out` the task itself plays out, as a
             dodgeball hit ends an episode.
     """
 
+    scene: str = ""
     steps: tuple[tuple, ...] = ()
     motions: tuple[str, ...] = ()
     query: str = ""
@@ -138,7 +143,7 @@ class Preview:
 #: that is, is worth measuring rather than deriving: the scene's authored azimuth is in its
 #: `manifest.json`, but whether a robot spawns facing +x or -x is the task's business.
 #: `--shot` settles it in one run.
-PREVIEWS: dict[str, Preview] = {
+PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
     # Push Speed defaults to 1.0, so the skater is already riding.
     "husky": Preview(orbit=150, crop="719:526:121:127"),
     # `idle_02` opens the motion list and stands still, so the preview picks its own two:
@@ -164,8 +169,55 @@ PREVIEWS: dict[str, Preview] = {
         orbit=140,
         crop="719:526:121:68",
     ),
-    # No steps: Forward defaults to 1.0, so the duck is already running.
-    "microduckpg": Preview(orbit=140, crop="719:526:121:68"),
+    # One cut per experiment, framed roughly as upstream's own videos are: eye level and
+    # close on the walkers, side-on to the ladder and the jumps, into the slot.
+    "microduckpg": (
+        Preview(
+            scene="running", orbit=140, tilt=10, crop="600:439:180:96", seconds=2.5
+        ),
+        # At full span, which it reaches at about 22 s.
+        Preview(
+            scene="swing", settle=24, crop="672:491:144:70", upright=False, seconds=3.0
+        ),
+        Preview(
+            scene="basketball", orbit=100, tilt=8, crop="540:395:210:200", seconds=2.0
+        ),
+        Preview(
+            scene="stilts_50_cm", orbit=110, tilt=6, crop="860:629:50:20", seconds=2.5
+        ),
+        # The seeded first attempt over the top of the ladder, which it tops at about 8 s.
+        Preview(
+            scene="desk_climb",
+            orbit=45,
+            crop="720:526:120:40",
+            settle=5.6,
+            upright=False,
+            seconds=3.0,
+        ),
+        # The platform coming into view at about 17 s.
+        Preview(
+            scene="chimney_climb",
+            tilt=15,
+            crop="576:421:192:105",
+            settle=16.1,
+            upright=False,
+            seconds=3.0,
+        ),
+        Preview(
+            scene="long_jump", crop="624:456:170:120", from_reset=True, seconds=2.0
+        ),
+        # A still camera, wide enough for the platform's top and the mat.
+        Preview(
+            scene="backflip",
+            steps=(("checkbox", "Track camera", False), ("number", "FOV (°)", 70)),
+            orbit=-55,
+            tilt=-15,
+            crop="575:420:192:262",
+            from_reset=True,
+            upright=False,
+            seconds=2.0,
+        ),
+    ),
     # Lowered camera: from the authored view a standing body is foreshortened into
     # mostly floor. 4.84 s is the 484-frame clip, so the GIF is exactly one episode.
     "musclemimic": Preview(
@@ -457,6 +509,8 @@ class Segment:
     first filmed frame on, the clip's `filmed` steps first and then the run after it."""
 
     next_index: int
+    #: The recipe it was filmed with.
+    preview: Preview = Preview()
     motion: str | None = None
     first_index: int = 0
     seconds: float = 0.0
@@ -469,6 +523,12 @@ class Segment:
     fps: float = 0.0
     #: Screenshots of the run after the clip, one per `SHEET_EVERY` seconds.
     after: list[bytes] = dataclasses.field(default_factory=list)
+
+    @property
+    def label(self) -> str:
+        """`` [<motion or scene>]``, whichever picked it, for the printed output."""
+        name = self.motion or self.preview.scene
+        return f" [{name}]" if name else ""
 
 
 def _hook_runtime(route, hooked: list[bool]) -> None:
@@ -507,7 +567,9 @@ def film(
     from playwright.sync_api import sync_playwright
 
     seconds = preview.seconds if seconds is None else seconds
-    segment = Segment(next_index=start_index, motion=motion, first_index=start_index)
+    segment = Segment(
+        next_index=start_index, preview=preview, motion=motion, first_index=start_index
+    )
     checked = check_seconds is not None
 
     with sync_playwright() as pw:
@@ -644,9 +706,8 @@ def film(
     )
     if segment.fps < FPS:
         slow += f"  ** fewer than {FPS} frames per second: frames repeat **"
-    label = f" [{motion}]" if motion else ""
     print(
-        f"  {len(frames)} frames captured{label}, "
+        f"  {len(frames)} frames captured{segment.label}, "
         f"{segment.rate:.1f} of {expected_rate:.0f} steps/s{slow}"
     )
 
@@ -759,34 +820,34 @@ def _ffmpeg() -> str:
     return imageio_ffmpeg.get_ffmpeg_exe()
 
 
-def to_gif(frames_dir: Path, out: Path, crop: str) -> None:
-    """Crop, downscale and quantize the sequence into a looping 15 fps GIF.
+def to_gif(frames_dir: Path, out: Path, segments: list[Segment]) -> None:
+    """Crop each segment by its own recipe, downscale, join and quantize the sequence
+    into a looping 15 fps GIF.
 
     32 colours without dithering: the scene is mostly one blue and one white, and
     dithering noise costs a megabyte without showing at the 200 px the README renders.
+    Cuts of several scenes get 64, or the palette shifts their colours. One palette, not
+    one per scene: ffmpeg encodes a frame off the first palette whole, not as a diff.
     """
     out.parent.mkdir(parents=True, exist_ok=True)
-    filters = (
-        f"crop={crop},scale={WIDTH}:{HEIGHT}:flags=lanczos,split[a][b];"
-        "[a]palettegen=max_colors=32:stats_mode=full[p];"
+    colors = 32 if len({s.preview.scene for s in segments}) == 1 else 64
+    inputs, filters = [], ""
+    for i, s in enumerate(segments):
+        inputs += ["-framerate", str(FPS), "-start_number", str(s.first_index)]
+        inputs += ["-i", str(frames_dir / "seq_%04d.png")]
+        filters += (
+            f"[{i}:v]trim=end_frame={s.next_index - s.first_index},crop={s.preview.crop},"
+            f"scale={WIDTH}:{HEIGHT}:flags=lanczos,setsar=1[v{i}];"
+        )
+    filters += (
+        "".join(f"[v{i}]" for i in range(len(segments)))
+        + f"concat=n={len(segments)},split[a][b];"
+        f"[a]palettegen=max_colors={colors}:stats_mode=full[p];"
         "[b][p]paletteuse=dither=none:diff_mode=rectangle"
     )
     subprocess.run(
-        [
-            _ffmpeg(),
-            "-v",
-            "error",
-            "-framerate",
-            str(FPS),
-            "-i",
-            str(frames_dir / "seq_%04d.png"),
-            "-vf",
-            filters,
-            "-loop",
-            "0",
-            "-y",
-            str(out),
-        ],
+        [_ffmpeg(), "-v", "error", *inputs, "-filter_complex", filters]
+        + ["-loop", "0", "-y", str(out)],
         check=True,
     )
     print(f"  {_shown(out)}  {out.stat().st_size / 1e6:.1f} MB")
@@ -815,7 +876,7 @@ def crop_png(path: Path, crop: str) -> None:
 
 
 def contact_sheet(
-    gif: Path, crop: str, segments: list[Segment], marks: list[set[int]], out: Path
+    gif: Path, segments: list[Segment], marks: list[set[int]], out: Path
 ) -> None:
     """Tile every frame of `gif`, then each segment's run after the clip, into `out`.
 
@@ -833,15 +894,15 @@ def contact_sheet(
 
     with Image.open(gif) as image:
         clip = [f.convert("RGB").resize((w, h)) for f in ImageSequence.Iterator(image)]
-    cw, ch, cx, cy = map(int, crop.split(":"))
     for segment, marked in zip(segments, marks):
-        label = f" [{segment.motion}]" if segment.motion else ""
+        label = segment.label
         frames = range(segment.first_index, min(segment.next_index, len(clip)))
         add(
             f"clip{label}",
             [(clip[i], f"{i / FPS:.2f}s", i in marked) for i in frames],
         )
         if segment.after:
+            cw, ch, cx, cy = map(int, segment.preview.crop.split(":"))
             shots = [
                 Image.open(io.BytesIO(png))
                 .convert("RGB")
@@ -890,7 +951,6 @@ def contact_sheet(
 
 def report(
     task_id: str,
-    preview: Preview,
     segments: list[Segment],
     control_dt: float,
     expected_rate: float,
@@ -903,9 +963,8 @@ def report(
     failures: list[str] = []
     marks: list[set[int]] = []
     for segment in segments:
-        found = check_run(segment, preview, control_dt, expected_rate, per_step)
-        label = f"[{segment.motion}] " if segment.motion else ""
-        failures += [label + message for _, message in found]
+        found = check_run(segment, segment.preview, control_dt, expected_rate, per_step)
+        failures += [f"{segment.label.strip()} {m}".lstrip() for _, m in found]
         marked = set()
         for k in (k for ks, _ in found for k in ks):
             if k < segment.filmed:
@@ -917,7 +976,7 @@ def report(
         marks.append(marked)
 
     sheet = out_dir / f"{task_id}.png"
-    contact_sheet(gif, preview.crop, segments, marks, sheet)
+    contact_sheet(gif, segments, marks, sheet)
     summary = {
         "task": task_id,
         "passed": not failures,
@@ -926,6 +985,7 @@ def report(
         "sheet": str(sheet),
         "segments": [
             {
+                "scene": s.preview.scene or None,
                 "motion": s.motion,
                 "seconds": s.seconds,
                 "filmed_steps": s.filmed,
@@ -985,6 +1045,9 @@ def main() -> None:
         "--motion", help="film this motion alone, instead of the recipe's `motions`"
     )
     parser.add_argument(
+        "--scene", help="film this scene's cut alone (the defaults if it has none)"
+    )
+    parser.add_argument(
         "--keep-frames", type=Path, help="also keep the PNG sequence here"
     )
     parser.add_argument(
@@ -1040,7 +1103,13 @@ def main() -> None:
             )
             if value is not None
         }
-        preview = dataclasses.replace(PREVIEWS.get(task_id, Preview()), **overrides)
+        recipe = PREVIEWS.get(task_id, Preview())
+        cuts = recipe if isinstance(recipe, tuple) else (recipe,)
+        if args.scene:
+            cuts = tuple(c for c in cuts if c.scene == args.scene) or (
+                Preview(scene=args.scene),
+            )
+        cuts = tuple(dataclasses.replace(cut, **overrides) for cut in cuts)
 
         try:
             app_dir = ensure_built(task_id, args.dist)
@@ -1050,53 +1119,59 @@ def main() -> None:
             failed.append(task_id)
             continue
         server = serve(app_dir)
-        query = f"?{preview.query}" if preview.query else ""
-        url = f"http://127.0.0.1:{server.server_address[1]}/{query}"
+
+        def url(cut: Preview) -> str:
+            query = "&".join(
+                q for q in (cut.scene and f"scene={cut.scene}", cut.query) if q
+            )
+            return f"http://127.0.0.1:{server.server_address[1]}/?{query}"
+
         try:
             if args.shot:
+                cut = cuts[0]
                 print(
-                    f"[{task_id}] framing {url} "
-                    f"(orbit {preview.orbit:g}, tilt {preview.tilt:g}, crop {preview.crop})"
+                    f"[{task_id}] framing {url(cut)} "
+                    f"(orbit {cut.orbit:g}, tilt {cut.tilt:g}, crop {cut.crop})"
                 )
                 film(
-                    url,
-                    preview,
+                    url(cut),
+                    cut,
                     shot=args.shot,
-                    motion=preview.motions[0] if preview.motions else None,
+                    motion=cut.motions[0] if cut.motions else None,
                     **browser,
                 )
-                crop_png(args.shot, preview.crop)
+                crop_png(args.shot, cut.crop)
                 print(f"  {args.shot}")
                 continue
-            print(f"[{task_id}] filming {preview.seconds:g}s of {url}")
+            print(f"[{task_id}] filming {sum(c.seconds for c in cuts):g}s")
             rate = control_rate(app_dir)
             gif = args.out_dir / f"{task_id}.gif"
             with tempfile.TemporaryDirectory() as tmp:
                 frames_dir = (
                     args.keep_frames / task_id if args.keep_frames else Path(tmp)
                 )
-                # One segment per motion, appended into one sequence; a task without
-                # `motions` is a single segment of whatever the setup left running.
-                motions = preview.motions or (None,)
+                # One segment per cut and motion, appended into one sequence; a cut
+                # without `motions` is a single segment of whatever its setup left running.
                 segments: list[Segment] = []
-                for motion in motions:
-                    segments.append(
-                        film(
-                            url,
-                            preview,
-                            frames_dir=frames_dir,
-                            expected_rate=rate,
-                            motion=motion,
-                            seconds=preview.seconds / len(motions),
-                            start_index=segments[-1].next_index if segments else 0,
-                            check_seconds=check_seconds,
-                            **browser,
+                for cut in cuts:
+                    motions = cut.motions or (None,)
+                    for motion in motions:
+                        segments.append(
+                            film(
+                                url(cut),
+                                cut,
+                                frames_dir=frames_dir,
+                                expected_rate=rate,
+                                motion=motion,
+                                seconds=cut.seconds / len(motions),
+                                start_index=segments[-1].next_index if segments else 0,
+                                check_seconds=check_seconds,
+                                **browser,
+                            )
                         )
-                    )
-                to_gif(frames_dir, gif, preview.crop)
+                to_gif(frames_dir, gif, segments)
             if check_seconds is not None and report(
                 task_id,
-                preview,
                 segments,
                 1 / rate,
                 rate,
