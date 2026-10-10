@@ -15,7 +15,7 @@ _TASKS: dict[str, str] = {
     "husky": "mjswan_playground.husky.main",
     "jumper": "mjswan_playground.jumper.main",
     "microduck": "mjswan_playground.microduck.main",
-    "microduck_playground": "mjswan_playground.microduck_playground.main",
+    "microduckpg": "mjswan_playground.microduckpg.main",
     "musclemimic": "mjswan_playground.musclemimic.main",
     "pacman": "mjswan_playground.pacman.main",
     "spinkick": "mjswan_playground.spinkick.main",

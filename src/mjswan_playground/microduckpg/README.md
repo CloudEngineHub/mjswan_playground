@@ -1,6 +1,6 @@
-# Microduck Playground (`microduck_playground`)
+# Microduck Playground (`microduckpg`)
 
-<img src="../../../assets/microduck_playground.gif" width="480" alt="Microduck Playground preview"/>
+<img src="../../../assets/microduckpg.gif" width="480" alt="Microduck Playground preview"/>
 
 Source: https://github.com/Vottivott/microduck-playground (Apache-2.0, **3D files
 CC BY-NC-SA 4.0**, see [License](#license)) ·
@@ -25,11 +25,11 @@ Every experiment microduck-playground publishes a policy for, on the 25 cm Micro
 ## Run
 
 ```sh
-uv run msp run microduck_playground
+uv run msp run microduckpg
 ```
 
 The first build clones microduck-playground into `.cache/` at a pinned commit (or reads
-the checkout `MJSWAN_MICRODUCK_PLAYGROUND_ROOT` points at) and downloads each policy from
+the checkout `MJSWAN_MICRODUCKPG_ROOT` points at) and downloads each policy from
 the Hub at a pinned revision. Each experiment is a module beside `main.py`, listed in
 `EXPERIMENTS` in the order the scenes appear.
 

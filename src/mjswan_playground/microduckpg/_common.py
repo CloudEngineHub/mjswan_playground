@@ -50,7 +50,7 @@ def resolve_root() -> Path:
         url=REPO_URL,
         commit=REPO_COMMIT,
         marker=WALK_SCENE_XML,
-        root_env_var="MJSWAN_MICRODUCK_PLAYGROUND_ROOT",
+        root_env_var="MJSWAN_MICRODUCKPG_ROOT",
     )
 
 
