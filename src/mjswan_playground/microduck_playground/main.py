@@ -5,10 +5,29 @@ from __future__ import annotations
 
 import mjswan
 
-from . import _common, running
+from . import (
+    _common,
+    backflip,
+    basketball,
+    chimney,
+    desk_climb,
+    long_jump,
+    running,
+    stilts,
+    swing,
+)
 
 #: In the order the scenes are listed.
-EXPERIMENTS = (running,)
+EXPERIMENTS = (
+    running,
+    swing,
+    basketball,
+    stilts,
+    desk_climb,
+    chimney,
+    long_jump,
+    backflip,
+)
 
 
 def setup_builder() -> mjswan.Builder:

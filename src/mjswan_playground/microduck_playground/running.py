@@ -37,12 +37,13 @@ def _scene_spec(
     root: Path, stand_pose: dict[str, float], *, tracing: bool = False
 ) -> mujoco.MjSpec:
     """``scene_walk.xml``, the model the running task trains on, with mjlab's velocity
-    sim settings and the servo filters; ``tracing`` leaves both out, as nothing traced
-    reads them."""
+    sim settings, the servo filters and the collision mesh copies; ``tracing`` leaves
+    them out, as nothing traced reads them."""
     spec = mujoco.MjSpec.from_file(str(root / _common.WALK_SCENE_XML))
     if not tracing:
         apply_mjlab_sim_options(spec, VELOCITY_ENV.sim)
         _common.filter_servos(spec)
+        _common.own_collision_meshes(spec)
     _common.set_only_keyframe(spec, stand_pose, (0, 0, STAND_HEIGHT, 1, 0, 0, 0))
     return spec
 
