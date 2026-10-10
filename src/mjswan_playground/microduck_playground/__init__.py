@@ -1,1 +1,1 @@
-"""Microduck Playground: microduck sprinting with the community running policy."""
+"""Microduck Playground: every experiment of the community Microduck playground."""

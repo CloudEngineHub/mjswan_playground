@@ -39,8 +39,8 @@ BODY_COMMAND = ((DROP - 0.7) / 0.2, -1.0, 0.0, 0.0, 0.0, 0.0)
 #: behind a 3 to 8 cm edge distance, 11.8 cm above the platform top, facing -x.
 SPAWN_X = -(0.055 + 0.02)
 SPAWN_DZ = 0.118
-#: Longer than running's 30 ms, which lands the flip as well but then wobbles off the
-#: mat within 12 s in about half the starts; at 45 ms one in ten.
+#: Longer than ``_common.SERVO_FILTER_S``: at 30 ms about half the landings wobble off
+#: the mat within 12 s, at 45 ms one in ten.
 SERVO_FILTER_S = 0.045
 #: The release render's length. The start is fixed, so each episode is the same flip.
 EPISODE_S = 12.0
@@ -88,7 +88,8 @@ def _scene_spec(
 ) -> mujoco.MjSpec:
     """``scene.xml`` (every collision mesh and a floor) with ``long_jump_robot``'s hull
     on each visible part, mjlab's velocity sim settings, the servo filters and the stage;
-    ``tracing`` leaves out the last three, as nothing traced reads them."""
+    ``tracing`` leaves out the last three and the mesh copies, as nothing traced reads
+    them."""
     robot = _common.load_upstream(root, ROBOT_PY)
     stage = _common.load_upstream(root, STAGE_PY)
     spec = mujoco.MjSpec.from_file(str(root / _common.ALLCOLLISIONS_SCENE_XML))

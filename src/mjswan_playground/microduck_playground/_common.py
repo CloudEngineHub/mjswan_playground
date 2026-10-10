@@ -150,8 +150,8 @@ def own_collision_meshes(spec: mujoco.MjSpec) -> None:
     mjswan's renderer turns the vertices of every mesh a rendered geom (group < 3) uses
     to three.js's y-up in place, in the model the physics reads, so a collision geom on
     the same mesh collides with a hull rotated 90 degrees.
-    # ponytail: drop once mjswan copies the vertices before turning them.
     """
+    # ponytail: drop once mjswan copies the vertices before turning them.
     rendered = {
         geom.meshname
         for geom in spec.geoms

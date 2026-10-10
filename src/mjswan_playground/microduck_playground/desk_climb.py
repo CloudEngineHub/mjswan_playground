@@ -77,9 +77,8 @@ GETUP_KP_RATIO = 0.8
 #: mjswan's recurrent carry, ``adapt_hx``.
 CARRY = 128
 
-#: Training's 3 to 6 physics step servo delay (15 to 30 ms) as a filter, half of
-#: ``_common.SERVO_FILTER_S``: from 22.5 ms on, the dive off the top tread lands short of
-#: the desk.
+#: Half of ``_common.SERVO_FILTER_S``: from 22.5 ms on, the dive off the top tread lands
+#: short of the desk.
 SERVO_FILTER_S = 0.015
 #: The XL330 friction model upstream's ``BamActuator`` trains with, ``params/xl330/m6.json``
 #: in Rhoban/bam at 62bd8ce (the commit upstream's ``uv.lock`` pins), and the stiffer

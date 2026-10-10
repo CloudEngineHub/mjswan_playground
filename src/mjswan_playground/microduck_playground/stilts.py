@@ -65,8 +65,8 @@ TWIST = mjswan.ui_command(
     ]
 )
 
-#: Training's servo delay as a filter, as ``_common.SERVO_FILTER_S`` but 5 ms shorter:
-#: every height walks with 2.5 to 30 ms, and the 1.4 m policy falls from 35 ms.
+#: Shorter than ``_common.SERVO_FILTER_S``: every height walks at 2.5 to 30 ms, and the
+#: 1.4 m policy falls from 35 ms.
 SERVO_FILTER_S = 0.025
 #: BAM's ``BamActuator`` (bam/mjlab.py) stiffens each servo's friction constraint, as
 #: MuJoCo Warp has no noslip solver.
@@ -126,8 +126,8 @@ def _scene_spec(
 
 def add_scenes(project: mjswan.ProjectHandle, root: Path) -> None:
     stand_pose = _stand_pose(root / _common.WALK_SCENE_XML)
-    # One for every height: the traced terms read only the joints and the root, which
-    # the stilts leave alone, and each env holds a compiled mujoco_warp model.
+    # One trace env for every height: the traced terms read only the joints and the
+    # root, which the stilts leave alone, and each env holds a compiled mujoco_warp model.
     trace_env = build_single_entity_trace_env(
         partial(_scene_spec, root, stand_pose, HEIGHTS_CM[0], tracing=True),
         entity_name=ENTITY,

@@ -39,9 +39,8 @@ PIT_HEIGHT = 0.06
 
 
 def course(env: Any, *, gap: float, drop: float, **_) -> torch.Tensor:
-    """``pj_command_obs``, ``[gap, drop, 0, 0, 0, 0] / 0.3`` in the body-command slot.
-
-    All the blind policy knows of the course."""
+    """``pj_command_obs``, ``[gap, drop, 0, 0, 0, 0] / 0.3``: all the blind policy knows
+    of the course."""
     out = torch.zeros(env.num_envs, 6, device=env.device)
     out[:, 0] = gap / COURSE_SCALE
     out[:, 1] = drop / COURSE_SCALE

@@ -80,10 +80,8 @@ def _scene_spec(
     and the servo stand-ins; ``tracing`` leaves those and the mesh copies out.
 
     Collisions stay as the XML has them, not ``_common.full_collision``: mjlab 1.3.0's
-    ``FULL_COLLISION`` disables the geoms it does not match by looking their names up,
-    and ``""`` finds one visual geom, so this XML's unnamed hulls (trunk, hips, legs,
-    jaw) kept colliding in training. The pump presses each leg against the trunk about a
-    third of the time.
+    ``FULL_COLLISION`` matches geoms by name, so this XML's unnamed hulls (trunk, hips,
+    legs, jaw) kept colliding in training, and the pump presses the legs on the trunk.
     """
     constants = _upstream(root)
     spec = constants.get_swing_spec()

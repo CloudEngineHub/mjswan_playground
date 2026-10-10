@@ -50,8 +50,7 @@ BALL_POSE = (0.0, 0.0, BALL_RADIUS + 0.001, 1.0, 0.0, 0.0, 0.0)
 ROOT_POSE = (0.0, 0.0, 2 * BALL_RADIUS + ROOT_HEIGHT + 0.003, 1.0, 0.0, 0.0, 0.0)
 
 #: Shorter than ``_common.SERVO_FILTER_S``: under upstream's eval pushes the balance
-#: holds from 10 to 20 ms, mostly fails at 30 ms, and from 40 ms topples within seconds
-#: even unpushed.
+#: holds at 10 to 20 ms and mostly fails from 30 ms.
 SERVO_FILTER_S = 0.02
 
 #: The play env's twist ranges.
