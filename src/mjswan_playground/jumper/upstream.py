@@ -1,5 +1,4 @@
-"""The jumper checkout: pinned clone, its posture task registered with mjlab, each
-policy's deploy contract, and the edits every play config needs."""
+"""The pinned jumper checkout, its deploy contracts, and shared play-config edits."""
 
 from __future__ import annotations
 
@@ -41,13 +40,9 @@ def contract(root: Path, task: str) -> dict:
 
 
 def import_module(root: Path, module: str) -> Any:
-    """Import one of upstream's modules.
-
-    Upstream keeps its own registry, so nothing reaches mjlab's on import. Its tasks
-    import themselves as top-level ``tasks`` and ``controller`` from the root, and
-    ``mjrl`` from ``rl/``. That directory also vendors mjlab and rsl_rl, so it goes
-    last on ``sys.path``, behind the installed copies.
-    """
+    """Import an upstream module, with the root first on ``sys.path`` for its top-level
+    ``tasks`` and ``controller``, and ``rl/`` (``mjrl``) last, behind the installed
+    mjlab and rsl_rl it also vendors."""
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
     if str(root / "rl") not in sys.path:
@@ -56,8 +51,7 @@ def import_module(root: Path, module: str) -> Any:
 
 
 def play_env_cfg(root: Path, task: str) -> Any:
-    """``jumper.<task>``'s play config, without the ToF sensor play adds for its viewer
-    alone; no term reads it."""
+    """``jumper.<task>``'s play config, without the ToF sensor only its viewer draws."""
     env_cfg = import_module(root, f"tasks.jumper.{task}.env_cfg").env_cfg(play=True)
     env_cfg.scene.sensors = tuple(s for s in env_cfg.scene.sensors if s.name != "tof")
     return env_cfg
@@ -105,8 +99,7 @@ def unstride(env_cfg: Any) -> dict[str, tuple[int, ...]]:
 
 
 def drop_training_terms(env_cfg: Any) -> None:
-    """Drop what only training reads: the critic, the rewards, the metrics and the
-    curricula, several of which read state the browser does not keep."""
+    """Drop training-only terms, some of which read state the browser does not keep."""
     env_cfg.observations = {"actor": env_cfg.observations["actor"]}
     env_cfg.rewards = {}
     env_cfg.metrics = {}

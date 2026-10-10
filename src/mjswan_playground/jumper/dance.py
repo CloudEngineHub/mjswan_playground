@@ -1,12 +1,9 @@
 """Upstream's dances and gestures, each policy on the clip it was trained to track.
 
-Upstream's tracking tasks read mjlab's ``MotionCommand``: the frame index, as a phase;
-the reference at that frame and 2, 5 and 10 control steps ahead; and the anchor's tilt.
-mjswan plays a ``MotionCommand`` natively and serves neither the index nor frames
-ahead, so the clip becomes a traced command term: its tables are constants of the
-command graph, which writes the rows the policy observes as state fields. The
-observation and termination terms are restated over those fields, and a reset event
-writes the clip's first frame where ``MotionCommand`` would.
+mjswan's native ``MotionCommand`` serves neither the frame index nor the frames ahead
+that upstream observes, so the clip is a traced command: its tables are graph constants
+and the rows the terms read are state fields. The observations and terminations are
+restated over those fields, and a reset event writes the clip's first frame.
 """
 
 from __future__ import annotations
@@ -28,8 +25,7 @@ from mjswan import CommandBinding, register_command
 from . import servos, upstream
 
 SCENE_ID = "Jumper-Dance"
-#: Each policy's upstream task, in the order the scene lists them: the short gestures
-#: first, the default among them.
+#: Each policy's upstream task, in the order the scene lists them.
 POLICIES = {
     "Hello": "gesture_hello",
     "Bow": "gesture_bow",

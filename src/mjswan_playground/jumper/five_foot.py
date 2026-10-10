@@ -1,7 +1,6 @@
-"""Upstream's five-leg walk, the left-front arm carried as a claw, as the browser runs it.
+"""Upstream's five-leg walk, the left-front leg carried folded as a claw.
 
-``jumper.five_foot`` walks on five legs and carries the left-front leg folded with its
-claw open: an event writes that pose and its position target each reset, and in play an
+An event writes the carried pose and its position target each reset, and in play an
 operator's trigger drives the claw. The carried joints get biased position actuators
 (:func:`servos.hold_unactuated`), and the claw stays open as untouched play leaves it.
 The body-pose command is restated over ``sample_uniform`` and ``torch.where``.
@@ -48,8 +47,7 @@ def _resample_body_pose(self: Any, env_ids: Any) -> None:
 
 
 def _update_body_pose(self: Any, env_ids: Any = None) -> None:
-    """``_update_command``: a neutral environment targets zero, and the observed command
-    ramps toward the target at ``max_rate``."""
+    """``BodyPoseCommand._update_command`` over the float ``is_neutral_env``."""
     del env_ids
     target = self.pose_target_b * (1.0 - self.is_neutral_env)
     self.pose_target_b = target
@@ -66,8 +64,7 @@ def bind_body_pose_override(term: Any) -> None:
 
 
 def _body_pose_ui(cfg: Any) -> dict[str, Any]:
-    """Upstream's operator axes, as sliders over the standing bands in the command's
-    order. A slider sets the observed command itself, past the ramp."""
+    """Sliders over the standing bands, in the command's order; they skip the ramp."""
     inputs: list[dict[str, Any]] = [
         {"type": "checkbox", "name": "enabled", "label": "Enable", "default": False}
     ]

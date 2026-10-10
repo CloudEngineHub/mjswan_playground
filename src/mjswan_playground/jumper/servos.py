@@ -42,8 +42,7 @@ class HeldPositionActuatorCfg(BuiltinPositionActuatorCfg):
 
 
 def _split_servo(env_cfg: Any, contract: dict) -> dict[str, float]:
-    """Keep the servo on the action's joints, and hold the rest where the deploy contract
-    says they stay with actuators of its gains and limit. Returns the holds."""
+    """Keep the servo on the action's joints and hold the rest; returns the holds."""
     hold = {name: float(value) for name, value in contract["unactuated_joints"].items()}
     articulation = env_cfg.scene.entities["robot"].articulation
     (servo,) = articulation.actuators
@@ -75,8 +74,7 @@ def hold_unactuated(env_cfg: Any, contract: dict) -> None:
         raise ValueError("A held joint's default pose is not its hold.")
     # `ctrl` in joint order, as upstream's one actuator has it.
     env_cfg.scene.entities["robot"].sort_actuators = True
-    # The browser resets every joint to the keyframe; widened to every joint, upstream's
-    # zero-width reset does the same in mjlab.
+    # Widened to every joint, the zero-width reset matches the browser's keyframe reset.
     reset = env_cfg.events["reset_robot_joints"]
     if any(reset.params[k] != (0.0, 0.0) for k in ("position_range", "velocity_range")):
         raise ValueError("The joint reset randomizes, and would move the held joints.")
@@ -92,9 +90,8 @@ def servo_force(
     damping: float,
     effort_limit: float,
 ) -> torch.Tensor:
-    """mjlab's ``actuator_force``, with an episode's first observation as mjlab's reset
-    leaves it: each servo's PD toward its cleared target, ``reset_target`` (0, or a held
-    joint's hold), within the effort limit."""
+    """mjlab's ``actuator_force``, but an episode's first observation is the servos' PD
+    toward ``reset_target``, where mjlab's reset leaves their targets."""
     asset = env.scene[asset_cfg.name]
     q = asset.data.joint_pos[:, joint_ids]
     qd = asset.data.joint_vel[:, joint_ids]
@@ -109,9 +106,8 @@ def servo_force(
 
 def observe_reset_force(env_cfg: Any, hold: dict[str, float] | None = None) -> None:
     """Point the ``actuator_force`` term at :func:`servo_force`, over the same actuators
-    in the same order and with the servos' gains. Each actuator drives the joint it is
-    named after, in the joints' model order; ``hold`` names the joints whose reset target
-    is not 0."""
+    in the same order. Each actuator drives the joint it is named after, in the joints'
+    model order; ``hold`` names the joints whose reset target is not 0."""
     hold = hold or {}
     term = env_cfg.observations["actor"].terms["actuator_force"]
     servo = env_cfg.scene.entities["robot"].articulation.actuators[0]

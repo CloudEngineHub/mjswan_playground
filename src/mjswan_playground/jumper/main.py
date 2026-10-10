@@ -1,5 +1,4 @@
-"""KingKong Robotics' jumper: walking with a commanded body posture, walking on five legs,
-dancing, gesturing and jumping. See ``README.md``."""
+"""KingKong Robotics' jumper walking, dancing and jumping. See ``README.md``."""
 
 from __future__ import annotations
 
@@ -18,8 +17,7 @@ TASK_ID = upstream.TASK_ID
 
 
 def play_env_cfg() -> tuple[Any, dict[str, tuple[int, ...]]]:
-    """Upstream's posture play config as the browser runs it, and each strided term's
-    offsets."""
+    """Posture's play config as the browser runs it, and each strided term's offsets."""
     root = upstream.resolve_root()
     upstream.register_tasks(root)
     from tasks.jumper.posture.mdp.commands import PostureCommandCfg
@@ -51,8 +49,6 @@ def _add_policy(
     offsets: dict[str, tuple[int, ...]],
     **kwargs: Any,
 ) -> None:
-    """``jumper.<task>``'s exported policy on ``scene``, against ``env_cfg``'s terms; a
-    strided term carries its frames as ``history_steps``."""
     contract = upstream.contract(root, task)
     observations = adapt_observations(env_cfg.observations["actor"])
     for term, steps in offsets.items():

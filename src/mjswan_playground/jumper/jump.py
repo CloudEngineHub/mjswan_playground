@@ -1,14 +1,12 @@
 """Upstream's two high jumps, on terms the browser can trace.
 
-``jumper.jump`` adds the policy's residual to a recorded jump. Its command keeps the go
-instant in a counter mjlab reads off ``episode_length_buf``, its spawn phase rides on an
-env side channel, and its action reads the recording itself. The command is restated with
-its own counter and spawn, and publishes the residual's baseline for mjswan's
-``joint_position_reference`` action; its terms are restated over its ``go_step``.
+``jumper.jump``'s command counts its go instant off ``episode_length_buf`` and passes
+its spawn phase on an env side channel; its residual action reads the recording. Here
+the command keeps its own counter and spawn and publishes the residual's baseline for
+mjswan's ``joint_position_reference`` action; the terms read its ``go_step``.
 
-``jumper.ref_free_jump`` observes only the robot. Its ``jump`` command feeds play nothing
-but ``back_home``, which ends an episode once the robot has landed and held its home
-pose for a while; both go, so each episode is one jump that ends on its 2.5 s time-out.
+``jumper.ref_free_jump``'s ``jump`` command feeds play only ``back_home``, which ends an
+episode after the landing; both go, so each episode ends on its time-out.
 """
 
 from __future__ import annotations
@@ -42,9 +40,6 @@ def jump_clock_cfg(root: Path) -> type:
     gait = list(obs._GAIT_COL)
 
     class JumpClockCommand(commands.JumpMotionCommand):
-        """``go_step`` as upstream counts it, against a counter of its own; the spawn
-        ``reset_from_reference_phase`` writes; and the residual's baseline."""
-
         def __init__(self, cfg: Any, env: Any) -> None:
             super().__init__(cfg, env)
             self.elapsed = torch.zeros(self.num_envs, device=self.device)

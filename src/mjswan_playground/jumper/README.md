@@ -11,17 +11,16 @@ checkpoint for, on four scenes:
 
 - **Jumper-Posture** walks on a tripod gait while it holds a commanded body posture: a
   twist over its planted feet, a pitch, a roll and a body height from 0.07 m to 0.15 m.
-  mjlab's joystick takes over the walk, and an Enable box with four sliders the posture.
-- **Jumper-Five-Foot** walks on five legs and carries the left-front leg folded as a
-  claw, open. The joystick takes over the walk, and an Enable box with three sliders its
-  body pitch, roll and twist.
-- **Jumper-Dance** runs nine policies, each tracking its own clip: four gestures (Hello,
-  Bow, Paw, Salute) and five dances (Maze, Waist, Dream Wings, Brazilian and the longer
-  Demo). Each episode plays its clip once from the first frame, then starts again.
+- **Jumper-Five-Foot** walks on five legs with the left-front leg folded as an open claw,
+  holding a commanded body pitch, roll and twist.
+- **Jumper-Dance** runs nine policies, each playing its own clip once per episode: four
+  gestures (Hello, Bow, Paw, Salute) and five dances (Maze, Waist, Dream Wings, Brazilian
+  and the longer Demo).
 - **Jumper-Jump** jumps high, once per episode: Jump adds its residual to a recorded
   crouch-jump-tuck-land, and Jump (no reference) observes the robot alone.
 
-Every command resamples as upstream's play config draws it.
+Every command resamples as upstream's play config draws it. On the two walking scenes,
+mjlab's joystick takes over the walk, and an Enable box with sliders the posture.
 
 ## Run
 
@@ -30,12 +29,8 @@ uv run msp run jumper
 ```
 
 The build clones the repository into `.cache/` at a pinned commit; set
-`MJSWAN_JUMPER_ROOT` to point at a checkout you already have. Upstream keeps a registry
-of its own, so [`upstream.py`](upstream.py) puts the checkout first on `sys.path`, builds
-each task's `env_cfg(play=True)` and registers posture's with mjlab. Its
-`rl/` directory, which vendors mjlab and rsl_rl beside upstream's own `mjrl`, goes last on
-`sys.path`, so the installed mjlab 1.6.0 is the one imported. Each dance task converts
-its clip into `media/.cache/` the first time its config is built.
+`MJSWAN_JUMPER_ROOT` to point at a checkout you already have. Each dance task converts its
+clip into `media/.cache/` the first time its config is built.
 
 | From `jumper` | Used as |
 |---|---|
@@ -92,22 +87,19 @@ joints, actions and servo output stacked like posture's.
 
 - **The servos run as plain PD.** Upstream's `ServoCurveActuatorCfg` subclasses
   `IdealPdActuatorCfg`, and mjswan runs it as that: kp 10 (20 for the jumps), kd 0.5,
-  within the 1.746 N·m plateau. Dropped are its torque decay above 30.7 rad/s and its
-  thermal derating toward 1.2 N·m. Walking never reaches the decay: with the posture
-  policy driving in mjlab for 20 s, the fastest joint reaches 20.3 rad/s. The jumps do,
-  briefly (below).
+  within the 1.746 N·m plateau, without its torque decay above 30.7 rad/s or its thermal
+  derating toward 1.2 N·m. Walking never reaches the decay (posture's fastest joint
+  peaks at 20.3 rad/s in mjlab); the jumps do, briefly (below).
 - **The joints no action moves are held by position actuators.** Upstream's servo PD
   holds them at their position target. The browser applies PD to the action's joints
   alone and zeroes every other `ctrl`, so [`servos.py`](servos.py) gives them MuJoCo
   position actuators of the servos' gains and limit: the claws at 0 rad, and five-foot's
   carried arm biased to hold its pose at `ctrl = 0`.
 - **An episode's first look at the servos is restated.** mjlab clears every position
-  target on reset, so the first observation of an episode carries the servos pushing
-  toward 0, saturated on most joints. The browser resets to the keyframe instead, whose
-  `ctrl` is the default pose. `servos.servo_force` computes that one observation the way
-  mjlab's reset leaves it, and reads `actuator_force` after it; in mjlab both are the same
-  number. Jump (no reference) takes it as its cue: without it, the robot stands still and
-  never jumps.
+  target on reset, so an episode's first observation carries the servos pushing toward 0;
+  the browser resets to the keyframe, whose `ctrl` is the default pose.
+  `servos.servo_force` computes that observation as mjlab's reset leaves it. Jump (no
+  reference) takes it as its cue: without it, the robot stands still and never jumps.
 - **The operator terms are mjlab's and the panel's.** Play's operator commands read a
   keyboard or a gamepad; posture's and five-foot's `twist` becomes mjlab's
   `UniformVelocityCommandCfg`, their posture commands become upstream's base
@@ -115,16 +107,15 @@ joints, actions and servo output stacked like posture's.
   Play's ToF sensor, which only its viewer draws, is dropped, and so are the critic, the
   rewards, the metrics and the curricula, which only training reads.
 - **Startup randomization.** Foot friction and the base's center of mass are drawn once
-  at startup, and parity leaves them unchecked. Play also draws an encoder bias, within
-  ±0.01 rad for the dances and gestures and ±0.015 rad elsewhere, which mjswan takes
-  from the policy config instead; the checkpoints ship none, so it is zero.
+  at startup, and parity leaves them unchecked. Play also draws an encoder bias, which
+  mjswan takes from the policy config instead; the checkpoints ship none, so it is zero.
 
 **Posture and Jump (no reference)**
 
 - **The strided history is mjswan's own.** Upstream wraps each stacked term in
   `StridedHistory`, which keeps a ring of 17 frames and emits every fourth. Here the
   wrapper is unwrapped and each term carries the same frames as `history_steps`
-  `(16, 12, 8, 4, 0)`. Five-foot stacks with mjlab's own `history_length`.
+  `(16, 12, 8, 4, 0)`.
 
 **Posture**
 
@@ -132,8 +123,7 @@ joints, actions and servo output stacked like posture's.
   that integrates its own phase at a cadence set by the twist command. A browser
   observation holds no state, so [`terms.py`](terms.py) moves the integration into a
   `gait_clock` command that advances each step at the cadence the twist asked for on the
-  step before, and restarts on reset. Over 800 steps and 216 twist changes in mjlab it
-  matches upstream's clock exactly.
+  step before, and restarts on reset. In mjlab it matches upstream's clock exactly.
 - **The posture command's draw is restated as one graph.** Upstream's
   `PostureCommand._resample_command` writes per-env rows with `Tensor.uniform_`, which
   the tracer cannot follow; `terms.py` draws the same bands at one env. Its update moves
@@ -146,9 +136,8 @@ joints, actions and servo output stacked like posture's.
 - **The arm holds the deploy contract's pose.** Upstream's `hold_carried_arm` event
   writes the arm's state and position target each reset, at a pose play samples within
   ±0.1 rad of the stow; the robot holds the stow itself. Here the joint reset writes the
-  default pose, which is the stow, and the biased actuators hold it. In mjlab, walking at
-  0.3 m/s for 5 s with the arm at the stow, upstream's config and this one cover 1.448 m
-  and 1.458 m, end 1.3 cm apart, and keep the arm within 2.1 mrad of each other.
+  default pose, which is the stow, and the biased actuators hold it. Walking 5 s in
+  mjlab, upstream's config and this one end 1.3 cm apart, the arm within 2.1 mrad.
 - **The claw stays open.** Play's trigger (`gripper_teleop`) drives the claw and
   `play --hold` (`claw_hold`) starts with a prop in it, both from step-mode events the
   browser does not run; untouched play leaves the claw open, and so does this.
@@ -161,17 +150,14 @@ joints, actions and servo output stacked like posture's.
 
 **Dances and gestures** ([`dance.py`](dance.py))
 
-- **The clip is a traced command.** Upstream observes mjlab's `MotionCommand`: the frame
-  index, the reference at that frame and frames ahead, and the anchor's tilt. mjswan plays
-  `MotionCommand` natively and serves neither the index nor frames ahead, so a
-  `ClipCommand` carries the clip as constants of its graph and writes the rows the terms
-  read as state fields. The observations and terminations are restated over them. Stepped
-  beside upstream's env on the same state in mjlab, every term matches exactly over a
-  whole clip (Bow, 426 steps; Maze, 498 steps).
-- **An episode plays the clip once.** Play starts at the first frame, as here. Past the
-  last frame `MotionCommand` resamples, writing the first frame's state back within the
-  same episode; here `clip_end` ends the episode as a time-out on that step, and the
-  reset writes the first frame again.
+- **The clip is a traced command.** mjswan's native `MotionCommand` serves neither the
+  frame index nor the frames ahead that upstream observes, so a `ClipCommand` carries the
+  clip as constants of its graph and writes the rows the terms read as state fields; the
+  observations and terminations are restated over them. In mjlab every term matches
+  upstream's exactly over a whole clip.
+- **An episode plays the clip once.** Past the last frame, `MotionCommand` resamples and
+  writes the first frame's state back within the episode; here `clip_end` ends the
+  episode as a time-out on that step, and the reset writes the first frame again.
 - **No reference ghost.** The browser draws its ghost from its own tracking command,
   which these scenes do not use.
 
@@ -180,29 +166,23 @@ joints, actions and servo output stacked like posture's.
 - **The jump's command keeps its own clock.** Upstream's command counts the go instant
   against `episode_length_buf`, its `reset_from_reference` event spawns the robot and
   hands the spawn phase over through an env side channel, and its action reads the
-  recording itself. Here the event is
-  dropped and `JumpClockCommand` counts against a clock of its own, writes the spawn on
-  reset (at the event's play phase, 0 to 1 % into the recording), and publishes the
-  residual's baseline for mjswan's `joint_position_reference` action; `jump_phase`,
+  recording itself. Here the event is dropped and `JumpClockCommand` counts against a
+  clock of its own, writes the spawn on reset at the event's play phase, and publishes
+  the residual's baseline for mjswan's `joint_position_reference` action; `jump_phase`,
   `ref_future` and `reference_diverged` read its `go_step`. In mjlab it jumps the same
-  trajectory as upstream's command: apex 0.2354 m at step 110 in both.
-- **The browser's Jump peaks lower.** The browser feeds the policy the same
-  observations and applies the same servo torques, but its MuJoCo resolves the crouch's
-  many contacts a little differently from mjlab's, and the push-off ends slower: the
-  apex is 0.211 m in the browser against 0.233 m to 0.241 m in mjlab over six seeds.
-- **Each jump keeps its own time-out.** A scene traces every policy's terms against one
-  env, built from the first policy's config, so mjlab's `time_out` would end Jump (no
-  reference)'s episodes at Jump's 3.5 s; [`jump.py`](jump.py)'s `time_out` takes each
-  policy's episode length as a step count instead.
-- **Jump (no reference) ends each episode on its 2.5 s time-out.** Upstream's
-  `back_home` ends it once the robot has landed, judged from the feet's contact forces,
-  and held its home pose for 20 steps (1.74 s in mjlab); its command feeds play nothing
-  else.
-  Both go, so the robot stands about 0.8 s longer between jumps. Its action,
-  `PriorFeedforwardJointPositionActionCfg`, becomes mjlab's `JointPositionActionCfg`:
-  the prior's feedforward is zero at this checkpoint's step count. In the browser it
-  jumps to 0.349 m at step 93; upstream's config in mjlab, to 0.352 m at step 89.
-- **The servos' speed curve does engage here.** In mjlab, upstream's servos against the
-  plain PD the browser runs: Jump reaches 0.2354 m against 0.2358 m, its fastest joint
-  32.3 rad/s against 32.4; Jump (no reference) 0.3520 m against 0.3526 m, 42.0 rad/s
-  against 49.7.
+  trajectory as upstream's command.
+- **The browser's Jump peaks lower**: 0.211 m, against 0.233 m to 0.241 m in mjlab. It
+  feeds the policy the same observations and applies the same servo torques, but its
+  MuJoCo resolves the crouch's many contacts a little differently, and the push-off ends
+  slower.
+- **Each jump keeps its own time-out.** A scene traces every policy's terms against the
+  first policy's env, whose episode length mjlab's `time_out` would read for both, so
+  `time_out` here takes each policy's own as a step count.
+- **Jump (no reference) ends each episode on its 2.5 s time-out.** Upstream's `back_home`
+  ends it once the robot has landed and held its home pose for 20 steps, and its `jump`
+  command feeds play nothing else; both go, so the robot stands about 0.8 s longer
+  between jumps. Its `PriorFeedforwardJointPositionActionCfg` becomes mjlab's
+  `JointPositionActionCfg`: the prior's feedforward is zero at this checkpoint's step
+  count. It jumps to 0.349 m in the browser, against 0.352 m in mjlab.
+- **The servos' speed decay does engage here**, but in mjlab dropping it moves either
+  jump's apex by under 1 mm.
