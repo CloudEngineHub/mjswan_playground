@@ -52,7 +52,8 @@ def _id(model: mujoco.MjModel, kind: mujoco.mjtObj, name: str) -> int:
 
 
 def _heading(rotation: torch.Tensor) -> torch.Tensor:
-    """The yaw-only rotation of root rotations ``(B, 3, 3)``, as ``_heading`` takes it."""
+    """Yaw-only rotations of root rotations ``(B, 3, 3)``, as
+    ``TerrainObservation._heading`` takes them."""
     yaw = torch.atan2(
         rotation[:, 1, 0] - rotation[:, 0, 1], rotation[:, 0, 0] + rotation[:, 1, 1]
     )
@@ -71,8 +72,8 @@ def _local(heading: torch.Tensor, vectors: torch.Tensor) -> torch.Tensor:
 def _rotation_error(
     current: torch.Tensor, target: torch.Tensor, heading: torch.Tensor
 ) -> torch.Tensor:
-    """``_rotation_error``: ``target @ current.T`` as a rotation vector in the heading
-    frame. ``current`` and ``target`` are ``(B, ..., 3, 3)``."""
+    """``TerrainObservation._rotation_error``: ``target @ current.T`` as a rotation
+    vector in the heading frame. ``current`` and ``target`` are ``(B, ..., 3, 3)``."""
     error = target @ current.transpose(-1, -2)
     return _mat_to_rotvec(
         torch.einsum("bji,b...jk,bkl->b...il", heading, error, heading)

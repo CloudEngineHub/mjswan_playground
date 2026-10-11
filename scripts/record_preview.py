@@ -259,8 +259,8 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             ok_terminations=("ee_body_pos",),
         ),
     ),
-    # The course's four steps up, from 4 s, then the flat route from its start. A fall
-    # ends the episode, as in the tutorial: the policy is not tuned to either route.
+    # The course's four steps up from 4 s, then the flat route from its start. TERRA's
+    # mean action can fall later on the course, which ends the episode as in the tutorial.
     "terra": (
         Preview(
             scene="terra_course",
