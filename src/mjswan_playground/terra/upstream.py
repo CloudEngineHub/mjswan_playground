@@ -9,7 +9,6 @@ myosuite's ``plan_waypoint_reference`` with the tutorial's gait, planned once in
 from __future__ import annotations
 
 import dataclasses
-import functools
 import json
 import math
 from collections.abc import Callable
@@ -199,10 +198,6 @@ class Route:
     route: np.ndarray
     arrival_radius: float
 
-    @property
-    def waypoints(self) -> np.ndarray:
-        return self.route[1:]
-
     def actor_spec(self) -> mujoco.MjSpec:
         """TERRA's actor in the scene, the waypoints marked: myosuite's
         ``build_terrain_fullbody_spec``, which rebuilds the ``musclemimic_models``
@@ -221,7 +216,7 @@ class Route:
             body.inertia = model.body_inertia[i]
             body.fullinertia = np.full(6, np.nan)
         heights = _heights(model)
-        for i, (x, y) in enumerate(self.waypoints):
+        for i, (x, y) in enumerate(self.route[1:]):
             # Visual only: no contact, and out of group 2, where the heightmap looks.
             spec.worldbody.add_geom(
                 name=f"waypoint_{i + 1}",
@@ -251,7 +246,6 @@ def _heights(model: mujoco.MjModel) -> Callable[[tuple[float, float]], float]:
     return lambda xy: float(heights(data, [xy])[0])
 
 
-@functools.cache
 def routes() -> tuple[Route, ...]:
     """The course, then the registered task's flat route, in the order the scenes are
     listed."""
