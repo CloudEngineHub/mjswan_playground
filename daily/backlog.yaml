@@ -14,9 +14,30 @@
 #   ease         0 to 3: its simulations' lowest above 0; 0 is a stop for an unattended run
 #   notes        what the port is known to need
 #   found        for an entry the scout added: when, and the evidence
+#   pinned       set by a person: why to port it first; pinned entries stay at the top,
+#                in the order a person put them
 #
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
+
+- id: wuji
+  pinned: '2026-10-11: the owner asked for it first'
+  repo: https://github.com/wuji-technology/wuji-mjlab
+  commit: 26b99c6338641e8edc17caf87922e6e1767121fa
+  task: WujiHand_Reorient
+  policy: release v2026.9.27 asset wuji-mjlab-v2026.9.27-assets.zip (sha256 de01b29921b69ea38100a29416c324b384905e1ae4ebbfa40d769be948fc2d39), reorient/checkpoints/hand1/policy.onnx (obs 207, actions 20); joint order and default pose in its config.json
+  license: Apache-2.0 for the code and checkpoints (the bundle's NOTICE); the hand meshes are MIT (wuji-technology/wuji-description)
+  popularity: '2: 251 stars (2026-10-10); X post on its release (2026-06-02); shown at ICRA'
+  ease: '0: JointPositionOffsetEMAActionCfg, defined in the repository, smooths its target with an EMA and holds a 0.4 s warmup, which no mjswan action does'
+  notes: >-
+    A 20-joint Wuji hand turning a cube to commanded orientations. Besides the action
+    term, the actor reads action_manager.prev_action, a(t-1), which mjswan has no slot
+    for, and a target error that follows the EMA; ttktjmt/mjswan#110 tried both and was
+    closed unmerged. The goal command draws with torch.rand and needs a binding; cage_drop
+    reads a reward's counter and never fires in a browser. The bundle's NOTICE names
+    training commits that are not public; the public config matches the checkpoint's
+    config.json.
+  found: '2026-10-07: 244 stars, X post on its release, ICRA demo'
 
 - id: tasknpoint
   repo: https://github.com/wernerb43/tasknpoint
@@ -101,24 +122,6 @@
     contract with the book and reader coordinates inside it; its grasp latch and its pick,
     carry and place phases are stateful and live outside mjlab's managers.
   found: '2026-10-10: GitHub mjlab topic (recently updated), 2 stars; ONNX in git'
-
-- id: wuji
-  repo: https://github.com/wuji-technology/wuji-mjlab
-  commit: 26b99c6338641e8edc17caf87922e6e1767121fa
-  task: WujiHand_Reorient
-  policy: release v2026.9.27 asset wuji-mjlab-v2026.9.27-assets.zip (sha256 de01b29921b69ea38100a29416c324b384905e1ae4ebbfa40d769be948fc2d39), reorient/checkpoints/hand1/policy.onnx (obs 207, actions 20); joint order and default pose in its config.json
-  license: Apache-2.0 for the code and checkpoints (the bundle's NOTICE); the hand meshes are MIT (wuji-technology/wuji-description)
-  popularity: '2: 251 stars (2026-10-10); X post on its release (2026-06-02); shown at ICRA'
-  ease: '0: JointPositionOffsetEMAActionCfg, defined in the repository, smooths its target with an EMA and holds a 0.4 s warmup, which no mjswan action does'
-  notes: >-
-    A 20-joint Wuji hand turning a cube to commanded orientations. Besides the action
-    term, the actor reads action_manager.prev_action, a(t-1), which mjswan has no slot
-    for, and a target error that follows the EMA; ttktjmt/mjswan#110 tried both and was
-    closed unmerged. The goal command draws with torch.rand and needs a binding; cage_drop
-    reads a reward's counter and never fires in a browser. The bundle's NOTICE names
-    training commits that are not public; the public config matches the checkpoint's
-    config.json.
-  found: '2026-10-07: 244 stars, X post on its release, ICRA demo'
 
 - id: rc_wheelleg
   repo: https://github.com/zeitvex/RC_WheelLeg
