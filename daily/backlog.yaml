@@ -1,6 +1,6 @@
 # The daily routine's queue (ROUTINE.md, part D), first entry first. Its scout (part A)
-# adds entries, orders them by popularity plus ease and removes the ones `main` already
-# ports, through the `claude/daily-backlog` pull request. An entry is one repository, to be
+# adds entries, orders them by popularity plus ease and removes the ones that already have
+# a task, through the `claude/daily-backlog` pull request. An entry is one repository, to be
 # ported with every simulation in it that mjswan can run.
 #
 #   id           playground id
@@ -17,35 +17,6 @@
 #
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
-
-- id: unitreerl
-  repo: https://github.com/unitreerobotics/unitree_rl_mjlab
-  commit: 1425b15f73bd4095f0df53709d7c389c3eb9e790
-  simulations:
-    - task: Unitree-G1-Flat (src/tasks/velocity/config/g1/__init__.py)
-      policy: deploy/robots/g1/config/policy/velocity/v0/exported/policy.onnx in git (obs 98, actions 29; mjlab export metadata with the joint order, default pose and observation names; params/deploy.yaml beside it)
-      ease: '3: no mjswan change; bipedhrl descends from this repository with the same 98-wide contract (base_ang_vel, projected_gravity, command, phase, joint_pos, joint_vel, actions), so its checkout shape, _gait_clock rewrite of phase and collision_defaults shim carry over'
-    - task: Unitree-G1-Tracking-No-State-Estimation (src/tasks/tracking/config/g1/__init__.py), on the dance1_subject2 clip
-      policy: deploy/robots/g1/config/policy/mimic/dance1_subject2/exported/policy.onnx and policy.onnx.data in git (obs 154, actions 29, no mjlab metadata, so params/deploy.yaml beside it gives the joint order, default pose and action scale); the clip is params/dance1_subject2.npz there (50 Hz, 6574 frames, 30 bodies)
-      ease: '3: no mjswan change; a BeyondMimic-style tracker like spinkick, on mjlab''s own G1 and MotionCommandCfg, with the clip already in mjlab''s npz form'
-  left_out: >-
-    Every other task upstream registers has no public policy: Unitree-G1-Rough,
-    Unitree-G1-Tracking (with state estimation), the Unitree-G1-23Dof velocity and tracking
-    tasks, and the Go2, A2, As2, H1_2, H2 and R1 velocity tasks.
-  license: Apache-2.0 for the whole repository (LICENCE), covering the code, both deployed ONNX files and the G1 MJCF and meshes under src/assets/robots/unitree_g1/xmls (Unitree's g1_29dof_rev_1_0); the dance clip is LAFAN1's dance1_subject2 retargeted to the G1, and LAFAN1 is CC BY-NC-ND 4.0 (Ubisoft La Forge; the retargeted set is lvhaidong/LAFAN1_Retargeting_Dataset on the Hub)
-  popularity: '2: 676 stars (2026-10-10); Unitree''s official mjlab repository'
-  ease: '3: both simulations at 3'
-  notes: >-
-    A Unitree G1 (29 DoF) walking to velocity commands and dancing LAFAN1's
-    dance1_subject2, with the checkpoints Unitree ships for deployment. Upstream runs from
-    source as the top-level package src (packages=["src"] in setup.py), like bipedhrl:
-    follow bipedhrl's upstream.py; importing src.tasks registers every task. setup.py
-    pins mjlab==1.2.0, so upstream's G1 constants also need mjlab 1.2's update_assets
-    back. The velocity play config draws lin_vel_x (-0.5, 1.0), lin_vel_y and ang_vel_z
-    (-0.5, 0.5). The dance policy loses the 131 s clip partway even in mjlab's own play
-    env (ee_body_pos at 34.3 s), and the episode starts the clip over. The clip's NC-ND
-    terms are the author's to weigh when publishing.
-  found: '2026-10-10: GitHub search for mjlab sorted by stars, 676 stars; ONNX in git'
 
 - id: tasknpoint
   repo: https://github.com/wernerb43/tasknpoint
