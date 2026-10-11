@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import importlib
 import json
-import posixpath
 import sys
 from pathlib import Path
-from unittest import mock
 
-from mjswan_playground._compat import collision_defaults, dropping_env_ids
+from mjswan_playground._compat import (
+    collision_defaults,
+    dropping_env_ids,
+    legacy_update_assets,
+)
 from mjswan_playground._deps import ensure_repo
 
 REPO_URL = "https://github.com/bae-air-lab/DUET.git"
@@ -55,21 +57,9 @@ def register_tasks(root: Path) -> None:
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
     # ponytail: upstream is on mjlab 1.2.0; drop the shims once REPO_COMMIT is on 1.6.
-    with (
-        collision_defaults(),
-        mock.patch("mjlab.utils.os.update_assets", _update_assets, create=True),
-    ):
+    with collision_defaults(), legacy_update_assets():
         importlib.import_module(TASK_PACKAGE)
     commands = importlib.import_module("src.tasks.common.mdp.commands")
     for name in ("_update_command", "compute"):
         method = vars(commands.BaseHeightCommand)[name]
         setattr(commands.BaseHeightCommand, name, dropping_env_ids(method))
-
-
-def _update_assets(assets: dict[str, bytes], path: Path, meshdir: str | None) -> None:
-    """mjlab 1.2's ``update_assets``, which 1.6 removed: every file in ``path``, keyed
-    under ``meshdir``."""
-    for file in Path(path).iterdir():
-        if file.is_file():
-            key = file.name if meshdir is None else posixpath.join(meshdir, file.name)
-            assets[key] = file.read_bytes()
