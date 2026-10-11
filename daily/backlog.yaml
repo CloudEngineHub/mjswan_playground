@@ -19,6 +19,61 @@
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
 
+- id: terra
+  pinned: '2026-10-11: the owner asked for it first, for the MyoSuite maintainers who want it on the MyoSuite webpage, with the plan in notes'
+  repo: https://github.com/MyoHub/myosuite
+  commit: 992bd58928e61d3f7ce27a033be02d0be18a2c18
+  simulations:
+    - task: myoFullBodyWaypoint-v0 (mjlab twin, myosuite/envs/myo/backends/mjlab/tasks/waypoint) on course_scene of tutorials/4.4_Programmatic_Waypoint_Tasks.ipynb, stairs up, a beam with a right-angle turn, a gap jump, stairs down and a second jump, through nine waypoints
+      policy: Hugging Face merc-s/TERRA-4B at b89a604d0687549f2678bb1b6a436dea058cd8b9 (myosuite's TERRA_REVISION), checkpoint_24416 (Orbax), tracking the reference plan_waypoint_reference plans for the course
+      ease: '2: the rewrites in notes, and 100 Hz control'
+    - task: myoFullBodyWaypoint-v0 as registered, on flat ground, with the route it draws at reset seed 0 held fixed
+      policy: the same checkpoint, tracking a reference planned for that route
+      ease: '2: as the course, without the jumps'
+  left_out: >-
+    The registered task's other routes: it draws one at every reset and each needs its own
+    planned reference, so one fixed route stands for them. The variants in the tutorial's
+    section 6 (step rise 0.04 m, arrival radii 0.2 and 0.3 m), which it only compiles.
+    Waypoints moved live in the browser, which needs a reference planned online.
+  license: Apache-2.0 for MyoSuite and for TERRA's code; the TERRA-4B model card states none; MyoFullBody comes from musclemimic_models, as in the musclemimic task. The owner takes licensing as settled, since the MyoSuite maintainers asked for the port
+  popularity: '3: MyoSuite 1.2k stars (2026-10-11); TERRA itself 119 stars'
+  ease: '2: no change to mjswan, but several playground-side rewrites (TERRA''s observation in torch with a raycast heightmap and a baked reference, its actor supplied to the mjlab twin) and 100 Hz control'
+  notes: >-
+    TERRA-4B, terrain-aware full-body muscle tracking, walking waypoint routes in
+    MyoSuite. (1) TERRA's code is only on myosuite's feat/programmatic-waypoint-tasks:
+    point [tool.uv.sources] myosuite at that branch (ms3, the current source, no longer
+    exists), with a one-line comment that it moves to main once merged, expected within
+    days; use main if it has the code by then. Do not check or fix the musclemimic task
+    under the new pin: if its build fails, say so in the PR; the owner accepts that. (2)
+    The twin takes model_path or model_recipe, not a compiled model: supply
+    build_terrain_fullbody_spec(scene_fn), musclemimic_models 1.0.5 with TERRA's
+    muscle-wrap fixes and solver settings, as the robot entity's spec through an
+    EntityCfg subclass as duet's _HeldArmsCfg, or as an XML for model_path. Flat ground
+    keeps course_scene's floor (geom group 2, its friction) and lighting without the
+    boxes. 0.002 s physics and 5 substeps; start at model.qpos0 moved to the route
+    start, at rest. (3) Convert TERRA-4B to ONNX as musclemimic/upstream.py converts
+    mm-10m-2 (load_local_policy_artifacts, MimicActorModule, export_to_onnx; float16 if
+    over 25 MiB) and run its mean action: the tutorial samples actions, the browser does
+    not. (4) Rebuild terrain_observation.py's TerrainObservation in torch and check it
+    against the numpy one, as musclemimic/upstream.py does for FullbodyObsAdapter:
+    FullbodyStateAdapter's egocentric state; the 11 x 11 heightmap at 0.1 m, yaw-aligned
+    on the pelvis, from rays down onto geom group 2, as an mjlab RayCastSensor with
+    include_geom_groups (2,), which mjswan casts in the browser; and the goal at
+    lookahead steps 1, 20, 40, 60 and 80, from the reference baked as a table indexed by
+    time. (5) Plan each scene's reference with plan_waypoint_reference (ankle and toe
+    IK, no gated data or Hub token) and the tutorial's
+    GaitParameters(jump_flight_s=0.45, jump_tuck=0.16, second_jump_tuck=0.16), with
+    jump_segments (5, 7) on the course and none on flat ground. (6) End an episode on a
+    fall, pelvis_mimic below 0.5 m as in the tutorial, or at the reference's end. Drop
+    the twin's waypoint command and route terms, which TERRA does not read and would
+    need a command binding, and mark the waypoints with visual-only geoms. (7) A fall is
+    fine: let it pass the preview through the scene's ok_terminations, record each scene
+    once, and do not tune gait parameters, seeds or the policy to make it succeed;
+    myosuite's own 9/9 run sampled its actions. (8) Keep the site under GitHub Pages' 1
+    GB (SIZE_LIMIT in _site.py): leave out the scenes that do not fit and name them in
+    the PR.
+  found: '2026-10-11: the MyoSuite maintainers asked the owner for it, pointing at tutorial 4.4 (ba439ad)'
+
 - id: wuji
   pinned: '2026-10-11: the owner asked for it first, with the plan in notes'
   repo: https://github.com/wuji-technology/wuji-mjlab
