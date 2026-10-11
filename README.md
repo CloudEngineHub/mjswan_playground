@@ -18,7 +18,7 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 | [`upkie`](src/mjswan_playground/upkie/README.md) | Upkie | A wheeled biped balancing and driving to velocity commands ([mjlab_upkie](https://github.com/MarcDcls/mjlab_upkie)) | <a href="https://mjswan.com/s/BIPHv2M"><img src="assets/upkie.gif" width="200"/></a><br />[mjswan.com/s/BIPHv2M](https://mjswan.com/s/BIPHv2M) |
 | [`duet`](src/mjswan_playground/duet/README.md) | Unitree G1 | Walking and squatting down to a 0.18 m crouch ([DUET](https://github.com/bae-air-lab/DUET)) | <img src="assets/duet.gif" width="200"/><br />WIP |
 | [`jumper`](src/mjswan_playground/jumper/README.md) | Jumper | A crab robot walking with a commanded body posture, walking on five legs, dancing, gesturing and jumping ([Jumper](https://github.com/KingKongRobotics/jumper)) | <a href="https://mjswan.com/s/7wT9SwQ"><img src="assets/jumper.gif" width="200"/></a><br />[mjswan.com/s/7wT9SwQ](https://mjswan.com/s/7wT9SwQ) |
-| [`microduckpg`](src/mjswan_playground/microduckpg/README.md) | Microduck | Every experiment of a community playground: running, swing, basketball, stilts, desk and chimney climbs, long jump, backflip ([microduck-playground](https://github.com/Vottivott/microduck-playground)) | <img src="assets/microduckpg.gif" width="200"/><br />[Moves](https://mjswan.com/s/_klQQmL) · [Climbs & Parkour](https://mjswan.com/s/mqwst_Y) · [Stilts](https://mjswan.com/s/qK0Uwr7) |
+| [`microduckpg`](src/mjswan_playground/microduckpg/README.md) | Microduck | Every experiment of a community playground: running, swing, basketball, stilts, desk and chimney climbs, long jump, backflip ([microduck-playground](https://github.com/Vottivott/microduck-playground)) | <img src="assets/microduckpg.gif" width="200"/><br />Moves: [mjswan.com/s/_klQQmL](https://mjswan.com/s/_klQQmL)<br />Parkour: [mjswan.com/s/mqwst_Y](https://mjswan.com/s/mqwst_Y)<br />Stilts: [mjswan.com/s/qK0Uwr7](https://mjswan.com/s/qK0Uwr7) |
 
 ## CLI
 
@@ -32,8 +32,6 @@ uv run msp <subcommand>
 | `run <task-id>` | Build a task and open it in the browser | `--host` (`localhost`), `--port` (`8080`), `--no-open`, `--output-dir` |
 | `build <task-id>` | Build a task without launching | `--output-dir` |
 | `site [<task-id>...]` | Build every task on the GitHub Pages site into one app | `--no-build`, `--base-path` (`/`), `--dist-dir` (`dist`), `--output-dir` (`dist/_site`) |
-
-`run` and `build` also take a part: a subset of a task built to upload on its own under mjswan Cloud's 100 MB (`microduck-moves`, `microduck-parkour`, `microduck-stilts`; see [`microduckpg`](src/mjswan_playground/microduckpg/README.md)).
 
 ## Python
 
