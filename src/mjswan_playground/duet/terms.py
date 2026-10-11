@@ -43,12 +43,23 @@ def bind_height_override(term: Any) -> None:
 
 def height_command(env: Any, command_name: str) -> torch.Tensor:
     """Upstream's ``BaseHeightCommand._update_command`` as the observation reads it: the
-    walk target while the twist command moves, else the command's own value."""
+    walk target while the twist command moves, else the command's own value.
+
+    The panel's slider holds while moving too, as upstream's does, but no lower than the
+    walk band's floor: the checkpoint never walked deeper."""
     term = env.command_manager.get_term(command_name)
-    twist = env.command_manager.get_command(term.cfg.velocity_command_name)
-    moving = torch.norm(twist[:, :3], dim=1, keepdim=True) > term.cfg.velocity_threshold
+    cfg = term.cfg
+    twist = env.command_manager.get_command(cfg.velocity_command_name)
+    moving = torch.norm(twist[:, :3], dim=1, keepdim=True) > cfg.velocity_threshold
     command = env.command_manager.get_command(command_name)
-    return torch.where(moving, term._walk_target, command)
+    # ponytail: no graph input reads the Enable box, so an override is told by value: the
+    # command parts from the squat target it otherwise equals. A slider landing exactly on
+    # that target reads as none until the next resample.
+    overridden = command != term._squat_target
+    walk = torch.where(
+        overridden, command.clamp(min=cfg.walk_min_height), term._walk_target
+    )
+    return torch.where(moving, walk, command)
 
 
 def _height_ui(cfg: Any) -> dict[str, Any]:

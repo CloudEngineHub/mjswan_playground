@@ -66,6 +66,12 @@ Eight terms, one frame, no history:
   target, and `height_command` makes the same choice from both commands. Its resampling
   is restated as one graph; its panel is upstream's `create_gui`, written out because the
   slider's range does not straddle zero.
+- **The height slider holds while walking, no lower than 0.60 m.** Upstream's slider
+  overrides the walk target too, down to a 0.18 m walk the checkpoint never trained on.
+  Here `height_command` keeps the slider while the twist moves but raises it to
+  `walk_min_height`, so a crouch rises to 0.60 m to walk and sinks back on stopping. No
+  graph input reads the Enable box, so the override is told by the command parting from
+  its squat target.
 - **The height range is the checkpoint's.** model_15500 was trained on 0.18 to 0.73 m,
   as its deploy contract says; upstream has since moved the config to 0.24 to 0.78 m.
   The squat floor is pinned at 0.18 m, play's full depth.
