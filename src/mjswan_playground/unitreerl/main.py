@@ -16,6 +16,8 @@ from . import upstream
 
 TASK_ID = "Unitree-G1-Flat"
 DANCE_TASK_ID = "Unitree-G1-Tracking-No-State-Estimation"
+#: The dance clip is LAFAN1's, under CC BY-NC-ND 4.0, not the Apache-2.0 of the rest.
+LAFAN1_LICENSE = Path(__file__).parent / "LICENSE.lafan1"
 
 
 def setup_builder() -> mjswan.Builder:
@@ -56,6 +58,7 @@ def _add_dance(project: Any, root: Path, joint_names: list[str]) -> None:
     motion = env_cfg.commands["motion"]
     motion.motion_file = str(clip)
     scene = project.add_scene_mjlab(DANCE_TASK_ID, env_cfg=env_cfg)
+    scene.add_attribution("lafan1", license=LAFAN1_LICENSE)
     handle = scene.add_policy(
         name="dance1_subject2",
         policy=onnx.load(str(root / upstream.DANCE_ONNX)),

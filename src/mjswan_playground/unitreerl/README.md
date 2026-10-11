@@ -102,5 +102,6 @@ The dance clip is `dance1_subject2` from Ubisoft La Forge's
 [LAFAN1](https://github.com/ubisoft/ubisoft-laforge-animation-dataset), licensed
 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/), as retargeted to
 the G1 in the [LAFAN1 Retargeting Dataset](https://huggingface.co/datasets/lvhaidong/LAFAN1_Retargeting_Dataset).
-It may be shared for noncommercial use, unmodified and with credit, so publishing the
-dance scene is its author's call.
+The build ships [`LICENSE.lafan1`](LICENSE.lafan1) beside the dance scene, and mjswan
+Cloud shows it. It may be shared for noncommercial use, unmodified and with credit, so
+publishing the dance scene is its author's call.

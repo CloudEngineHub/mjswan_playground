@@ -1,0 +1,16 @@
+SPDX-License-Identifier: CC-BY-NC-ND-4.0
+
+The dance clip this scene plays is dance1_subject2 from Ubisoft La Forge's Animation
+Dataset ("LAFAN1", https://github.com/ubisoft/ubisoft-laforge-animation-dataset), whose
+README states:
+
+    "This dataset can be used under the Creative Commons Attribution-NonCommercial-
+     NoDerivatives 4.0 International Public License (see license.txt)."
+
+The clip is its retargeting to the Unitree G1 from the LAFAN1 Retargeting Dataset
+(https://huggingface.co/datasets/lvhaidong/LAFAN1_Retargeting_Dataset), as
+unitree_rl_mjlab ships it. The license's terms are at
+
+    https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
+
+It permits sharing for noncommercial purposes only, unmodified and with credit.
