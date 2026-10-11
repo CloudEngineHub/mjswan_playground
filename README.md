@@ -28,10 +28,12 @@ uv run msp <subcommand>
 
 | Subcommand | Description | Options |
 |------------|-------------|---------|
-| `list` | List the task IDs | none |
+| `list` | List the task IDs, then the parts | none |
 | `run <task-id>` | Build a task and open it in the browser | `--host` (`localhost`), `--port` (`8080`), `--no-open`, `--output-dir` |
 | `build <task-id>` | Build a task without launching | `--output-dir` |
 | `site [<task-id>...]` | Build every task on the GitHub Pages site into one app | `--no-build`, `--base-path` (`/`), `--dist-dir` (`dist`), `--output-dir` (`dist/_site`) |
+
+`run` and `build` also take a part: a subset of a task built to upload on its own under mjswan Cloud's 100 MB (`microduck-moves`, `microduck-parkour`, `microduck-stilts`; see [`microduckpg`](src/mjswan_playground/microduckpg/README.md)).
 
 ## Python
 
