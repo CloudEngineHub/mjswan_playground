@@ -14,7 +14,7 @@
 #   ease         0 to 3: its simulations' lowest above 0; 0 is a stop for an unattended run
 #   notes        what the port is known to need
 #   found        for an entry the scout added: when, and the evidence
-#   pinned       a person's reason to port it first; kept on top in the order they set
+#   pinned       a person's reason to port it first (ROUTINE.md, parts A and D)
 #
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
