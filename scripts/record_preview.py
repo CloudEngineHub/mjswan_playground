@@ -259,6 +259,27 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             ok_terminations=("ee_body_pos",),
         ),
     ),
+    # The course's four steps up from 4 s, then the flat route from its start. TERRA's
+    # mean action can fall later on the course, which ends the episode as in the tutorial.
+    "terra": (
+        Preview(
+            scene="terra_course",
+            orbit=270,
+            tilt=15,
+            crop="720:526:120:100",
+            settle=4.0,
+            seconds=6.0,
+            ok_terminations=("fall",),
+        ),
+        Preview(
+            scene="terra_flat",
+            orbit=300,
+            tilt=20,
+            crop="660:483:150:110",
+            from_reset=True,
+            ok_terminations=("fall",),
+        ),
+    ),
 }
 
 
