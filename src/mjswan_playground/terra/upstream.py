@@ -30,9 +30,8 @@ def ensure_policy() -> tuple[Path, Any]:
     checkpoint's ``TerrainObsCfg``. The ONNX runs the mean action, where the tutorial
     samples one.
 
-    Converted once into the cache, the way ``musclemimic.upstream`` converts mm-10m-2,
-    and checked against myosuite's numpy forward pass. At 24 MiB it fits a 25 MiB file
-    cap, so the weights stay float32.
+    Converted once into the cache and checked against myosuite's numpy forward pass. At
+    24 MiB it fits hosts that cap a file at 25 MiB, so the weights stay float32.
     """
     from myosuite.integrations.musclemimic.terrain_observation import TerrainObsCfg
     from myosuite.integrations.musclemimic.terrain_policy import TERRA_CHECKPOINT
@@ -92,7 +91,7 @@ def _convert(path: Path, cfg_path: Path) -> None:
     cfg_path.write_text(json.dumps(dataclasses.asdict(cfg), indent=1))
 
 
-# --- The scenes: tutorial 4.4's, verbatim but for the split ------------------------
+# --- The scenes, as myosuite tutorial 4.4 builds them ------------------------------
 
 
 def _ground(spec: mujoco.MjSpec) -> None:
@@ -161,7 +160,7 @@ _COURSE_WAYPOINTS = (
 
 def _flat_route() -> tuple[np.ndarray, float]:
     """``myoFullBodyWaypoint-v0``'s route at reset seed 0, start first, and its arrival
-    radius: the registered task as it is, on its own model. Cached with the references."""
+    radius."""
     path = _CACHE / "flat_route.json"
     if not path.exists():
         from myosuite import make_env
