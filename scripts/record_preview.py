@@ -339,8 +339,7 @@ def per_step_graphs(app_dir: Path) -> set[str]:
 
 
 def control_rate(app_dir: Path, scene: str) -> float:
-    """Control steps per second `scene` runs at, the app's first scene when empty, from
-    its manifest."""
+    """Control steps per second `scene` runs at; the app's first scene when empty."""
     manifest = json.loads((app_dir / "manifest.json").read_text())
     scenes = [s for project in manifest["projects"] for s in project["scenes"]]
     control_dt = next((s for s in scenes if s["id"] == scene), scenes[0]).get(
@@ -423,11 +422,10 @@ def _orbit(page, degrees: float, tilt: float = 0.0) -> None:
     page.mouse.up()
 
 
-#: Counts the step loop's own pacing: one `setTimeout` per on-schedule control step, of up
-#: to a control period (formatted in, in ms, with 5 ms to spare), two `MessageChannel`
-#: posts per step that ran late. Installed before the app's own scripts. An IIFE, not a
-#: function: `add_init_script` takes source to run, and a bare function expression would
-#: be evaluated and dropped, leaving the counters undefined.
+#: Counts the step loop's own pacing: one `setTimeout` of up to a control period (`%g`,
+#: in ms, with 5 ms to spare) per on-schedule step, two `MessageChannel` posts per late
+#: one. Installed before the app's own scripts, as an IIFE: `add_init_script` runs
+#: source, and a bare function expression would leave the counters undefined.
 _STEP_COUNTER = """(() => {
     window.__paced = 0; window.__yield = 0;
     const timeout = window.setTimeout;
