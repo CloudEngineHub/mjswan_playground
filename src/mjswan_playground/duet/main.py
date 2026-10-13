@@ -1,5 +1,4 @@
-"""Unitree G1-23DOF walking and squatting to commands while its arms move. See
-``README.md``."""
+"""Unitree G1-23DOF walking and squatting while its arms move. See ``README.md``."""
 
 from __future__ import annotations
 

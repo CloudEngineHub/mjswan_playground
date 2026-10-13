@@ -1,14 +1,12 @@
-"""Upstream's ``BaseHeightCommand`` bound for the browser, and its arm generator as a
-command.
+"""Upstream's ``BaseHeightCommand`` bound for the browser, and its arm generator recast.
 
 Its update picks the walk or the squat target by reading the twist command, and a command
 term cannot read another one in the browser. So the bound command holds the squat target
 as its value and the ``height_command`` observation, which can read both commands, makes
 that pick instead.
 
-The arm generator, ``UpperBodyPoseAction``, is an action term with no policy output,
-which mjswan does not run. ``ArmPoseCommand`` restates it, and
-``CommandJointPositionActionCfg`` applies its value to the arms."""
+The arm generator, ``UpperBodyPoseAction``, is an action term mjswan does not run, so
+``ArmPoseCommand`` restates it for ``CommandJointPositionActionCfg`` to apply."""
 
 from __future__ import annotations
 
@@ -123,7 +121,7 @@ class ArmPoseCommandCfg(CommandTermCfg):
     velocity_command_name: str = "twist"
     velocity_threshold: float = 0.1
     walking_motion_scale: float = 0.15
-    # resample_steps at the 0.02 s control step, upstream's `step % 50 == 0`.
+    # resample_steps at the 0.02 s control step.
     resampling_time_range: tuple[float, float] = (1.0, 1.0)
 
     def build(self, env: Any) -> "ArmPoseCommand":
