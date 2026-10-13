@@ -3,8 +3,6 @@ puts them in the env config, so the build and parity both run them."""
 
 from __future__ import annotations
 
-import functools
-
 import numpy as np
 import torch
 from mjlab.managers.scene_entity_config import SceneEntityCfg
@@ -23,14 +21,6 @@ def nan_detection(env) -> torch.Tensor:
     return nan_mask
 
 
-@functools.cache
-def _fall_states(path: str, joint_names: tuple[str, ...]) -> np.ndarray:
-    data = np.load(path)
-    if tuple(data["joint_names"]) != joint_names:
-        raise ValueError("Fall-state joint order does not match the robot joint order.")
-    return data["qpos"]
-
-
 def reset_from_fall_states(
     env,
     env_ids: torch.Tensor | None,
@@ -44,8 +34,10 @@ def reset_from_fall_states(
     if env_ids is None:
         env_ids = torch.arange(env.num_envs, device=env.device)
     asset = env.scene[asset_cfg.name]
-    states = _fall_states(path, tuple(asset.joint_names))
-    states = torch.as_tensor(states, device=env.device, dtype=torch.float32)
+    data = np.load(path)
+    if tuple(data["joint_names"]) != tuple(asset.joint_names):
+        raise ValueError("Fall-state joint order does not match the robot joint order.")
+    states = torch.as_tensor(data["qpos"], device=env.device, dtype=torch.float32)
     n = len(env_ids)
     q = states[torch.randint(0, len(states), (n,), device=env.device)]
 
