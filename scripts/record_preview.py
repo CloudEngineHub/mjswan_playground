@@ -101,9 +101,8 @@ class Preview:
             ``("check", <input id>, <bool>)`` for a label that repeats, as each
             command's Enable does, ``("click", <button label>)`` or
             ``("wait", <seconds>)``.
-        command_keys: Command values the clip eases through, as a hand on the panel's
-            sliders would: ``(seconds into the clip, {"<command>:<input>": value})``.
-            They reach the runtime through the check's hook, so need the run checked.
+        command_keys: Slider values the clip eases through, as ``(seconds into the clip,
+            {"<command>:<input>": value})``. Needs the run checked, whose hook they use.
         motions: Motions to film one after another, concatenated into one GIF with
             `seconds` split evenly between them: for a tracking policy, where the point
             is the range of motions rather than any single one. Empty films one segment
