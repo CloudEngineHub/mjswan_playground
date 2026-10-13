@@ -324,7 +324,8 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             ok_terminations=("fall",),
         ),
     ),
-    # From a reset through standing up. Every episode starts fallen, past the tilt limit.
+    # From a reset through standing up. Each episode starts fallen, often past the tilt
+    # limit.
     "asimov": Preview(crop="600:439:180:128", from_reset=True, upright=False),
 }
 
