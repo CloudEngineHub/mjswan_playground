@@ -259,10 +259,9 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
     ),
     # Wider crop for the taller H1-2. No steps: the twist command resamples every 3-8 s.
     "bipedhrl": Preview(orbit=-30, crop="878:642:41:35"),
-    # Walking while the arm command's sliders move through upstream's task poses: rest,
-    # forward reach, a high reach with the left arm, the deploy controller's BOX_HOLD, rest.
-    # On its own the arm generator slows to 15% while walking. The twist arrows would hide
-    # the arms.
+    # Walking while the arm command's sliders ease through upstream's arm poses (rest,
+    # forward reach, left high reach, BOX_HOLD, rest): the arm generator alone slows to
+    # 15% while walking. The twist arrows would hide the arms.
     "duet": Preview(
         steps=(
             ("check", "twist:enabled", True),
@@ -588,10 +587,9 @@ _TELEMETRY = """(() => {
     };
 })();"""
 
-#: Eases each `command_keys` value from key to key on page time, through the runtime the
-#: telemetry hook keeps; after the last key it holds that key's values. It sets the command
-#: term itself: the manager's setter also redraws the hidden panel, whose timers the step
-#: counter would count.
+#: Eases `command_keys` from key to key on page time, then holds the last. It sets the
+#: command term itself: the manager's setter also redraws the hidden panel, whose timers
+#: the step counter would count.
 _COMMAND_KEYS = """(keys) => {
     const commands = window.__rec.rt.commandManager, t0 = performance.now();
     const set = (id, value) => {
