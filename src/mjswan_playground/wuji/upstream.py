@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
-import os
 import sys
 import urllib.request
 import zipfile
@@ -24,8 +23,6 @@ BUNDLE_URL = (
 BUNDLE_SHA256 = "de01b29921b69ea38100a29416c324b384905e1ae4ebbfa40d769be948fc2d39"
 #: What the build reads out of the bundle, which is mostly CAD and pen-spin data.
 BUNDLE_FILES = (
-    "LICENSE",
-    "NOTICE",
     "reorient/checkpoints/hand2/policy.onnx",
     "reorient/checkpoints/hand2/config.json",
 )
@@ -45,16 +42,7 @@ def resolve_root() -> Path:
 
 
 def resolve_bundle() -> Path:
-    """The release bundle's files the build reads, extracted once into the cache, or
-    the extracted bundle ``MJSWAN_WUJI_BUNDLE`` points at."""
-    configured = os.getenv("MJSWAN_WUJI_BUNDLE")
-    if configured:
-        root = Path(configured).expanduser().resolve()
-        if missing := [name for name in BUNDLE_FILES if not (root / name).exists()]:
-            raise FileNotFoundError(
-                f"MJSWAN_WUJI_BUNDLE={root} lacks {', '.join(missing)}."
-            )
-        return root
+    """The release bundle's files the build reads, extracted once into the cache."""
     root = CACHE_DIR / "wuji" / RELEASE
     if all((root / name).exists() for name in BUNDLE_FILES):
         return root

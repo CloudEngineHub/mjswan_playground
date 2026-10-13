@@ -30,11 +30,9 @@ uv run msp run wuji
 
 The first build clones the repository into `.cache/wuji-mjlab/` at a pinned commit and
 downloads the 246 MB release bundle once, checks its sha256 and keeps the Hand 2
-checkpoint, its `config.json` and the bundle's `LICENSE` and `NOTICE` in
-`.cache/wuji/v2026.9.27/`. `MJSWAN_WUJI_ROOT` points at a checkout you already have,
-`MJSWAN_WUJI_BUNDLE` at a bundle you already extracted. Installed, upstream registers its
-tasks through mjlab's entry point; [`upstream.py`](upstream.py) imports `wuji_mjlab.tasks`
-from the checkout's `src/` instead.
+checkpoint and its `config.json` in `.cache/wuji/v2026.9.27/`; set `MJSWAN_WUJI_ROOT` to
+point at a checkout you already have. Installed, upstream registers its tasks through mjlab's entry point;
+[`upstream.py`](upstream.py) imports `wuji_mjlab.tasks` from the checkout's `src/` instead.
 
 | From `wuji-mjlab` | Used as |
 |---|---|
