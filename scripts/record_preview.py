@@ -280,6 +280,11 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             ok_terminations=("fall",),
         ),
     ),
+    # The only free joint is the cube's, which the recording takes for the root: turning
+    # it over is the task.
+    "wuji": Preview(
+        orbit=-40, tilt=-20, crop="540:395:200:110", seconds=6.0, upright=False
+    ),
 }
 
 

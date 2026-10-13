@@ -23,6 +23,7 @@ _TASKS: dict[str, str] = {
     "unitreerl": "mjswan_playground.unitreerl.main",
     "upkie": "mjswan_playground.upkie.main",
     "wbc": "mjswan_playground.wbc.main",
+    "wuji": "mjswan_playground.wuji.main",
 }
 
 ALL_TASKS: tuple[str, ...] = tuple(_TASKS)
