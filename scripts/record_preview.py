@@ -98,7 +98,9 @@ class Preview:
         steps: Control-panel actions, applied before the panel is hidden. Each is one of
             ``("select", <input id>, <option>)`` for the scene/policy/motion pickers,
             ``("number", <slider label>, <value>)``, ``("checkbox", <label>, <bool>)``,
-            ``("click", <button label>)`` or ``("wait", <seconds>)``.
+            ``("check", <input id>, <bool>)`` for a label that repeats, as each
+            command's Enable does, ``("click", <button label>)`` or
+            ``("wait", <seconds>)``.
         motions: Motions to film one after another, concatenated into one GIF with
             `seconds` split evenly between them: for a tracking policy, where the point
             is the range of motions rather than any single one. Empty films one segment
@@ -237,9 +239,31 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
     ),
     # Wider crop for the taller H1-2. No steps: the twist command resamples every 3-8 s.
     "bipedhrl": Preview(orbit=-30, crop="878:642:41:35"),
-    # No steps: the twist and the height command resample every 3-8 s, so the clip
-    # catches a squat or a walk without driving the panel.
-    "duet": Preview(orbit=-30, crop="766:560:97:90", seconds=6.0),
+    # A front three-quarter view, walking with the arms held in upstream's BOX_HOLD gamepad
+    # pose through the arm command's sliders: on its own the arm generator slows to 15%
+    # while walking. The twist arrows would cover the arms.
+    "duet": Preview(
+        steps=(
+            ("check", "twist:enabled", True),
+            ("check", "base_height:enabled", True),
+            ("check", "viewer:Scene/Debug Viz/Enabled", False),
+            ("number", "FOV (°)", 40),
+            ("check", "upper_body_pose:enabled", True),
+            ("number", "left_shoulder_pitch", -1.25),
+            ("number", "right_shoulder_pitch", -1.25),
+            ("number", "left_shoulder_roll", 0.0),
+            ("number", "right_shoulder_roll", 0.0),
+            ("number", "left_elbow", 0.7),
+            ("number", "right_elbow", 0.7),
+            # Last, so the clip starts before the walk turns the robot from the camera.
+            ("number", "lin_vel_x", 0.5),
+        ),
+        orbit=135,
+        tilt=10,
+        crop="960:702:0:0",
+        settle=1.0,
+        seconds=6.0,
+    ),
     # Tight crop: the robot is 0.4 m tall under a camera authored at 3 m.
     "upkie": Preview(orbit=45, crop="540:395:210:170", seconds=5.0),
     # No steps: the twist and the posture command resample every 3-8 s.
@@ -388,6 +412,9 @@ def _apply(page, step: tuple) -> None:
     elif kind == "checkbox":
         label, value = rest
         page.set_checked(_labelled_input(page, label, "input[type=checkbox]"), value)
+    elif kind == "check":
+        input_id, value = rest
+        page.set_checked(f'[id="{input_id}"]', value)
     elif kind == "click":
         page.get_by_role("button", name=rest[0], exact=True).click()
     elif kind == "wait":
