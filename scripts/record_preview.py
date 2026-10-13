@@ -338,7 +338,7 @@ def per_step_graphs(app_dir: Path) -> set[str]:
     return paths - {None}
 
 
-def control_rate(app_dir: Path, scene: str = "") -> float:
+def control_rate(app_dir: Path, scene: str) -> float:
     """Control steps per second `scene` runs at, the app's first scene when empty, from
     its manifest."""
     manifest = json.loads((app_dir / "manifest.json").read_text())
@@ -588,9 +588,9 @@ def _hook_runtime(route, hooked: list[bool]) -> None:
 def film(
     url: str,
     preview: Preview,
+    expected_rate: float,
     frames_dir: Path | None = None,
     shot: Path | None = None,
-    expected_rate: float = 50.0,
     motion: str | None = None,
     seconds: float | None = None,
     start_index: int = 0,
@@ -773,11 +773,7 @@ def film(
 
 
 def check_run(
-    segment: Segment,
-    preview: Preview,
-    control_dt: float,
-    expected_rate: float,
-    per_step: set[str],
+    segment: Segment, preview: Preview, per_step: set[str]
 ) -> list[tuple[list[int], str]]:
     """What went wrong in `segment`: each failure with the steps it happens at, counted
     from the first filmed frame, or none when it spans the run. Empty when it passed.
@@ -785,17 +781,16 @@ def check_run(
     `per_step` names the graphs that have to run every step (`per_step_graphs`).
     """
     failures: list[tuple[list[int], str]] = []
-    steps = segment.steps
+    steps, rate = segment.steps, segment.expected_rate
+    control_dt = 1 / rate
 
     def at(k: int) -> str:
         after = k >= segment.filmed
         return f"{k * control_dt:.1f} s" + (" (after the clip)" if after else "")
 
     failures += [([], f"page error: {error}") for error in segment.errors]
-    if segment.rate < expected_rate * MIN_STEP_RATE_RATIO:
-        failures.append(
-            ([], f"slow motion: {segment.rate:.1f} of {expected_rate:.0f} steps/s")
-        )
+    if segment.rate < rate * MIN_STEP_RATE_RATIO:
+        failures.append(([], f"slow motion: {segment.rate:.1f} of {rate:.0f} steps/s"))
     if segment.fps < FPS:
         failures.append(
             ([], f"{segment.fps:.1f} frames/s captured, under {FPS}: frames repeat")
@@ -1008,9 +1003,8 @@ def report(
     failures: list[str] = []
     marks: list[set[int]] = []
     for segment in segments:
-        rate = segment.expected_rate
-        control_dt = 1 / rate
-        found = check_run(segment, segment.preview, control_dt, rate, per_step)
+        found = check_run(segment, segment.preview, per_step)
+        control_dt = 1 / segment.expected_rate
         failures += [f"{segment.label.strip()} {m}".lstrip() for _, m in found]
         marked = set()
         for k in (k for ks, _ in found for k in ks):
