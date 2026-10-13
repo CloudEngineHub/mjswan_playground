@@ -19,6 +19,50 @@
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
 
+- id: asimov
+  pinned: '2026-10-13: the owner asked for Menlo Research''s Asimov first'
+  repo: https://github.com/openhorizon-labs/asimov-v1-policies
+  commit: 695ceba93f6a2fb99be03a5854d94bc55f3df1be
+  simulations:
+    - task: Asimov1-GetUp (src/asimov_policies/tasks/getup), Menlo Research's Asimov 1 humanoid getting up from a fall
+      policy: 'Hugging Face openhorizon-labs/asimov1-getup-safefall at f657abede4c0e8c74b96d7a2546568b63fed619f, policies/getup.onnx (sha256 aa43dfcbae7bdee333c97202b6159642c4c6ad0612ba85b853a7952d6ef6c717; obs 375 = 5 frames of 75, actions 23; no mjlab metadata) with policies/getup_policy_spec.json (joint names, default pose, PD gains); its spec names training commit 695ceba, whose src/ equals HEAD 18c2213'
+      ease: '2: mjlab 1.6''s own action, observation and DC motor actuator classes, and several playground-side rewrites: the fall-state reset traced over the states the pinned commit ships, the training-only assist force dropped, the contract read off the policy spec'
+  left_out: >-
+    Asimov1-SafeFall, the same repository's fall-shaping policy (policies/safefall.onnx at
+    the same revision): its action term, TriggeredJointPositionActionCfg, holds the action at
+    zero until its own fall trigger fires, which mjswan has no counterpart for (ease 0; a
+    policy wrapper that carries the trigger, the route #39 proposes for wuji's pen spin, is
+    untried). Menlo's own Asimov 1 walking policy (Hugging Face
+    Menlo/asimov1-locomotion-0818, BSD-3-Clause) was trained in Isaac Lab
+    (menloresearch/cyclotron) and has no mjlab task. Menlo's mjlab tasks live in copies of
+    mjlab that cannot install beside mjswan's mjlab 1.6.0, and neither ships a policy:
+    menloresearch/asimov-mjlab (the 12-joint v0 legs, on mjlab from before 1.0) and the
+    feature/asimov-velocity-training-cfg branch of menloresearch/mjlab (Asimov 1 velocity,
+    on mjlab 1.5.0 with a low-pass filter added to JointPositionAction).
+  license: 'Apache-2.0 for the tasks and the policy (the repository''s LICENSE; the model card says apache-2.0); the robot model is menloresearch/asimov-1''s sim-model at 35ae7b3, whose repository licenses its hardware under CERN-OHL-S-2.0 and its software under GPL-2.0 without saying which covers the MJCF and meshes: both are reciprocal, and publishing is the owner''s call'
+  popularity: '3: menloresearch/asimov-1, the robot''s repository, has about 1,300 stars (2026-10-13), and its launch drew press; the tasks'' own repository has 1'
+  ease: '2: one simulation, no change to mjswan, several playground-side rewrites (the fall-state reset, the assist force dropped, the contract from the policy spec)'
+  notes: >-
+    Asimov 1, Menlo Research's open-source 1.2 m humanoid (23 hinge joints in its MJCF),
+    getting up from prone, supine and side falls with OpenHorizon Labs' get-up policy,
+    which its model card calls simulation only. Checkout shape: an installable package,
+    asimov_policies, that registers through mjlab's entry point, with the robot in the
+    third_party/asimov-1 submodule at 35ae7b3: clone it with the submodule. mjlab~=1.6.0
+    and mujoco 3.11.0 match mjswan's pins; load_env_cfg("Asimov1-GetUp", play=True) builds
+    here, and its actor group, 5 frames of 75 values, matches the ONNX's 375 inputs. The
+    reset event reset_from_fall_states needs a fall-state file: 695ceba ships
+    data/fall_states.v1-local/fall_states.npz (512 settled states, seed 0), which later
+    commits delete, so pass its path rather than run scripts/gen_fall_states.py.
+    apply_assist_force is a training curriculum: drop it. The actuators are mjlab's
+    DcMotorActuatorCfg, which mjswan runs as PD within the effort limit, dropping the
+    torque-speed clip (peak torque falling to zero at the velocity limit) and the 0-25 ms
+    command delay: compare the browser's get-up with an mjlab rollout that makes the same
+    two simplifications before filming, since wbc's flip_02 failed in the browser from a
+    dropped actuator term alone. The ONNX carries no mjlab metadata: take
+    policy_joint_names, the default pose and the gains from getup_policy_spec.json, whose
+    observation joint order differs from its action order.
+  found: '2026-10-13: the owner asked for Asimov; its mjlab tasks and policies found on GitHub and the Hub'
+
 - id: amp
   repo: https://github.com/ccrpRepo/AMP_mjlab
   commit: 6c7a2947fccc973e4af8e6d90e550400f1b6fcfc
