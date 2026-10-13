@@ -101,6 +101,9 @@ class Preview:
             ``("check", <input id>, <bool>)`` for a label that repeats, as each
             command's Enable does, ``("click", <button label>)`` or
             ``("wait", <seconds>)``.
+        command_keys: Command values the clip eases through, as a hand on the panel's
+            sliders would: ``(seconds into the clip, {"<command>:<input>": value})``.
+            They reach the runtime through the check's hook, so need the run checked.
         motions: Motions to film one after another, concatenated into one GIF with
             `seconds` split evenly between them: for a tracking policy, where the point
             is the range of motions rather than any single one. Empty films one segment
@@ -128,6 +131,7 @@ class Preview:
 
     scene: str = ""
     steps: tuple[tuple, ...] = ()
+    command_keys: tuple[tuple[float, dict[str, float]], ...] = ()
     motions: tuple[str, ...] = ()
     query: str = ""
     orbit: float = 0.0
@@ -138,6 +142,22 @@ class Preview:
     settle: float = 2.0
     upright: bool = True
     ok_terminations: tuple[str, ...] = ()
+
+
+def _duet_arms(
+    left: tuple[float, float, float], right: tuple[float, float, float] | None = None
+) -> dict[str, float]:
+    """duet's arm sliders for a pose, ``(shoulder pitch, shoulder roll, elbow)`` per arm
+    with roll outward-positive; the right arm mirrors the left unless given its own."""
+    values = {}
+    for side, sign, (pitch, roll, elbow) in (
+        ("left", 1, left),
+        ("right", -1, right or left),
+    ):
+        values[f"upper_body_pose:{side}_shoulder_pitch_joint"] = pitch
+        values[f"upper_body_pose:{side}_shoulder_roll_joint"] = sign * roll
+        values[f"upper_body_pose:{side}_elbow_joint"] = elbow
+    return values
 
 
 #: One entry per task in `ALL_TASKS`; a task with no entry is filmed with the defaults.
@@ -239,8 +259,10 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
     ),
     # Wider crop for the taller H1-2. No steps: the twist command resamples every 3-8 s.
     "bipedhrl": Preview(orbit=-30, crop="878:642:41:35"),
-    # Walking in upstream's BOX_HOLD arm pose, set on the arm command's sliders: the arm
-    # generator alone slows to 15% while walking. The twist arrows would hide the arms.
+    # Walking while the arm command's sliders move through upstream's task poses: rest,
+    # forward reach, a high reach with the left arm, the deploy controller's BOX_HOLD, rest.
+    # On its own the arm generator slows to 15% while walking. The twist arrows would hide
+    # the arms.
     "duet": Preview(
         steps=(
             ("check", "twist:enabled", True),
@@ -248,14 +270,15 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             ("check", "viewer:Scene/Debug Viz/Enabled", False),
             ("number", "FOV (°)", 40),
             ("check", "upper_body_pose:enabled", True),
-            ("number", "left_shoulder_pitch", -1.25),
-            ("number", "right_shoulder_pitch", -1.25),
-            ("number", "left_shoulder_roll", 0.0),
-            ("number", "right_shoulder_roll", 0.0),
-            ("number", "left_elbow", 0.7),
-            ("number", "right_elbow", 0.7),
             # Last, so the clip starts before the walk turns the robot from the camera.
             ("number", "lin_vel_x", 0.5),
+        ),
+        command_keys=(
+            (0.0, _duet_arms((0.35, 0.18, 0.87))),
+            (1.5, _duet_arms((-0.9, 0.1, 0.3))),
+            (3.0, _duet_arms((-1.6, 0.1, 0.4), (-0.9, 0.1, 0.3))),
+            (4.5, _duet_arms((-1.25, 0.0, 0.7))),
+            (6.0, _duet_arms((0.35, 0.18, 0.87))),
         ),
         orbit=135,
         tilt=10,
@@ -507,6 +530,7 @@ _TELEMETRY = """(() => {
     window.__recHook = (rt) => {
         if (rt.__rec) return;
         rt.__rec = rec.hooked = true;
+        rec.rt = rt;
         rec.paths = () => [...(rt.policyGraphs?.sessions?.keys() ?? [])];
         let obs = null, model = null, root = null, last = null;
         // Loading a policy builds new sessions and a new termination manager.
@@ -563,6 +587,28 @@ _TELEMETRY = """(() => {
         };
     };
 })();"""
+
+#: Eases each `command_keys` value from key to key on page time, through the runtime the
+#: telemetry hook keeps; after the last key it holds that key's values. It sets the command
+#: term itself: the manager's setter also redraws the hidden panel, whose timers the step
+#: counter would count.
+_COMMAND_KEYS = """(keys) => {
+    const commands = window.__rec.rt.commandManager, t0 = performance.now();
+    const set = (id, value) => {
+        const [term, input] = id.split(':');
+        commands.getTerm(term).setValue(input, value);
+    };
+    const frame = () => {
+        const t = (performance.now() - t0) / 1000;
+        const i = keys.findIndex(([at]) => at > t);
+        const [ta, a] = keys[Math.max(0, (i < 0 ? keys.length : i) - 1)];
+        const [tb, b] = i < 0 ? [ta, a] : keys[i];
+        const u = tb > ta ? 0.5 - 0.5 * Math.cos((Math.PI * (t - ta)) / (tb - ta)) : 1;
+        for (const id in b) set(id, a[id] + u * (b[id] - a[id]));
+        if (i >= 0) requestAnimationFrame(frame);
+    };
+    frame();
+}"""
 
 
 @dataclass
@@ -729,6 +775,10 @@ def film(
                 "everyNthFrame": 1,
             },
         )
+        if preview.command_keys:
+            if not checked:
+                raise SystemExit("command_keys need the run checked: drop --no-check")
+            page.evaluate(_COMMAND_KEYS, [[t, v] for t, v in preview.command_keys])
         page.wait_for_timeout(seconds / clock * 1000)
         client.send("Page.stopScreencast")
         after = page.evaluate("() => window.__paced + window.__yield / 2")
