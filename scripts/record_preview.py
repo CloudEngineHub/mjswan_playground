@@ -239,9 +239,8 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
     ),
     # Wider crop for the taller H1-2. No steps: the twist command resamples every 3-8 s.
     "bipedhrl": Preview(orbit=-30, crop="878:642:41:35"),
-    # A front three-quarter view, walking with the arms held in upstream's BOX_HOLD gamepad
-    # pose through the arm command's sliders: on its own the arm generator slows to 15%
-    # while walking. The twist arrows would cover the arms.
+    # Walking in upstream's BOX_HOLD arm pose, set on the arm command's sliders: the arm
+    # generator alone slows to 15% while walking. The twist arrows would hide the arms.
     "duet": Preview(
         steps=(
             ("check", "twist:enabled", True),
