@@ -7,10 +7,12 @@ G1-23DOF model is Unitree's, BSD-3-Clause)
 
 A 23-DOF Unitree G1 walking and squatting with DUET's lower-body policy, the checkpoint
 its paper deploys on hardware. The policy drives the twelve leg joints and the waist yaw
-to a commanded twist and a pelvis height from 0.73 m down to a 0.18 m crouch; the arms are
-not its actions and hold their default pose. Both commands resample every 3 to 8 s as
-upstream's play config draws them, and the control panel can take over either: mjlab's
-joystick for the twist, an Enable box and a height slider for the squat.
+to a commanded twist and a pelvis height from 0.73 m down to a 0.18 m crouch. The arms are
+not its actions: they follow the arm generator the checkpoint was trained with, toward
+a new pose every second and slower while walking. The twist and the height resample every
+3 to 8 s as upstream's play config draws them, and the control panel can take over each:
+mjlab's joystick for the twist, an Enable box and a height slider for the squat, and an
+Enable box and a slider per joint for the arms.
 
 ## Run
 
@@ -28,6 +30,7 @@ imports `src.tasks.duet.config.g1_23dof`, which registers the task.
 | `Unitree-G1-23Dof-Duet-Flat` (`play=True`) | the scene, the observations, the action term, the commands, the terminations and the events |
 | `exported/policy.onnx` | the policy (71 → 13), model_15500, already exported |
 | `exported/deploy_contract.json` | the action joints and their offsets, the arms' default pose, and the height range the checkpoint was trained on |
+| `TASK_ARM_POSES`, `TASK_ARM_POSE_NOISE`, `ARM_WORKSPACE_LIMITS` | the arm generator's task poses and their noise, and the arm sliders' ranges |
 | `LICENCE` | the project's `LICENSE` |
 
 ## What the policy reads
@@ -46,15 +49,22 @@ Eight terms, one frame, no history:
 
 ## What differs from upstream
 
-- **The arms are held by their actuators, not by an action term.** Play sets upstream's
-  `UpperBodyPoseActionCfg`, the arm disturbance generator, to hold the arms at their
-  default pose, and mjswan has no counterpart for that task-specific action, so it is
-  dropped with the training-side terms that read it: the critic's `arm_traj_vel` and the
-  `arm_traj_speed` and `arm_traj_accel` metrics. Without it, mjlab and the browser both
-  leave the arm targets at 0 rad, so [`main.py`](main.py) shifts each arm position
-  actuator's setpoint by the default pose. A zero target then applies
-  `kp * (default - q) - kv * qdot`, the force the generator applies in play, where its
-  target stays at the default pose to within 1e-8.
+- **The arm generator is a command, not an action term.** Upstream's
+  `UpperBodyPoseActionCfg`, the arm disturbance generator, is an action term with no
+  policy output, which mjswan does not run, so it is dropped with the training-side terms
+  that read it: the critic's `arm_traj_vel` and the `arm_traj_speed` and `arm_traj_accel`
+  metrics. Play also sets it to hold the arms at their default pose.
+  [`terms.py`](terms.py) restates the generator as the `upper_body_pose` command, and
+  mjswan's `CommandJointPositionActionCfg` makes its value the arm targets.
+- **It is the generator model_15500 trained with, not upstream's current one.** It is
+  `UpperBodyPoseAction` as of commit 5521a3f, with the values in `exported/env.yaml`, at
+  the full ratio training reached: a new goal every 50 steps, reached linearly, 70% of
+  them near one of six task poses, slowed to 15% while the twist moves. Upstream has
+  since replaced it with a trapezoidal generator, which trained the later `arm_robust`
+  checkpoints.
+- **The panel can pose the arms.** Its Enable box hands the arm targets to a slider per
+  joint, each over upstream's `ARM_WORKSPACE_LIMITS`. Turning it on or off moves the
+  targets at once, a step the generator never makes.
 - **The gait clock is a command term**, shared with `bipedhrl`. Upstream's `phase` reads
   `env.episode_length_buf`, which the browser does not serve;
   [`_gait_clock.py`](../_gait_clock.py) counts control steps in a `gait_clock` command
