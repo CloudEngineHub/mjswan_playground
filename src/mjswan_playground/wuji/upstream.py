@@ -78,8 +78,7 @@ def checkpoint(bundle: Path, hand: str) -> tuple[Path, dict]:
 
 
 def register_tasks(root: Path) -> None:
-    """Import upstream's task package so mjlab's registry knows its task ids. Installed,
-    mjlab would import it through the entry point; a checkout runs from ``src/``."""
+    """Import upstream's task package from ``src/`` so mjlab's registry knows it."""
     if TASK_PACKAGE in sys.modules:
         return
     source = str(root / "src")

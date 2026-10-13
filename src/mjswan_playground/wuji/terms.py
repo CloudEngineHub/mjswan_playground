@@ -55,8 +55,7 @@ def goal_rot_err_6d(
     object_cfg: SceneEntityCfg = _OBJECT,
 ) -> torch.Tensor:
     """Upstream's ``goal_rot_err_6d`` reading the goal as the command's value, which is
-    what the browser serves of a traced command. ``tag_cfg`` comes resolved, as a term
-    param."""
+    what the browser serves of a traced command."""
     goal_quat_w = env.command_manager.get_command(command_name)
     cube_quat_w = env.scene[object_cfg.name].data.root_link_quat_w
     tag_quat_w = env.scene[tag_cfg.name].data.site_pose_w[:, tag_cfg.site_ids[0], 3:7]
@@ -103,8 +102,7 @@ def _resample_goal(self: Any, env_ids: Any) -> None:
 
 def _update_goal(self: Any, env_ids: Any) -> None:
     """``InHandReorientCommand._update_command`` without its training-side counters.
-    The next goal is drawn every step and taken only when the goal switches, which
-    draws from the same distribution as upstream's draw on switching."""
+    Each step draws a goal from upstream's distribution, taken only on a switch."""
     del env_ids
     cfg = self.cfg
     goal_timer = self.goal_timer + 1
@@ -166,9 +164,8 @@ def bind_goal_override(term: Any) -> None:
     term._update_command = types.MethodType(_update_goal, term)
 
 
-#: Upstream draws the goal as a ghost cube; mjswan draws arrows, so each goal axis
-#: points out of the cube in the color of the face that belongs there (cube.xml:
-#: +X purple, +Y red, +Z green).
+#: Each goal axis is an arrow out of the cube in the color of the face that belongs
+#: there (cube.xml: +X purple, +Y red, +Z green).
 _GOAL_ARROW_M = 0.06
 _GOAL_AXES = {
     "goal_x": [0.6, 0.2, 0.8, 1.0],
