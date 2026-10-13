@@ -1,4 +1,4 @@
-"""Wuji Hand 2 turning a cube to commanded orientations. See ``README.md``."""
+"""Wuji Hand 1 and Hand 2 turning a cube to commanded orientations. See ``README.md``."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from mjswan.mjlab.observation import adapt_observations
 from . import terms, upstream
 
 #: Each scene's upstream task, and the bundle's checkpoint trained on it.
-HANDS = {"WujiHand2_Reorient_50Hz": "hand2"}
+HANDS = {"WujiHand2_Reorient_50Hz": "hand2", "WujiHand_Reorient": "hand1"}
 
 
 def setup_builder() -> mjswan.Builder:

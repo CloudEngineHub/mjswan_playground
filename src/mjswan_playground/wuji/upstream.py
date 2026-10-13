@@ -23,6 +23,8 @@ BUNDLE_URL = (
 BUNDLE_SHA256 = "de01b29921b69ea38100a29416c324b384905e1ae4ebbfa40d769be948fc2d39"
 #: What the build reads out of the bundle, which is mostly CAD and pen-spin data.
 BUNDLE_FILES = (
+    "reorient/checkpoints/hand1/policy.onnx",
+    "reorient/checkpoints/hand1/config.json",
     "reorient/checkpoints/hand2/policy.onnx",
     "reorient/checkpoints/hand2/config.json",
 )

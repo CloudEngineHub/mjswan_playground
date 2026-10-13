@@ -4,21 +4,22 @@
 
 Source: https://github.com/wuji-technology/wuji-mjlab (Apache-2.0) · policy from its
 [v2026.9.27 release bundle](https://github.com/wuji-technology/wuji-mjlab/releases/tag/v2026.9.27)
-(Apache-2.0) · the Wuji Hand 2 model from
+(Apache-2.0) · the Wuji Hand 1 and Hand 2 models from
 [wuji-description](https://github.com/wuji-technology/wuji-description) (MIT)
 
-Wuji Hand 2, a 20-joint right hand on its mounting jig, turning a 54 mm cube in its palm
-to orientations drawn uniformly at random. Three arrows out of the cube show the goal:
-each points where the face of its color has to face (purple +X, red +Y, green +Z). Once
-the cube has held within 0.2 rad of the goal for 13 control steps, the goal stays 1 s more
-and then switches. Episodes last 60 s.
+Wuji Hand 1 and Hand 2, each a 20-joint right hand on its mounting jig, turning a 54 mm
+cube in its palm to orientations drawn uniformly at random. Three arrows out of the cube
+show the goal: each points where the face of its color has to face (purple +X, red +Y,
+green +Z). Once the cube has held within 0.2 rad of the goal for about a quarter second
+(13 control steps on Hand 2, 5 on Hand 1), the goal stays 1 s more and then switches.
+Episodes last 60 s.
 
-Upstream ships four simulations; this task ports one:
+Upstream ships four simulations; this task ports two:
 
 | Upstream task | Here |
 |---|---|
-| `WujiHand2_Reorient_50Hz`, Hand 2 turning the cube at 50 Hz | the scene, with the bundle's Hand 2 checkpoint |
-| `WujiHand_Reorient`, Hand 1 turning the cube at 20 Hz | left out until the playground's preview recorder can check a 20 Hz scene ([#38](https://github.com/ttktjmt/mjswan_playground/issues/38)) |
+| `WujiHand2_Reorient_50Hz`, Hand 2 turning the cube at 50 Hz | a scene, with the bundle's Hand 2 checkpoint |
+| `WujiHand_Reorient`, Hand 1 turning the cube at 20 Hz | a scene, with the bundle's Hand 1 checkpoint |
 | `WujiHand2_Reorient`, Hand 2 at 20 Hz | left out: no checkpoint of its own, the bundle's Hand 2 checkpoint is the 50 Hz recipe's |
 | `WujiHand2_PenSpin`, Hand 2 spinning a pen | left out: `SingleHandResidualEMAActionCfg` smooths the policy's residual alone and adds it to a reference its own command plays, which no actuator filter can stand in for |
 
@@ -29,21 +30,23 @@ uv run msp run wuji
 ```
 
 The first build clones the repository into `.cache/wuji-mjlab/` at a pinned commit and
-downloads the 246 MB release bundle once, checks its sha256 and keeps the Hand 2
-checkpoint and its `config.json` in `.cache/wuji/v2026.9.27/`; set `MJSWAN_WUJI_ROOT` to
+downloads the 246 MB release bundle once, checks its sha256 and keeps the two hands'
+checkpoints and their `config.json` in `.cache/wuji/v2026.9.27/`; set `MJSWAN_WUJI_ROOT` to
 point at a checkout you already have. Installed, upstream registers its tasks through mjlab's entry point;
 [`upstream.py`](upstream.py) imports `wuji_mjlab.tasks` from the checkout's `src/` instead.
 
 | From `wuji-mjlab` | Used as |
 |---|---|
-| `WujiHand2_Reorient_50Hz` (`play=True`) | the scene, the observations, the command, the terminations and the reset events, changed as below |
-| bundle `reorient/checkpoints/hand2/policy.onnx` | the policy (207 → 20): run `RewardContactFix_Full_s42`'s `model_4999` |
-| bundle `reorient/checkpoints/hand2/config.json` | the joint order and the default pose; its action scale, EMA factor and control period are checked against the config |
+| `WujiHand2_Reorient_50Hz`, `WujiHand_Reorient` (`play=True`) | the scenes, the observations, the command, the terminations and the reset events, changed as below |
+| bundle `reorient/checkpoints/hand2/policy.onnx` | Hand 2's policy (207 → 20): run `RewardContactFix_Full_s42`'s `model_4999` |
+| bundle `reorient/checkpoints/hand1/policy.onnx` | Hand 1's policy (207 → 20) |
+| bundle `reorient/checkpoints/<hand>/config.json` | each hand's joint order and default pose; its action scale, EMA factor and control period are checked against the config |
 | `LICENSE`, `NOTICE` | the project's license and notice |
 
 | Scene | Policy | Checkpoint | Input → action | Rate |
 |---|---|---|---|---|
 | `WujiHand2_Reorient_50Hz` | `hand2` | bundle `reorient/checkpoints/hand2` | 207 → 20 | 50 Hz, 100 Hz physics |
+| `WujiHand_Reorient` | `hand1` | bundle `reorient/checkpoints/hand1` | 207 → 20 | 20 Hz, 100 Hz physics |
 
 ## What the policy reads
 
@@ -62,14 +65,15 @@ Five terms, three frames each, oldest first:
 - **The EMA action is the actuators' filter.** Upstream's
   `JointPositionOffsetEMAActionCfg`, a term of its own that mjswan has no counterpart for,
   clamps the action to [-1, 1], scales it by 0.5 about the default pose, clamps that
-  target to the soft limits and smooths it with an EMA, 0.3 per 20 ms step. Here mjlab's
-  `JointPositionActionCfg` applies the same scale and one clip per joint that equals both
-  clamps, and each `<position>` actuator gets a `filterexact` filter with time constant
-  `-dt / ln(1 - 0.3)`, 56 ms, settled at the default pose in the keyframe. The filter
-  equals the EMA at the end of every control step; within one its target moves smoothly
-  rather than jumping, about half a step later. Parity cannot check this side: rolled out
-  in mjlab over 4 envs for 60 s, the checkpoint reached 28.0 goals a minute this way
-  against 29.0 with upstream's term, and dropped the cube in neither.
+  target to the soft limits and smooths it with an EMA: 0.3 per 20 ms step for Hand 2,
+  0.5 per 50 ms step for Hand 1. Here mjlab's `JointPositionActionCfg` applies the same
+  scale and one clip per joint that equals both clamps, and each `<position>` actuator
+  gets a `filterexact` filter with time constant `-dt / ln(1 - alpha)`, 56 ms for Hand 2
+  and 72 ms for Hand 1, settled at the default pose in the keyframe. The filter equals the
+  EMA at the end of every control step; within one its target moves smoothly rather than
+  jumping, about half a step later. Parity cannot check this side: rolled out in mjlab
+  over 4 envs for 60 s, Hand 2's checkpoint reached 28.0 goals a minute this way against
+  29.0 with upstream's term, Hand 1's 24.0 against 25.5, and neither dropped the cube.
 - **`qpos_error` reads the filter state**, `act`, where upstream reads its action term's
   smoothed target ([`terms.py`](terms.py)).
 - **`action_history` is mjlab's `last_action` one to three steps back.** Upstream's

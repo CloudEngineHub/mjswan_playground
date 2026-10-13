@@ -325,8 +325,23 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
         ),
     ),
     # The root is the cube, the only free joint, and turning it over is the task.
-    "wuji": Preview(
-        orbit=-40, tilt=-20, crop="540:395:200:110", seconds=6.0, upright=False
+    "wuji": (
+        Preview(
+            scene="wujihand2_reorient_50hz",
+            orbit=-40,
+            tilt=-20,
+            crop="540:395:200:110",
+            seconds=5.0,
+            upright=False,
+        ),
+        Preview(
+            scene="wujihand_reorient",
+            orbit=-40,
+            tilt=-20,
+            crop="540:395:120:75",
+            seconds=5.0,
+            upright=False,
+        ),
     ),
 }
 
