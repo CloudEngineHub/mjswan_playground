@@ -165,12 +165,12 @@ def bind_goal_override(term: Any) -> None:
 
 
 #: Each goal axis is an arrow out of the cube in the color of the face that belongs
-#: there (cube.xml: +X purple, +Y red, +Z green).
+#: there: the +X, +Y and +Z textures' purple, red and green (cube.xml).
 _GOAL_ARROW_M = 0.06
 _GOAL_AXES = {
-    "goal_x": [0.6, 0.2, 0.8, 1.0],
-    "goal_y": [0.9, 0.1, 0.1, 1.0],
-    "goal_z": [0.1, 0.7, 0.2, 1.0],
+    "goal_x": [0.54, 0.47, 0.78, 1.0],
+    "goal_y": [1.0, 0.0, 0.0, 1.0],
+    "goal_z": [0.0, 0.63, 0.0, 1.0],
 }
 
 register_command(

@@ -48,6 +48,8 @@ build-backend = "hatchling.build"
 packages = ["src/mjswan_playground"]
 
 [tool.uv.sources]
+# ttktjmt/mjswan#164 draws a box's cube texture as MuJoCo does; drop once a release has it.
+mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "518e06e3501cc0c6548099d04ea82be2eb9a8b6a" }
 # TERRA's code is only on feat/programmatic-waypoint-tasks; move to main once it merges.
 myosuite = { git = "https://github.com/MyoHub/myosuite", rev = "992bd58928e61d3f7ce27a033be02d0be18a2c18" }
 spinkick-example = { git = "https://github.com/mujocolab/g1_spinkick_example", rev = "f1c4b230bd1a76c44e801e49f079212b6c6487da" }
