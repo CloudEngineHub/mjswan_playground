@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     import mjswan
 
 _TASKS: dict[str, str] = {
+    "asimov": "mjswan_playground.asimov.main",
     "bipedhrl": "mjswan_playground.bipedhrl.main",
     "duet": "mjswan_playground.duet.main",
     "husky": "mjswan_playground.husky.main",
