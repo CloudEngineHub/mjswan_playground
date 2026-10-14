@@ -353,6 +353,21 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             ok_terminations=("reference_end",),
         ),
     ),
+    "asimov": (
+        # Forward on the panel's joystick: left alone, the twist can stand still a while.
+        Preview(
+            steps=(("check", "twist:enabled", True), ("number", "lin_vel_x", 0.5)),
+            crop="600:439:180:128",
+            seconds=5.0,
+        ),
+        # From a reset to standing. Episodes start fallen, often past the tilt limit.
+        Preview(
+            steps=(("select", "policy-select", "getup"),),
+            crop="600:439:180:128",
+            from_reset=True,
+            upright=False,
+        ),
+    ),
 }
 
 
