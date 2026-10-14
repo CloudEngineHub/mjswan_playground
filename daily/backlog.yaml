@@ -15,145 +15,10 @@
 #   notes        what the port is known to need
 #   found        for an entry the scout added: when, and the evidence
 #   pinned       a person's reason to port it first (ROUTINE.md, parts A and D)
+#   rejected     a person's reason never to port it; such an entry keeps only `id` and `repo`
 #
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
-
-- id: amp
-  repo: https://github.com/ccrpRepo/AMP_mjlab
-  commit: 6c7a2947fccc973e4af8e6d90e550400f1b6fcfc
-  simulations:
-    - task: Unitree-G1-AMP-Flat (src/tasks/amp_loco/config/g1), one G1 policy that walks, runs and gets back up after a fall
-      policy: 'ccrpRepo/wbc_fsm at b352409d73bed469169334040ee9ea70bc28a5f1, model/loco/Unitree-G1-AMP-Flat_model_30000.onnx (obs 384 = 4 frames of 96, time-major; actions 29; no mjlab metadata); the deployed contract is that repo''s config/mjamp.json and include/FSM/State_MJAmp.h (history 4, joint map, KNEES_BENT default pose, action scale 0.25 effort/kp)'
-      ease: '2: several playground-side rewrites: the time-major history recast as per-lag terms, the motion-reset events dropped, the registration bypassed, UnitreeActuatorCfg run as its BuiltinPositionActuatorCfg base, mjlab 1.2.0 shims'
-  left_out: >-
-    Unitree-G1-AMP-Rough, Unitree-G1-Rough and Unitree-G1-Flat: no checkpoint of their own.
-    wbc_fsm's other ONNX files (amp_0309_1, loco_0731 with an LSTM, dance12_0207_1) are torch
-    2.5.1, opset-11 exports for the deploy repo's other controllers, with no task in this
-    repository.
-  license: 'none stated: neither AMP_mjlab nor wbc_fsm has a LICENSE file, so all rights are reserved and publishing is the author''s call; the G1 MJCF and meshes are Unitree''s (BSD-3-Clause, as in unitreerl); the AMP clips under src/assets/motions only train and are not shipped'
-  popularity: '2: 474 stars (2026-10-13); a CSDN write-up of the method'
-  ease: '2: one simulation, no change to mjswan, several playground-side rewrites (time-major history, motion-reset events dropped, registration bypassed, Unitree actuators run as their base) and mjlab 1.2.0 shims'
-  notes: >-
-    A Unitree G1 that walks, runs and gets up after falls with one AMP policy. Checkout
-    shape: upstream imports itself as the top-level `src`, like unitreerl. Pins
-    mjlab==1.2.0: shim update_assets and CollisionCfg as unitreerl does. The actor group sets
-    history_ordering="time", a field only the repo's mjlab_patch adds and mjlab 1.6.0
-    rejects: shim the field, and rebuild the 384-wide input as the six terms (base_ang_vel
-    from imu_ang_vel, projected_gravity, the twist command, joint_pos_rel, joint_vel_rel,
-    last_action) at look-backs 3, 2, 1 and 0, oldest frame first and term order within a
-    frame, which is the deploy code's buffer. Drop the critic and amp groups and the
-    init_motion_loader and reset_from_motion_data events, which reset into recovery clips
-    (play sets delay_reset_env_ratio 1.0). Registration imports AMPOnPolicyRunner from the
-    vendored rsl_rl fork at the repo root, and wandb: build g1_amp_flat_env_cfg(play=True)
-    directly. The UnitreeActuatorCfg_* classes subclass BuiltinPositionActuatorCfg and clip
-    effort to a torque-speed curve with Fs/Fd friction in torch; mjswan runs the <position>
-    actuators, dropping both. No metadata: the joint order and default pose come from
-    State_MJAmp.h, whose pose is the config's KNEES_BENT_KEYFRAME. mjlab's own
-    UniformVelocityCommandCfg and JointPositionActionCfg; 200 Hz physics, 50 Hz control.
-    The flat actor group at HEAD equals 2d6b0d1's (2026-04-29), the policy's era. pacman
-    already runs a Unitree-G1-AMP-Flat scene from a repository that ships the same AMP
-    clips, with its own checkpoint; LainLab ships this ONNX byte for byte.
-  found: '2026-10-11: GitHub search for mjlab (stars), 472 stars'
-
-- id: ufo
-  repo: https://github.com/Roboparty/UFO
-  commit: 0b89378de02f77712072d983bc43ec2a46455dc0
-  simulations:
-    - task: the G1 forward-backward (FB) policy in HumanoidVerse's mjlab backend (make_mjlab_ufo_env_cfg in humanoidverse/agents/envs/humanoidverse_mjlab.py, built from Hydra configs, not registered with mjlab), prompted with a latent z
-      policy: 'Hugging Face xuewang/ufo-g1-policy at fc5efb7b3bb7a82270abaeabb0cf3c1194f1c7e6, g1_policy/exported/FBcprAuxModel.onnx (actor_obs [1, 721] = 465 proprioception + 256 z; actions 29; 128.5 MB) with the z contexts tracking_inference_mjlab/zs_{3,6,7,8,15,20,24,25,39}.pkl, reward_inference_mjlab/reward_locomotion.pkl and goal_inference_mjlab/goal_reaching.pkl'
-      ease: '1: the model card states no license, on top of several rewrites (the 721-wide observation rebuilt as terms, z fed as a command, a 128.5 MB ONNX)'
-  left_out: >-
-    The TeCH agent and robots other than the G1 (the robot-config path): no released
-    checkpoint. The deploy branch's PICO teleoperation, which streams z from a live
-    retargeter.
-  license: 'CC BY-NC 4.0 for UFO (LICENSE); the Hub model card states none; the G1 MJCF is Unitree''s (BSD-3-Clause); the LAFAN1-derived training data (xuewang/UFO-MotionData) is not needed at play'
-  popularity: '2: 313 stars (2026-10-13); press on RoboParty''s RP1 humanoid at IROS 2026 names UFO in its control stack'
-  ease: '1: one simulation whose Hub checkpoint states no license, with its observation rebuilt as terms, z fed as a command and a 128.5 MB ONNX to shrink'
-  notes: >-
-    An unsupervised behavior-foundation policy for the G1: one network that tracks a motion,
-    walks or reaches a goal depending on the latent z it is given. The mjlab env config is a
-    physics shell whose actor group holds a placeholder joint_pos term; HumanoidVerse
-    computes the policy's input outside mjlab's managers. Rebuild it from the deploy branch
-    (eb556f9173ec1c7519f643211409140f8b2690c8) rl_policy/observations/ufo_policy.py and
-    config/policy/g1_policy.yaml: dof_pos minus default, dof_vel, projected_gravity,
-    base_ang_vel x0.25 and prev_actions, then 4-step histories of the same terms in the
-    yaml's order, newest first (history_steps offsets), then z. Feed z per control step from a table for a tracking
-    context (a command binding), or hold one z for the reward and goal contexts; the
-    contexts are pickles, so convert them at build time. DcMotorActuatorCfg runs as PD
-    within its effort limit, dropping the DC torque-speed curve; JointPositionActionCfg
-    with per-joint scales and preserve_order. 200 Hz physics, decimation 4. Pins
-    mjlab==1.4.0 and mujoco~=3.8.0: checkout shape. The 128.5 MB ONNX is over mjswan
-    Cloud's 100 MB per upload: convert it to float16.
-  found: '2026-10-11: GitHub mjlab topic (stars), 307 stars'
-
-- id: openbeni
-  repo: https://github.com/Mondo-Robotics/open-beni
-  commit: 4545b86a131d05519050df11a424368ef9f06b4f
-  simulations:
-    - task: Beni-Jump-Flat (python/beni_rl), the BENI wheel-legged robot driving to velocity commands and jumping on request
-      policy: assets/models/policy.onnx in git (obs 40, a GRU carry h_in/h_out [1, 1, 512], actions 7; no mjlab metadata); policy_best.onnx is another checkpoint of the same policy
-      ease: '2: 100 Hz control and several rewrites: three command bindings, a GRU carry wrapper, class-based terms; the actuators drop a knee spring and a command delay'
-  left_out: >-
-    Beni-Velocity-Flat: no checkpoint of its own; the README plays the shipped policy as
-    Beni-Jump-Flat.
-  license: MIT for the code, the BENI MJCF and meshes and the policies (LICENSE)
-  popularity: '1: 61 stars (2026-10-13); a Hugging Face Space game, mondo-robotics/open-beni (0 likes)'
-  ease: '2: one simulation at 100 Hz control with three command bindings, a GRU carry wrapper, class-based terms and two actuator details (a knee spring, a command delay) mjswan drops'
-  notes: >-
-    BENI, a small wheel-legged biped (hips and knees by position, wheels by velocity, a head
-    yaw), driving and jumping a fixed 0.18 m reference on request. Pins mjlab>=1.6.0 (locks
-    1.6.0) and Python 3.12 but torch>=2.7,<2.8: checkout shape. mjlab's
-    JointPositionActionCfg and JointVelocityActionCfg. 500 Hz physics (timestep 0.002),
-    decimation 5: 100 Hz control. BeniVelocityCommandCfg subclasses mjlab's
-    UniformVelocityCommandCfg under its own name (cast to the base, as jumper does);
-    BeniGimbalCommandCfg and BeniJumpCommandCfg are its own, the latter a ~500-line stateful
-    jump state machine: hold it idle, or rebuild a one-shot jump trigger as a command.
-    constant_observation is a class term and base_pose_command reads custom state: rewrite
-    both in terms.py. The GRU's single carry needs the ONNX wrapper microduckpg's basketball
-    uses. BeniMotorCfg subclasses IdealPdActuatorCfg: mjswan runs PD within effort_limit,
-    dropping the knees' (L2, R2) passive spring (spring_scale 1.0: 0.22 sin(q-1) + 0.15
-    sin 2(q-1) N m) and their 4.6 N m simulation_effort_limit; the spring may need
-    emulating. Every motor also carries a 2 to 5 physics-step command delay
-    (_COMMAND_DELAY in beni_robot.py), which mjswan does not model: a servo filter may
-    stand in, as in microduckpg.
-  found: '2026-10-11: web search (extended), 55 stars'
-
-- id: tasknpoint
-  repo: https://github.com/wernerb43/tasknpoint
-  commit: b8faaf284e0cef8021b94e2219492dbd54efba0c
-  simulations:
-    - task: Mjlab-MultiTarget-Tracking-Flat-Unitree-G1 (tasknpoint_project/src/tasknpoint_project/goal_cond_tracking/config/g1), a G1 kicking a commanded point with one of kicks_new.toml's five kicks (one and two steps, right and left, and two baby steps right), on robots/training/g1_27dof_training.xml as that motion set trains
-      policy: deploy/policies/kicks_no_ori.onnx in git (inputs obs 157, which_motion and time_step; actions 29; mjlab metadata; the five clips baked in as tables for 14 bodies); four of the clips also as full 30-body npz in git at ac7c8ccc51c7caae2b869b71e232789b9f035db0 (deploy/artifacts/{one,two}_step_{right,left}_kick.npz, equal to the baked tables), two_baby_step_right_kick (222 frames) only in the ONNX
-      ease: '2: no change to mjswan, but several task-specific rewrites: a command binding for MultiTargetMotionCommandCfg (stacked clips, Gaussian target points, 0 to 1 s pauses between kicks, its reset writes), which_motion as an observation group of its own, the kicks cut to their position target, one clip rebuilt from the ONNX, and the _update_command(env_ids) shim; 200 Hz physics, 50 Hz control'
-  left_out: >-
-    The tennis swings (deploy/configs/g1_tasknpoint_tennis.yaml's six_motions_4.onnx) and the
-    box pickup (pickup_9.onnx): their checkpoints sit on the author's disk, and the README's
-    W&B runs (48cdla54, i4tr5j7v, 0ulgzbgg, r49k4cin) are in
-    bwerner-california-institute-of-technology-caltech/mjlab, which the public W&B API does
-    not serve (project null on 2026-10-11).
-  license: MIT (LICENSE.md) for the code, the ONNX and the kick clips; the clips were retargeted from video with PromptHMR and GMR, source videos not stated; the G1 model in robots/ (g1_29dof_rev_1_0) is Unitree's, BSD-3-Clause
-  popularity: '1: 60 stars (2026-10-13); arXiv 2606.26215'
-  ease: '2: its one simulation, under the rewrites in notes'
-  notes: >-
-    A G1 kicking a commanded point with one of five kicks (TaskNPoint, Caltech). The task
-    lives in the tasknpoint_project sub-project, whose pyproject wants Python 3.13 and
-    mjlab>=1.3.0 (locked at 1.3.0, and 1.4.0 at the workspace root): checkout shape, with
-    tasknpoint_project/src on sys.path and tasknpoint_project.goal_cond_tracking.config.g1
-    imported, since its mjlab.tasks entry point loads only when installed; nothing in it
-    needs 3.13. The checkpoint is 157 wide: command (the clip's joint_pos and joint_vel, 58,
-    plus one target point in the pelvis frame), motion_anchor_ori_b, base_ang_vel,
-    joint_pos, joint_vel, actions. HEAD's motion_lib also gives each kick a velocity and an
-    orientation target (164 wide); the deploy node
-    (control_29dof_tasknpoint_autonomous.py, goal_dim 3) and g1_tasknpoint_soccer.yaml feed
-    the position goal alone, so keep each kick's first sub-target, in kicks_new.toml's order
-    (time_step_totals 252, 247, 240, 224, 222). Swap the robot's spec_fn to
-    robots/training/g1_27dof_training.xml (29 joints despite the name) as train.py does;
-    mjlab's G1 BuiltinPositionActuatorCfg gains match the metadata. The policy reads obs
-    alone: which_motion and time_step only index the baked reference outputs (in_keys actor,
-    a which_motion group, time_step; out_keys action first). MultiTargetMotionCommand
-    overrides _update_command(self) without env_ids, which mjlab 1.6 rejects:
-    dropping_env_ids, as duet.
 
 - id: booster
   repo: https://github.com/IntelligentRoboticsLab/booster_mjlab
@@ -184,6 +49,7 @@
     shape, and its code has to import under 3.12. mjlab pinned at git b517e0c4 (1.6.0).
     200 Hz physics, 50 Hz control.
   found: '2026-10-11: GitHub search for mjlab (stars), 57 stars'
+  pinned: '2026-10-15: the owner asked for booster next'
 
 - id: droidup
   repo: https://github.com/Anwei-Saw/DroidUpE1_mjlab
@@ -1507,3 +1373,19 @@
     A fork of AMP_mjlab (mjlab==1.2.0). Stops an unattended run unless mjswan gains an
     incremental position action.
   found: '2026-10-13: web search (AMP_mjlab forks), 1 star'
+
+- id: amp
+  repo: https://github.com/ccrpRepo/AMP_mjlab
+  rejected: '2026-10-15: the owner took it out'
+
+- id: ufo
+  repo: https://github.com/Roboparty/UFO
+  rejected: '2026-10-15: the owner took it out'
+
+- id: openbeni
+  repo: https://github.com/Mondo-Robotics/open-beni
+  rejected: '2026-10-15: the owner took it out'
+
+- id: tasknpoint
+  repo: https://github.com/wernerb43/tasknpoint
+  rejected: '2026-10-15: the owner took it out'
