@@ -1,6 +1,6 @@
-"""Menlo Research's walking policy, and the MDP its ``env.yaml`` records, on upstream's
-get-up scene. The policy was trained in Isaac Lab and has no mjlab task, so its
-observations, command and terminations are restated here from that file."""
+"""Menlo Research's walking policy on upstream's get-up scene. Trained in Isaac Lab, it
+has no mjlab task, so its ``env.yaml``'s observations, command and terminations are
+restated here."""
 
 from __future__ import annotations
 
@@ -22,8 +22,7 @@ from . import upstream
 POLICY_REPO_ID = "Menlo/asimov1-locomotion-0818"
 POLICY_REVISION = "18114a730668a983423e6361f0522eb62c76cb74"
 
-#: ``env.yaml``'s torque limits where they exceed upstream's, which takes the motors'
-#: rated torques. N·m.
+#: ``env.yaml``'s torque limits in N·m, where they exceed upstream's rated torques.
 EFFORT_LIMITS = {
     r".*_hip_pitch_joint": 45.0,
     r".*_hip_roll_joint": 45.0,

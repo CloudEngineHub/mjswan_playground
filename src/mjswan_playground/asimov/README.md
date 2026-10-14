@@ -13,10 +13,10 @@ Asimov 1, Menlo Research's open-source 1.2 m humanoid, with two policies on one 
 - **`walk`**, Menlo's own walking policy, follows a velocity command: mjlab's, drawn
   anew every 3 to 8 s, or the panel's joystick. Each episode starts standing at a random
   heading and lasts 20 s, unless the robot tips past 70°.
-- **`getup`**, OpenHorizon Labs' get-up policy, starts each episode from one of the 512
-  settled fall states upstream ships (prone, supine, on a side or in between) at a random
-  heading; the robot stands within about two seconds and holds the stance until the
-  20 s episode ends and drops it into the next fall.
+- **`getup`**, OpenHorizon Labs' get-up policy, starts each episode from one of
+  upstream's 512 settled fall states (prone, supine, on a side or in between) at a
+  random heading. The robot stands within about two seconds and holds the stance until
+  the 20 s episode ends and the next fall begins.
 
 Switching policies starts the chosen one from its own reset, so the get-up does not pick
 up a walk that fell. OpenHorizon says its policies have only run in simulation.
@@ -32,12 +32,12 @@ uv run msp run asimov
 ```
 
 The first build clones both repositories into `.cache/` at pinned commits and downloads
-the two policies, and the get-up's spec, from the Hub at pinned revisions. Set
-`MJSWAN_ASIMOV_ROOT` and `MJSWAN_ASIMOV_MODEL_ROOT` to point at checkouts you already
-have. Upstream is a package registered through mjlab's `mjlab.tasks` entry point, but
-the checkout is not installed: [`upstream.py`](upstream.py) points `ASIMOV_1_MODEL_DIR`
-at the asimov-1 checkout, which stands in for the submodule the clone leaves empty, puts
-`src/` on `sys.path` and imports `asimov_policies.tasks`.
+both policies and the get-up's spec from the Hub at pinned revisions. Set
+`MJSWAN_ASIMOV_ROOT` and `MJSWAN_ASIMOV_MODEL_ROOT` to use checkouts you already have.
+Installed, upstream registers its tasks through mjlab's entry point;
+[`upstream.py`](upstream.py) imports `asimov_policies.tasks` from the checkout's `src/`
+instead, with `ASIMOV_1_MODEL_DIR` at the asimov-1 checkout in place of the submodule the
+clone leaves empty.
 
 | From upstream | Used as |
 |---|---|
@@ -81,56 +81,46 @@ the model's joint order, which differs from the observations'.
 
 ### Both policies
 
-- **Flat ground.** Upstream's play config keeps training's ground: flat patches, and
-  heightfields with 2 to 5 cm bumps on the other 70%. mujoco_warp, which mjlab trains
-  and plays on, gives a box or capsule touching a heightfield at most one contact (it
-  warns so when it builds the scene), where the browser's MuJoCo gives several, and a
-  robot lying down touches the ground with exactly those shapes. On a heightfield the
-  browser's get-up fell back once before it stood in two of three filmed rounds from
-  the same start; in mjlab, with upstream's motors, the policy falls back in 5 of 128
-  starts there, and in none of 128 on flat ground. [`upstream.py`](upstream.py) builds
-  the config with upstream's own `rough=False`: a plane, and the reset's spawn height
-  for flat ground, 1 cm where the bumps take 6.
-- **The actuators run as PD within the effort limit.** Upstream's `DcMotorActuatorCfg`
-  also caps each motor's torque on a torque-speed curve, from its peak torque at rest
-  to zero at its no-load speed, and delays each command by 0 to 5 physics steps (0 to
-  25 ms). mjswan runs the `IdealPdActuatorCfg` it subclasses, dropping both. In mjlab on
-  this flat ground, from the same 128 fall states, the get-up stands up in all 128
-  either way: in a median 1.23 s with upstream's motors, 1.12 s without the curve and
-  the delay.
+- **Flat ground.** Upstream's play keeps training's ground, 70% of it heightfields with
+  2 to 5 cm bumps. On those, mujoco_warp, which mjlab runs, gives a box or capsule at
+  most one contact and the browser's MuJoCo several, and a robot lying down touches the
+  ground with exactly those shapes. [`upstream.py`](upstream.py) builds the config with
+  upstream's own `rough=False`: a plane, and the reset's spawn height for flat ground,
+  1 cm where the bumps take 6. In mjlab, with upstream's motors, the get-up falls back
+  in 5 of 128 starts on the heightfield and in none on the plane.
+- **The actuators run as PD within the effort limit.** mjswan runs upstream's
+  `DcMotorActuatorCfg` as the `IdealPdActuatorCfg` it subclasses, which drops the
+  motors' torque-speed curve and their 0 to 25 ms command delay. In mjlab, from 128 fall
+  states on the plane, the get-up stands every time either way, in a median 1.23 s with
+  upstream's motors and 1.12 s without.
 - **The limits are `env.yaml`'s.** The walking policy trained with 45 N·m at the hips'
   pitch and roll and at the knees and 28 N·m at the hips' yaw, where upstream takes the
-  motors' rated 40, 30, 25 and 20 N·m; the other joints' limits agree.
-  [`walk.py`](walk.py) raises them for the scene, which both policies share. In MuJoCo's
-  C build, which the browser runs, with the browser's PD, the walking policy fell in 5 of
-  100 20-second runs of random commands at the rated limits and in none at
-  `env.yaml`'s. In mjlab, with the same PD, the get-up stood from all of 64 fall states
-  at either.
+  motors' rated 40, 30, 25 and 20 N·m. [`walk.py`](walk.py) raises them on the scene both
+  policies share. In MuJoCo's C build, which the browser runs, with the browser's PD, the
+  walk fell in 5 of 100 20-second runs of random commands at the rated limits and in none
+  at `env.yaml`'s; in mjlab the get-up stood from all of 64 fall states at either.
 - **One robot, not a population.** The resets' draws come from the browser's seeded
   PRNG, where mjlab draws them per env.
 
 ### `walk`
 
-- **The MDP is restated from `env.yaml`.** Menlo trained the policy in Isaac Lab, so
-  there is no mjlab task. [`walk.py`](walk.py) writes its observations, velocity command
-  and terminations from the Hub's `env.yaml`, on upstream's get-up scene, whose
-  `robot.py` copies Menlo's joint order, default pose, PD gains, armature, joint friction
-  and action scale from Menlo's training code. Menlo's own mjlab ports do not fit:
-  [menloresearch/mjlab](https://github.com/menloresearch/mjlab)'s Asimov 1 task trains a
-  different recipe (straight knees, stiffer ankles, a filtered action, a gait clock in
-  the observation) and ships no policy, and
-  [asimov-mjlab](https://github.com/menloresearch/asimov-mjlab) is the legs-only Asimov.
-- **Play's conditions.** Training adds noise and delays to the observations (the gyro
-  0 to 1 control steps late, gravity 0 to 2), randomizes the feet's friction, the
-  joints' zeros, the torso's centre of mass and the PD gains, pushes the robot every 1
-  to 3 s and resets it up to 0.5 m and 0.5 rad off the default pose. Here none of that
-  happens, as in mjlab's play: each episode starts at the default pose, facing a random
-  heading.
-- **MuJoCo, not PhysX.** The policy never trained on MuJoCo's contacts, and its
-  `env.yaml` gives joint friction as a PhysX coefficient, which upstream's entity takes
-  as a frictionloss in N·m. In mjlab, over 32 robots for 20 s of `env.yaml`'s random
-  commands, it kept within 0.13 to 0.15 m/s of the commanded velocity, and none fell at
-  `env.yaml`'s limits.
+- **The MDP is restated from `env.yaml`.** Menlo trained the policy in Isaac Lab, so it
+  has no mjlab task. [`walk.py`](walk.py) writes `env.yaml`'s observations, velocity
+  command and terminations on upstream's get-up scene, whose `robot.py` copies Menlo's
+  joint order, default pose, PD gains, armature, joint friction and action scale.
+  Menlo's own mjlab ports do not fit:
+  [menloresearch/mjlab](https://github.com/menloresearch/mjlab) trains a different recipe
+  and ships no policy, and [asimov-mjlab](https://github.com/menloresearch/asimov-mjlab)
+  is the legs-only Asimov.
+- **Play's conditions.** Training adds noise and delays to the observations, randomizes
+  the feet's friction, the joints' zeros, the torso's centre of mass and the PD gains,
+  pushes the robot every 1 to 3 s and resets it up to 0.5 m and 0.5 rad off the default
+  pose. None of that happens here, as in mjlab's play: each episode starts at the
+  default pose, facing a random heading.
+- **MuJoCo, not PhysX.** The policy never trained on MuJoCo's contacts, and `env.yaml`
+  gives joint friction as a PhysX coefficient, which upstream's entity takes as a
+  frictionloss in N·m. In mjlab, 32 robots over 20 s of `env.yaml`'s random commands
+  kept within 0.13 to 0.15 m/s of the command, and none fell at `env.yaml`'s limits.
 
 ### `getup`
 
@@ -144,21 +134,19 @@ the model's joint order, which differs from the observations'.
 - **`nan_detection` without `|=`.** mjlab's own term builds its mask in place, which
   `torch.onnx.export` cannot export (`aten::__ior_`); [`terms.py`](terms.py) restates
   it with `|`.
-- **No `assist_force`.** The training curriculum's upward pull on the torso, whose scale
-  play already holds at zero. Dropped, with the curriculum, the rewards and the metrics,
-  which only train.
+- **No `assist_force`.** It is the training curriculum's upward pull on the torso, whose
+  scale play already holds at zero. It goes with the curriculum, the rewards and the
+  metrics, which only train.
 - **No encoder bias.** Play randomizes nothing, and the policy's spec carries none.
 
 ## License
 
 The tasks, the code and the get-up policy are Apache-2.0. Menlo's walking policy is
 BSD-3-Clause by its model card, which names no copyright holder; the build ships the
-standard text as `LICENSE.asimov1-locomotion`, under Menlo Research, which its training
-code names. The robot model is neither: menloresearch/asimov-1 licenses its hardware
-under CERN-OHL-S-2.0 and its software under GPL-2.0 without saying which covers
-`sim-model/`, the MJCF and STL meshes this task compiles into `scene.mjz` (upstream's
-open question Q1; Menlo says a statement is coming). Both are reciprocal. The build
-ships both texts beside the scene, as `LICENSE.asimov-1-hardware` and
-`LICENSE.asimov-1-software`, and upstream's `NOTICE` with the project, so
-`mjswan publish` warns on the GPL-2.0 file. Publishing the demo is its author's call,
-under those terms.
+standard text as `LICENSE.asimov1-locomotion` under Menlo Research, the holder its
+training code names. The robot model is neither: menloresearch/asimov-1 licenses its
+hardware under CERN-OHL-S-2.0 and its software under GPL-2.0 without saying which covers
+`sim-model/`, the MJCF and STL meshes compiled into `scene.mjz` (upstream's open
+question Q1). Both are reciprocal. The build ships both texts beside the scene, as
+`LICENSE.asimov-1-hardware` and `LICENSE.asimov-1-software`, and `mjswan publish` warns
+on the GPL-2.0 file. Publishing the demo is its author's call, under those terms.
