@@ -27,7 +27,8 @@ HANDS = {"WujiHand2_Reorient_50Hz": "hand2", "WujiHand_Reorient": "hand1"}
 def _add_hands(project: Any, root: Path, bundle: Path) -> None:
     for task_id, hand in HANDS.items():
         policy, config = upstream.checkpoint(bundle, hand)
-        _add_hand(project, task_id, hand, policy, config)
+        scene = _add_hand(project, task_id, hand, policy, config)
+        upstream.add_attributions(scene, bundle)
 
 
 #: Parts built on their own, in the order the whole lists their scenes.
@@ -46,9 +47,7 @@ def setup_builder(part: str | None = None) -> mjswan.Builder:
     return builder
 
 
-def _add_hand(
-    project: Any, task_id: str, hand: str, policy: Path, config: dict
-) -> None:
+def _add_hand(project: Any, task_id: str, hand: str, policy: Path, config: dict) -> Any:
     env_cfg = play_env_cfg(task_id, config)
     scene = project.add_scene_mjlab(task_id, env_cfg=env_cfg)
     observations = adapt_observations(env_cfg.observations["policy"])
@@ -61,6 +60,7 @@ def _add_hand(
         policy_joint_names=[f"robot/{joint}" for joint in config["joint_order"]],
         default_joint_pos=config["default_joint_pos"],
     )
+    return scene
 
 
 def play_env_cfg(task_id: str, config: dict) -> Any:
