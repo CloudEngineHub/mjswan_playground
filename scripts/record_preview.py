@@ -168,12 +168,12 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
     # Push Speed defaults to 1.0, so the skater is already riding.
     "husky": Preview(orbit=150, crop="719:526:121:127"),
     # `idle_02` opens the motion list and stands still, so the preview picks its own two:
-    # one policy over a sprint and a flip is the point of a tracking task. `ref=0` drops
+    # one policy over a sprint and a flip is the point of a tracking task. `debug=0` drops
     # the tracking ghost, which otherwise stands beside the robot and halves its size.
     # The flip turns the root over, so the tracking terminations judge a fall instead.
     "wbc": Preview(
         motions=("sprint_01", "flip_02"),
-        query="ref=0",
+        query="debug=0",
         orbit=150,
         crop="719:526:115:122",
         seconds=6.0,

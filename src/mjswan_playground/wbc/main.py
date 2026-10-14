@@ -56,6 +56,11 @@ def setup_builder() -> mjswan.Builder:
     # Training-only events the deploy runtime does not apply either; see README.
     for training_only in ("assistive_wrench", "pull_robot"):
         env_cfg.events.pop(training_only, None)
+    # The browser runs the PD alone, so UnitreeActuator's friction terms become the
+    # joints' own frictionloss and damping, which the exported scene carries.
+    for actuator in env_cfg.scene.entities["robot"].articulation.actuators:
+        actuator.frictionloss, actuator.viscous_damping = actuator.fs, actuator.fd
+        actuator.fs = actuator.fd = 0.0
 
     builder = mjswan.Builder()
     project = builder.add_project(name="WBC-Mjlab G1", license=deploy / "LICENSE")

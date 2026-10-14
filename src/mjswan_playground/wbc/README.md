@@ -40,3 +40,13 @@ every term against the live `Wbc-G1` env.
 Two training-only events are dropped: `assistive_wrench`, the helper wrench that carries
 early training, and `pull_robot`, the disturbance sampler. Neither is applied by the
 deploy runtime either.
+
+The G1's `UnitreeActuator` adds two friction torques to mjlab's ideal PD, a static
+`fs·tanh(v / 0.01)` and a viscous `fd·v`, and the browser's PD computes neither. Here
+they become each joint's MuJoCo `frictionloss` and `damping`, through the actuator
+config's `frictionloss` and `viscous_damping`, which the exported scene carries. Without
+them `flip_02` comes down too high and ends on `ee_body_pos` at 4.16 s, in the browser and
+in mjlab alike; with them mjlab lands it as it does with upstream's actuator. The landing
+is narrow in mjlab too: with no randomization the policy misses it, and with play's
+randomization it misses in 10 of 16 envs. The browser's fixed term seed draws a foot
+friction and COM offset it lands with.
