@@ -382,10 +382,13 @@ def per_step_graphs(app_dir: Path) -> set[str]:
     return paths - {None}
 
 
-def control_rate(app_dir: Path) -> float:
-    """Control steps per second the app's first scene runs at, from its manifest."""
+def control_rate(app_dir: Path, scene: str) -> float:
+    """Control steps per second `scene` runs at; the app's first scene when empty."""
     manifest = json.loads((app_dir / "manifest.json").read_text())
-    control_dt = manifest["projects"][0]["scenes"][0].get("control_dt")
+    scenes = [s for project in manifest["projects"] for s in project["scenes"]]
+    control_dt = next((s for s in scenes if s["id"] == scene), scenes[0]).get(
+        "control_dt"
+    )
     return 1 / control_dt if control_dt else 50.0
 
 
@@ -466,15 +469,15 @@ def _orbit(page, degrees: float, tilt: float = 0.0) -> None:
     page.mouse.up()
 
 
-#: Counts the step loop's own pacing: one `setTimeout` per on-schedule control step, two
-#: `MessageChannel` posts per step that ran late. Installed before the app's own scripts.
-#: An IIFE, not a function: `add_init_script` takes source to run, and a bare function
-#: expression would be evaluated and dropped, leaving the counters undefined.
+#: Counts the step loop's own pacing: one `setTimeout` of up to a control period (`%g`,
+#: in ms, with 5 ms to spare) per on-schedule step, two `MessageChannel` posts per late
+#: one. Installed before the app's own scripts, as an IIFE: `add_init_script` runs
+#: source, and a bare function expression would leave the counters undefined.
 _STEP_COUNTER = """(() => {
     window.__paced = 0; window.__yield = 0;
     const timeout = window.setTimeout;
     window.setTimeout = function (fn, ms, ...rest) {
-        if (ms > 0 && ms <= 25) window.__paced++;
+        if (ms > 0 && ms <= %g) window.__paced++;
         return timeout.call(this, fn, ms, ...rest);
     };
     const post = MessagePort.prototype.postMessage;
@@ -486,7 +489,7 @@ _STEP_COUNTER = """(() => {
 
 #: Runs the page's clock at a fraction of real time for `--software`: timers,
 #: `performance.now`, `Date.now` and animation-frame timestamps alike. Installed before
-#: `_STEP_COUNTER`, which then still sees the step loop's own 20 ms delays.
+#: `_STEP_COUNTER`, which then still sees the step loop's own delays.
 _SCALED_CLOCK = """((k) => {
     const now = performance.now.bind(performance), t0 = now();
     performance.now = () => t0 + (now() - t0) * k;
@@ -625,6 +628,8 @@ class Segment:
     runs: dict[str, int] = dataclasses.field(default_factory=dict)
     errors: list[str] = dataclasses.field(default_factory=list)
     rate: float = 0.0
+    #: The control rate of the scene it filmed, which `rate` is held to.
+    expected_rate: float = 50.0
     fps: float = 0.0
     #: Screenshots of the run after the clip, one per `SHEET_EVERY` seconds.
     after: list[bytes] = dataclasses.field(default_factory=list)
@@ -650,9 +655,9 @@ def _hook_runtime(route, hooked: list[bool]) -> None:
 def film(
     url: str,
     preview: Preview,
+    expected_rate: float,
     frames_dir: Path | None = None,
     shot: Path | None = None,
-    expected_rate: float = 50.0,
     motion: str | None = None,
     seconds: float | None = None,
     start_index: int = 0,
@@ -673,7 +678,11 @@ def film(
 
     seconds = preview.seconds if seconds is None else seconds
     segment = Segment(
-        next_index=start_index, preview=preview, motion=motion, first_index=start_index
+        next_index=start_index,
+        preview=preview,
+        motion=motion,
+        first_index=start_index,
+        expected_rate=expected_rate,
     )
     checked = check_seconds is not None
 
@@ -692,7 +701,7 @@ def film(
         )
         if clock < 1:
             context.add_init_script(_SCALED_CLOCK % clock)
-        context.add_init_script(_STEP_COUNTER)
+        context.add_init_script(_STEP_COUNTER % (1000 / expected_rate + 5))
         hooked: list[bool] = []
         if checked:
             context.add_init_script(_TELEMETRY)
@@ -835,11 +844,7 @@ def film(
 
 
 def check_run(
-    segment: Segment,
-    preview: Preview,
-    control_dt: float,
-    expected_rate: float,
-    per_step: set[str],
+    segment: Segment, preview: Preview, per_step: set[str]
 ) -> list[tuple[list[int], str]]:
     """What went wrong in `segment`: each failure with the steps it happens at, counted
     from the first filmed frame, or none when it spans the run. Empty when it passed.
@@ -847,17 +852,16 @@ def check_run(
     `per_step` names the graphs that have to run every step (`per_step_graphs`).
     """
     failures: list[tuple[list[int], str]] = []
-    steps = segment.steps
+    steps, rate = segment.steps, segment.expected_rate
+    control_dt = 1 / rate
 
     def at(k: int) -> str:
         after = k >= segment.filmed
         return f"{k * control_dt:.1f} s" + (" (after the clip)" if after else "")
 
     failures += [([], f"page error: {error}") for error in segment.errors]
-    if segment.rate < expected_rate * MIN_STEP_RATE_RATIO:
-        failures.append(
-            ([], f"slow motion: {segment.rate:.1f} of {expected_rate:.0f} steps/s")
-        )
+    if segment.rate < rate * MIN_STEP_RATE_RATIO:
+        failures.append(([], f"slow motion: {segment.rate:.1f} of {rate:.0f} steps/s"))
     if segment.fps < FPS:
         failures.append(
             ([], f"{segment.fps:.1f} frames/s captured, under {FPS}: frames repeat")
@@ -1061,8 +1065,6 @@ def contact_sheet(
 def report(
     task_id: str,
     segments: list[Segment],
-    control_dt: float,
-    expected_rate: float,
     per_step: set[str],
     gif: Path,
     out_dir: Path,
@@ -1072,7 +1074,8 @@ def report(
     failures: list[str] = []
     marks: list[set[int]] = []
     for segment in segments:
-        found = check_run(segment, segment.preview, control_dt, expected_rate, per_step)
+        found = check_run(segment, segment.preview, per_step)
+        control_dt = 1 / segment.expected_rate
         failures += [f"{segment.label.strip()} {m}".lstrip() for _, m in found]
         marked = set()
         for k in (k for ks, _ in found for k in ks):
@@ -1246,6 +1249,7 @@ def main() -> None:
                     url(cut),
                     cut,
                     shot=args.shot,
+                    expected_rate=control_rate(app_dir, cut.scene),
                     motion=cut.motions[0] if cut.motions else None,
                     **browser,
                 )
@@ -1253,7 +1257,6 @@ def main() -> None:
                 print(f"  {args.shot}")
                 continue
             print(f"[{task_id}] filming {sum(c.seconds for c in cuts):g}s")
-            rate = control_rate(app_dir)
             gif = args.out_dir / f"{task_id}.gif"
             with tempfile.TemporaryDirectory() as tmp:
                 frames_dir = (
@@ -1270,7 +1273,7 @@ def main() -> None:
                                 url(cut),
                                 cut,
                                 frames_dir=frames_dir,
-                                expected_rate=rate,
+                                expected_rate=control_rate(app_dir, cut.scene),
                                 motion=motion,
                                 seconds=cut.seconds / len(motions),
                                 start_index=segments[-1].next_index if segments else 0,
@@ -1282,8 +1285,6 @@ def main() -> None:
             if check_seconds is not None and report(
                 task_id,
                 segments,
-                1 / rate,
-                rate,
                 per_step_graphs(app_dir),
                 gif,
                 args.dist / "preview",
