@@ -63,9 +63,9 @@ Six terms, one frame, no history:
   sets that stage itself, and the joystick's limits follow it.
 - **No inertia randomization.** Play draws the mass, center of mass and inertia of the
   trunk and of every other body once at startup, with mjlab's `pseudo_inertia`. It does
-  not trace: `torch.diag_embed` has no ONNX export at opset 17, and the
-  eigendecomposition after it has no ONNX op at all. `main.py` drops both events, and the
-  browser runs the nominal model.
+  not trace: torch exports neither `diag_embed` nor `mT` to ONNX at opset 17, and the
+  eigenvector sign fix after mjlab's Jacobi solver branches on the data, which a trace
+  would freeze. `main.py` drops both events, and the browser runs the nominal model.
 - **No actuator delay.** The actuators take each command 2 to 8 physics steps late
   (10 to 40 ms) in training and play; mjswan applies it at once, as upstream's own web
   demo does.

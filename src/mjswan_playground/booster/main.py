@@ -20,7 +20,7 @@ def setup_builder() -> mjswan.Builder:
     stage = env_cfg.curriculum["command_vel"].params["velocity_stages"][0]
     for axis in ("lin_vel_x", "lin_vel_y", "ang_vel_z"):
         setattr(twist.ranges, axis, stage[axis])
-    # mjlab's `pseudo_inertia` does not trace: no ONNX op for `diag_embed` or `eigh`.
+    # mjlab's `pseudo_inertia` does not trace (`diag_embed`, `mT`, a branch on data).
     del env_cfg.events["trunk_inertia"], env_cfg.events["limb_inertia"]
 
     builder = mjswan.Builder()
