@@ -1,4 +1,5 @@
-"""Wuji Hand 1 and Hand 2 turning a cube to commanded orientations. See ``README.md``."""
+"""Wuji Hand 1 and Hand 2 turning a cube to commanded orientations, and Hand 2
+spinning a pen. See ``README.md``."""
 
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ from mjlab.scene import Scene
 from mjlab.tasks.registry import load_env_cfg
 from mjswan.mjlab.observation import adapt_observations
 
-from . import terms, upstream
+from . import pen_spin, terms, upstream
 
 #: Each scene's upstream task, and the bundle's checkpoint trained on it.
 HANDS = {"WujiHand2_Reorient_50Hz": "hand2", "WujiHand_Reorient": "hand1"}
@@ -33,6 +34,7 @@ def setup_builder() -> mjswan.Builder:
     for task_id, hand in HANDS.items():
         policy, config = upstream.checkpoint(bundle, hand)
         _add_hand(project, task_id, hand, policy, config)
+    pen_spin.add_scene(project, root, bundle)
     return builder
 
 

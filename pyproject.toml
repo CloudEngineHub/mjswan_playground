@@ -51,6 +51,8 @@ packages = ["src/mjswan_playground"]
 # TERRA's code is only on feat/programmatic-waypoint-tasks; move to main once it merges.
 myosuite = { git = "https://github.com/MyoHub/myosuite", rev = "992bd58928e61d3f7ce27a033be02d0be18a2c18" }
 spinkick-example = { git = "https://github.com/mujocolab/g1_spinkick_example", rev = "f1c4b230bd1a76c44e801e49f079212b6c6487da" }
+# ttktjmt/mjswan#166 keeps mesh colliders as MuJoCo compiled them; drop once a release has it.
+mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "b3dfe38d6926e7f4763d8cfc97c7c4cf77b563f4" }
 
 [dependency-groups]
 dev = ["pytest>=9.0.2", "ruff==0.16.0"]

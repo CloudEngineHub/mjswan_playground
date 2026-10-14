@@ -342,6 +342,16 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             seconds=5.0,
             upright=False,
         ),
+        # Each clip ends its episode and the next is drawn.
+        Preview(
+            scene="wujihand2_penspin",
+            orbit=30,
+            tilt=-10,
+            crop="960:702:0:0",
+            seconds=5.0,
+            upright=False,
+            ok_terminations=("reference_end",),
+        ),
     ),
 }
 
