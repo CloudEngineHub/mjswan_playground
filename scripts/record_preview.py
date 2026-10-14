@@ -367,7 +367,7 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             from_reset=True,
             upright=False,
         ),
-        # One episode: the push, the fall and the landing.
+        # From a reset: the push, the fall past the tilt limit, the landing.
         Preview(
             steps=(("select", "policy-select", "safefall"),),
             crop="600:439:180:128",

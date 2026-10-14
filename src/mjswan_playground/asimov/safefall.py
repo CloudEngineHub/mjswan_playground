@@ -36,7 +36,7 @@ def env_cfg() -> Any:
     cfg.observations = {"actor": actor}
     cfg.events["reset_push"].func = terms.reset_standing_with_push
     cfg.terminations["nan"].func = terms.nan_detection
-    # Training terms; a metric among them reads upstream's action term too.
+    # Training-only; a metric among them reads upstream's action term.
     cfg.rewards = {}
     cfg.curriculum = {}
     cfg.metrics = {}

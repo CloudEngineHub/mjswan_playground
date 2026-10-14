@@ -171,7 +171,7 @@ in the model's joint order, which differs from the observations'.
   upstream's spec gives for deployment.
 - **20 s episodes, for now.** Upstream's last 3 s, time to land and settle. mjswan 0.11.8
   traces every policy's time limit at its scene's length, the walk's 20 s, so the robot
-  lies where it landed until the next push. ttktjmt/mjswan#MJSWAN_PR traces each
+  lies where it landed until the next push. ttktjmt/mjswan#167 traces each
   policy's own; the build runs upstream's 3 s once the playground locks the mjswan
   release that carries it.
 - **The reset draws through `sample_uniform`.** Upstream's `reset_standing_with_push`
