@@ -1597,7 +1597,7 @@ wheels = [
 
 [[package]]
 name = "mjswan"
-version = "0.11.7"
+version = "0.11.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mujoco" },
@@ -1606,9 +1606,9 @@ dependencies = [
     { name = "rich" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/02/f1/54194ed5bd92afff77eea26634527a59dd11e6e5d615d07532467b4b9c13/mjswan-0.11.7.tar.gz", hash = "sha256:57b7ea269dd632fb73bd58f98b4baa2d93b1716b8669ab4e8469a7d5156ebeff", size = 11376557, upload-time = "2026-10-13T09:56:28.373Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4f/95/ff8d896c1b6b438a2ba4b529e670fa46d81ab548a710ea847a48ec778c59/mjswan-0.11.8.tar.gz", hash = "sha256:8cbe863385bab4f1d04614c54d67452e3537b7534f65282abb104cafd2bbb7ca", size = 11376878, upload-time = "2026-10-14T03:59:16.297Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/fa/65752e49499225542233aaad9ee7ca449d3060eb10f91aaa1621ebc400b3/mjswan-0.11.7-py3-none-any.whl", hash = "sha256:ae1af3fdafd4004e7f12eb471c123a798c797ed0d23ece0650cfbc348a6be053", size = 11596778, upload-time = "2026-10-13T09:56:25.429Z" },
+    { url = "https://files.pythonhosted.org/packages/09/59/e85517c472f8e10b0c1a626029aa763de28bc790e802011bc3fec133d24b/mjswan-0.11.8-py3-none-any.whl", hash = "sha256:4ec2e9ab6f861a493b06b6c21ee8be38c0f66c5d888762896b14b95b3dfa8eda", size = 11597928, upload-time = "2026-10-14T03:59:13.724Z" },
 ]
 
 [[package]]
@@ -1656,7 +1656,7 @@ previews = [
 [package.metadata]
 requires-dist = [
     { name = "mjlab", specifier = "==1.6.0" },
-    { name = "mjswan", specifier = ">=0.11.7" },
+    { name = "mjswan", specifier = ">=0.11.8" },
     { name = "myosuite", extras = ["musclemimic"], marker = "extra == 'musclemimic'", git = "https://github.com/MyoHub/myosuite?rev=992bd58928e61d3f7ce27a033be02d0be18a2c18" },
     { name = "myosuite", extras = ["musclemimic"], marker = "extra == 'terra'", git = "https://github.com/MyoHub/myosuite?rev=992bd58928e61d3f7ce27a033be02d0be18a2c18" },
     { name = "onnx", specifier = ">=1.20.0" },
