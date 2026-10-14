@@ -22,3 +22,5 @@ MUJOCO_LOG.TXT
 
 # Fetched task assets
 .cache/
+
+.temp

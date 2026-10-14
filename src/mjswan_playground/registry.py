@@ -29,12 +29,14 @@ _TASKS: dict[str, str] = {
 ALL_TASKS: tuple[str, ...] = tuple(_TASKS)
 
 #: Part ID -> the task module whose ``setup_builder(part)`` builds it: a subset of the
-#: task small enough to upload alone. Not tasks: the README, the site and the previews
-#: show the whole.
-_PARTS: dict[str, str] = dict.fromkeys(
-    ("microduck-moves", "microduck-parkour", "microduck-stilts"),
-    "mjswan_playground.microduckpg.main",
-)
+#: task to upload alone. Not tasks: the README, the site and the previews show the whole.
+_PARTS: dict[str, str] = {
+    **dict.fromkeys(
+        ("microduckpg-moves", "microduckpg-parkour", "microduckpg-stilts"),
+        "mjswan_playground.microduckpg.main",
+    ),
+    **dict.fromkeys(("wuji-reorient", "wuji-penspin"), "mjswan_playground.wuji.main"),
+}
 
 ALL_PARTS: tuple[str, ...] = tuple(_PARTS)
 

@@ -34,13 +34,13 @@ the Hub at a pinned revision. Each experiment is a module beside `main.py`, its
 `add_scenes` listed in `EXPERIMENTS` in the order the scenes appear.
 
 The whole build is 175 MB, over the 100 MB that mjswan Cloud takes, so `PARTS` splits it
-into three uploads, built by their own IDs (`uv run msp build microduck-moves`):
+into three uploads, built by their own IDs (`uv run msp build microduckpg-moves`):
 
 | Part | Scenes | On mjswan Cloud |
 |---|---|---|
-| `microduck-moves` | Running, Swing, Basketball, Stilts 1.0 m | [mjswan.com/s/_klQQmL](https://mjswan.com/s/_klQQmL) |
-| `microduck-parkour` | Desk Climb, Chimney Climb, Long Jump, Backflip | [mjswan.com/s/mqwst_Y](https://mjswan.com/s/mqwst_Y) |
-| `microduck-stilts` | Stilts at every height | [mjswan.com/s/qK0Uwr7](https://mjswan.com/s/qK0Uwr7) |
+| `microduckpg-moves` | Running, Swing, Basketball, Stilts 1.0 m | [mjswan.com/s/_klQQmL](https://mjswan.com/s/_klQQmL) |
+| `microduckpg-parkour` | Desk Climb, Chimney Climb, Long Jump, Backflip | [mjswan.com/s/mqwst_Y](https://mjswan.com/s/mqwst_Y) |
+| `microduckpg-stilts` | Stilts at every height | [mjswan.com/s/qK0Uwr7](https://mjswan.com/s/qK0Uwr7) |
 
 ## What every scene shares
 

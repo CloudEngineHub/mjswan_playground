@@ -24,17 +24,25 @@ from . import pen_spin, terms, upstream
 HANDS = {"WujiHand2_Reorient_50Hz": "hand2", "WujiHand_Reorient": "hand1"}
 
 
-def setup_builder() -> mjswan.Builder:
+def _add_hands(project: Any, root: Path, bundle: Path) -> None:
+    for task_id, hand in HANDS.items():
+        policy, config = upstream.checkpoint(bundle, hand)
+        _add_hand(project, task_id, hand, policy, config)
+
+
+#: Parts built on their own, in the order the whole lists their scenes.
+PARTS = {"wuji-reorient": _add_hands, "wuji-penspin": pen_spin.add_scene}
+
+
+def setup_builder(part: str | None = None) -> mjswan.Builder:
     root = upstream.resolve_root()
     upstream.register_tasks(root)
     bundle = upstream.resolve_bundle()
     builder = mjswan.Builder()
     project = builder.add_project(name="wuji-mjlab", license=root / "LICENSE")
     project.set_notice(root / "NOTICE")
-    for task_id, hand in HANDS.items():
-        policy, config = upstream.checkpoint(bundle, hand)
-        _add_hand(project, task_id, hand, policy, config)
-    pen_spin.add_scene(project, root, bundle)
+    for add_scenes in [PARTS[part]] if part else PARTS.values():
+        add_scenes(project, root, bundle)
     return builder
 
 
