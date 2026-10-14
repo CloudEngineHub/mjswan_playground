@@ -48,7 +48,7 @@ PER_STEP = {
 
 def _check(segment, preview=None) -> list:
     preview = preview or record_preview.Preview()
-    return record_preview.check_run(segment, preview, DT, RATE, PER_STEP)
+    return record_preview.check_run(segment, preview, PER_STEP)
 
 
 def test_a_healthy_run_passes() -> None:
@@ -143,6 +143,20 @@ def test_per_step_graphs_leave_out_reset_and_event_graphs(tmp_path) -> None:
         "mdp/a0/term/terminations.onnx",
         "mdp/a0/command/twist.onnx",
     }
+
+
+def test_each_cut_is_held_to_its_own_scenes_rate(tmp_path) -> None:
+    scenes = [{"id": "hand1", "control_dt": 0.05}, {"id": "hand2", "control_dt": 0.02}]
+    manifest = {"projects": [{"scenes": scenes}]}
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+    assert record_preview.control_rate(tmp_path, "") == pytest.approx(20.0)
+    assert record_preview.control_rate(tmp_path, "hand2") == pytest.approx(50.0)
+
+
+def test_the_step_counter_takes_a_slower_loops_delays() -> None:
+    # A 20 Hz loop sleeps up to 50 ms a step; a 50 Hz one, 20 ms.
+    assert "ms <= 55)" in record_preview._STEP_COUNTER % (1000 / 20 + 5)
+    assert "ms <= 25)" in record_preview._STEP_COUNTER % (1000 / 50 + 5)
 
 
 def test_a_task_that_will_not_build_leaves_the_rest_to_run(monkeypatch) -> None:
