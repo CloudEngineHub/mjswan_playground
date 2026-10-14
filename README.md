@@ -23,6 +23,7 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 | [`terra`](src/mjswan_playground/terra/README.md) | MyoFullBody | A 354-muscle body walking myosuite's terrain course, stairs, a beam and two jumps, and a flat route, with the TERRA-4B checkpoint ([TERRA](https://github.com/amathislab/terra), on [myosuite](https://github.com/MyoHub/myosuite)) | <img src="assets/terra.gif" width="200"/><br />WIP |
 | [`wuji`](src/mjswan_playground/wuji/README.md) | Wuji Hand 1, Wuji Hand 2 | A dexterous hand turning a cube in its palm to random goal orientations, and spinning a pen along clips recorded on the real hand ([wuji-mjlab](https://github.com/wuji-technology/wuji-mjlab)) | <a href="https://mjswan.com/s/XbIngWj"><img src="assets/wuji.gif" width="200"/></a><br />Reorient: [mjswan.com/s/XbIngWj](https://mjswan.com/s/XbIngWj)<br />Penspin: [mjswan.com/s/JiGR41o](https://mjswan.com/s/JiGR41o) |
 | [`asimov`](src/mjswan_playground/asimov/README.md) | Asimov 1 | Walking ([asimov1-locomotion-0818](https://huggingface.co/Menlo/asimov1-locomotion-0818)), and getting up from a fall ([asimov-v1-policies](https://github.com/openhorizon-labs/asimov-v1-policies)) | <img src="assets/asimov.gif" width="200"/><br />WIP |
+| [`booster`](src/mjswan_playground/booster/README.md) | Booster K1 | Walking to velocity commands with the policy its project page runs in the browser ([booster_mjlab](https://github.com/IntelligentRoboticsLab/booster_mjlab)) | <img src="assets/booster.gif" width="200"/><br />WIP |
 
 ## CLI
 

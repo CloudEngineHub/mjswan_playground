@@ -368,6 +368,13 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             upright=False,
         ),
     ),
+    # Forward on the panel's joystick: left alone, the twist can stand still a while.
+    "booster": Preview(
+        steps=(("check", "twist:enabled", True), ("number", "lin_vel_x", 0.5)),
+        orbit=-90,
+        crop="600:439:180:150",
+        seconds=5.0,
+    ),
 }
 
 
