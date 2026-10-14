@@ -68,7 +68,15 @@ Then follow `$MJSWAN/skills/mjlab-to-mjswan/SKILL.md`. Its `export_policy.py` si
 
 - An upstream that registers through mjlab's `mjlab.tasks` entry point is loaded by `import mjlab` itself, so the registry diff comes out empty. Read its mjlab task ids from its `register_mjlab_task` calls, or diff with its skip switch set if it has one.
 - List every mjlab task upstream registers and every experiment it ships, each with its published checkpoint or that it has none. Each one with a checkpoint is a simulation to port, and pre-flight runs on each; one without is left out. Ask for env vars and credentials here; unattended, a simulation that needs one the caller did not hand over is left out.
-- An action term pre-flight rejects is sorted the way "8. When the gap is mjswan's" sorts it: a generic one goes to step 9, a task-specific one is the data-only stop for that simulation.
+- An action term pre-flight rejects is sorted the way "8. When the gap is mjswan's" sorts it: a generic one goes to step 9. A task-specific one whose state follows from what the policy observes and outputs (a filter, a residual on a reference, a gate that latches, an accumulator) goes into the policy:
+  - a wrapper ONNX around the checkpoint computes what the term's `process_actions` does, from the policy's output and slices of its observation, and a plain `JointPositionActionCfg` replaces the term in `env_cfg` and applies the wrapper's output (`wuji/pen_spin.py`: a smoothed residual on the command's reference; `asimov/safefall.py`: a fall trigger that latches);
+  - the term's state rides the recurrent carry: `add_policy(..., in_keys=["actor", "is_init", "adapt_hx"], out_keys=["action", ["next", "adapt_hx"]])`. mjswan opens each episode with `is_init` and a `[1, 128]` zero carry, so the state fits in 128 values and the wrapper resets it while `is_init` holds;
+  - the observation's previous action reads the wrapper's output: when upstream observes another value, the wrapper carries that value and splices it in (`pen_spin.py`);
+  - the wrapper carries the keys mjswan stamps on the graphs it traces, so a viewer can show the term it replaces: `helper.set_model_props` with `mjswan.kind` `action`, `mjswan.term` the term's key in `env_cfg.actions` and `mjswan.func` its cfg class as `module:Class`;
+  - before parity, run upstream's env with its own term in mjlab and feed the wrapper the same observations each step: the actions match exactly, or the wrapper is wrong;
+  - "What differs from upstream" names the term and what the wrapper does in its place.
+
+  A term that reads state the observation does not carry, or acts per physics substep, cannot be wrapped: that is the data-only stop for its simulation.
 
 ## 4. Policies and clips (replaces "Get the policy into ONNX")
 
