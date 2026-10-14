@@ -181,7 +181,7 @@ leaves switched off:
 | MuJoCo's C build, which the browser runs, with the wrapped checkpoints | 40 of 40 | 2.9 to 4.9° |
 
 In the browser, over three minutes of the first recipe, the pen stayed in hand through
-all 20 episodes. That takes mjswan with
-[ttktjmt/mjswan#166](https://github.com/ttktjmt/mjswan/pull/166): without it, the
-browser turns every mesh collider 90° about its own x, the fingertips' among them, and
+all 20 episodes. That takes mjswan 0.11.8
+([ttktjmt/mjswan#166](https://github.com/ttktjmt/mjswan/pull/166)): before it, the
+browser turned every mesh collider 90° about its own x, the fingertips' among them, and
 the pen fell in 9 of 21 episodes.
