@@ -31,8 +31,8 @@ PEN_SPIN_GROUPS = (
     "05_multi_axis_two_rotations",
 )
 PEN_SPIN_CLIPS = "pen_spin/data/rawdata/clips"
-#: What the build reads out of the bundle, which is mostly CAD: the checkpoints, the
-#: license and notice they come with, and in ``BUNDLE_DIRS`` the pen-spin clips.
+#: What the build reads out of the bundle, which is mostly CAD: the checkpoints, its
+#: license and notice, and in ``BUNDLE_DIRS`` the pen-spin clips.
 BUNDLE_FILES = (
     "LICENSE",
     "NOTICE",
@@ -98,7 +98,7 @@ def resolve_bundle() -> Path:
 
 def add_attributions(scene: Any, bundle: Path) -> None:
     """Declare what a scene ships beyond wuji-mjlab's own ``LICENSE`` and ``NOTICE``."""
-    # Both hands' meshes are wuji-description's, under MIT, which wuji-mjlab does not ship.
+    # Both hands' meshes are wuji-description's (MIT), a license wuji-mjlab omits.
     scene.add_attribution(
         "wuji-description", license="MIT", copyright="2025 Wuji Technology"
     )
