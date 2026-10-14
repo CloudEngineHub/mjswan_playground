@@ -15,6 +15,7 @@
 #   notes        what the port is known to need
 #   found        for an entry the scout added: when, and the evidence
 #   pinned       a person's reason to port it first (ROUTINE.md, parts A and D)
+#   rejected     a person's reason never to port it; such an entry keeps only `id` and `repo`
 #
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
@@ -1372,3 +1373,19 @@
     A fork of AMP_mjlab (mjlab==1.2.0). Stops an unattended run unless mjswan gains an
     incremental position action.
   found: '2026-10-13: web search (AMP_mjlab forks), 1 star'
+
+- id: amp
+  repo: https://github.com/ccrpRepo/AMP_mjlab
+  rejected: '2026-10-15: the owner took it out'
+
+- id: ufo
+  repo: https://github.com/Roboparty/UFO
+  rejected: '2026-10-15: the owner took it out'
+
+- id: openbeni
+  repo: https://github.com/Mondo-Robotics/open-beni
+  rejected: '2026-10-15: the owner took it out'
+
+- id: tasknpoint
+  repo: https://github.com/wernerb43/tasknpoint
+  rejected: '2026-10-15: the owner took it out'
