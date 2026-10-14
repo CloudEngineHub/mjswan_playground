@@ -29,7 +29,7 @@ from onnx import TensorProto, helper, numpy_helper
 from . import terms, upstream
 
 TASK_ID = "WujiHand2_PenSpin"
-#: Each policy's recipe, the bundle's checkpoint trained on it, in the scene's order.
+#: Each policy's name and the recipe its checkpoint was trained on, in the scene's order.
 GROUPS = {
     "Single axis": "01_single_axis",
     "Continuous single axis": "02_continuous_single_axis",
