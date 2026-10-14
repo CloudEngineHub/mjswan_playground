@@ -20,37 +20,6 @@
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
 
-- id: booster
-  repo: https://github.com/IntelligentRoboticsLab/booster_mjlab
-  commit: d92e11395d961096d639446c0a8a176f12bb51da
-  simulations:
-    - task: a Booster K1 humanoid walking to velocity commands on flat ground (booster_k1_flat_env_cfg, registered as Mjlab-Velocity-Flat[-DA|-Amp|-Amp-DA][-Muon]-Booster-K1, which share one play config)
-      policy: 'the project page''s in-browser demo policy in git: website/static/demo/policy.bin, raw float32 weights laid out in website/static/demo/scene.json (run 2026-09-18_18-14-22: normalizer, MLP 75-512-256-128-22 with ELU, joint addresses, PD gains, action scales, command limits)'
-      ease: '2: the ONNX rebuilt from raw weights for a variant the repository does not name, a few terms.py rewrites, and a checkout that must import under Python 3.12'
-  left_out: >-
-    Mjlab-Tracking-Flat-Booster-K1, the rough velocity variants and the K1-Parallel
-    variants: no checkpoint of their own.
-  license: 'none stated (no LICENSE file); the K1 MJCF and meshes are Booster Robotics'' and carry no notice; the LAFAN1-retargeted clips on the Hub (whirlwind-ams/lafan_locomotion_k1) only train the AMP variants'
-  popularity: '1: 58 stars (2026-10-14); a project page that runs this policy live in the browser'
-  ease: '2: one simulation, its policy rebuilt from raw weights for an unnamed variant of one shared env, a few terms.py rewrites and a checkout that must import under Python 3.12'
-  notes: >-
-    A Booster K1 walking to velocity commands. Rebuild the ONNX at build time from
-    policy.bin as scene.json lays it out (Sub/Div normalizer, four Gemm layers, ELU),
-    inverting scripts/export_web_demo.py, and check its observation order (base_ang_vel,
-    projected_gravity, joint_pos, joint_vel, actions, command) and per-joint gains against
-    the flat env config. MotorPositionActuatorCfg subclasses BuiltinPositionActuatorCfg and
-    only carries torque-speed metadata (only the tracking task applies the curve), so it
-    runs as its base; its 2 to 8 physics-step command delay (ACTUATOR_DELAY, hold 0.3)
-    is one mjswan does not model, so a servo filter may stand in. Its
-    UniformVelocityCommandCfg subclasses mjlab's under the same class
-    name, so mjswan's binding applies by name. Play keeps push_robot, the
-    randomize_terrain_contact event and the stochastic_bad_orientation termination: trace,
-    rewrite or drop each. requires-python >=3.13 where the playground runs 3.12: checkout
-    shape, and its code has to import under 3.12. mjlab pinned at git b517e0c4 (1.6.0).
-    200 Hz physics, 50 Hz control.
-  found: '2026-10-11: GitHub search for mjlab (stars), 57 stars'
-  pinned: '2026-10-15: the owner asked for booster next'
-
 - id: microduck_tutorial
   repo: https://github.com/AI-FanGe/Microduck-build-tutorial
   commit: 9a11a406a73c8d809daf6de939ef4df3f19f1656
