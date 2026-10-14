@@ -34,19 +34,19 @@ EXPERIMENTS = (
 #: Parts built on their own for mjswan Cloud, which takes 100 MB where the whole is
 #: 175 MB: every experiment once, Stilts at 1.0 m only, then Stilts at every height.
 PARTS = {
-    "microduck-moves": (
+    "microduckpg-moves": (
         running.add_scenes,
         swing.add_scenes,
         basketball.add_scenes,
         partial(stilts.add_scenes, heights_cm=(100,)),
     ),
-    "microduck-parkour": (
+    "microduckpg-parkour": (
         desk_climb.add_scenes,
         chimney.add_scenes,
         long_jump.add_scenes,
         backflip.add_scenes,
     ),
-    "microduck-stilts": (stilts.add_scenes,),
+    "microduckpg-stilts": (stilts.add_scenes,),
 }
 
 

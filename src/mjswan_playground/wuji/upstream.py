@@ -9,6 +9,7 @@ import sys
 import urllib.request
 import zipfile
 from pathlib import Path
+from typing import Any
 
 from mjswan_playground._deps import CACHE_DIR, ensure_repo
 
@@ -21,13 +22,31 @@ BUNDLE_URL = (
     f"{RELEASE}/wuji-mjlab-{RELEASE}-assets.zip"
 )
 BUNDLE_SHA256 = "de01b29921b69ea38100a29416c324b384905e1ae4ebbfa40d769be948fc2d39"
-#: What the build reads out of the bundle, which is mostly CAD and pen-spin data.
+#: Upstream's pen-spin recipes, each with a checkpoint and a group of clips.
+PEN_SPIN_GROUPS = (
+    "01_single_axis",
+    "02_continuous_single_axis",
+    "03_continuous_multi_axis",
+    "04_stable_grasp_rotation",
+    "05_multi_axis_two_rotations",
+)
+PEN_SPIN_CLIPS = "pen_spin/data/rawdata/clips"
+#: What the build reads out of the bundle, which is mostly CAD: the checkpoints, its
+#: license and notice, and in ``BUNDLE_DIRS`` the pen-spin clips.
 BUNDLE_FILES = (
+    "LICENSE",
+    "NOTICE",
     "reorient/checkpoints/hand1/policy.onnx",
     "reorient/checkpoints/hand1/config.json",
     "reorient/checkpoints/hand2/policy.onnx",
     "reorient/checkpoints/hand2/config.json",
+    *(
+        f"pen_spin/checkpoints/{group}/{name}"
+        for group in PEN_SPIN_GROUPS
+        for name in ("policy.onnx", "config.json")
+    ),
 )
+BUNDLE_DIRS = (PEN_SPIN_CLIPS,)
 
 #: Upstream's ``mjlab.tasks`` entry point, which registers every task id it ships.
 TASK_PACKAGE = "wuji_mjlab.tasks"
@@ -63,7 +82,13 @@ def resolve_bundle() -> Path:
         )
     prefix = f"wuji-mjlab-{RELEASE}-assets/"
     with zipfile.ZipFile(archive) as bundle:
-        for name in BUNDLE_FILES:
+        names = [
+            member.removeprefix(prefix)
+            for member in bundle.namelist()
+            if not member.endswith("/")
+            and member.removeprefix(prefix).startswith(BUNDLE_DIRS)
+        ]
+        for name in {*BUNDLE_FILES, *names}:
             target = root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(bundle.read(prefix + name))
@@ -71,9 +96,28 @@ def resolve_bundle() -> Path:
     return root
 
 
+def add_attributions(scene: Any, bundle: Path) -> None:
+    """Declare what a scene ships beyond wuji-mjlab's own ``LICENSE`` and ``NOTICE``."""
+    # Both hands' meshes are wuji-description's (MIT), a license wuji-mjlab omits.
+    scene.add_attribution(
+        "wuji-description", license="MIT", copyright="2025 Wuji Technology"
+    )
+    scene.add_attribution(
+        "wuji-mjlab-assets", license=bundle / "LICENSE", notice=bundle / "NOTICE"
+    )
+
+
 def checkpoint(bundle: Path, hand: str) -> tuple[Path, dict]:
     """A hand's ``policy.onnx`` and the deploy config beside it."""
     directory = bundle / "reorient" / "checkpoints" / hand
+    return directory / "policy.onnx", json.loads(
+        (directory / "config.json").read_text()
+    )
+
+
+def pen_spin_checkpoint(bundle: Path, group: str) -> tuple[Path, dict]:
+    """A pen-spin recipe's ``policy.onnx`` and the deploy config beside it."""
+    directory = bundle / "pen_spin" / "checkpoints" / group
     return directory / "policy.onnx", json.loads(
         (directory / "config.json").read_text()
     )

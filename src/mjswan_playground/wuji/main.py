@@ -1,4 +1,5 @@
-"""Wuji Hand 1 and Hand 2 turning a cube to commanded orientations. See ``README.md``."""
+"""Wuji Hand 1 and Hand 2 turning a cube to commanded orientations, and Hand 2
+spinning a pen. See ``README.md``."""
 
 from __future__ import annotations
 
@@ -17,28 +18,36 @@ from mjlab.scene import Scene
 from mjlab.tasks.registry import load_env_cfg
 from mjswan.mjlab.observation import adapt_observations
 
-from . import terms, upstream
+from . import pen_spin, terms, upstream
 
 #: Each scene's upstream task, and the bundle's checkpoint trained on it.
 HANDS = {"WujiHand2_Reorient_50Hz": "hand2", "WujiHand_Reorient": "hand1"}
 
 
-def setup_builder() -> mjswan.Builder:
+def _add_hands(project: Any, root: Path, bundle: Path) -> None:
+    for task_id, hand in HANDS.items():
+        policy, config = upstream.checkpoint(bundle, hand)
+        scene = _add_hand(project, task_id, hand, policy, config)
+        upstream.add_attributions(scene, bundle)
+
+
+#: Parts built on their own, in the order the whole lists their scenes.
+PARTS = {"wuji-reorient": _add_hands, "wuji-penspin": pen_spin.add_scene}
+
+
+def setup_builder(part: str | None = None) -> mjswan.Builder:
     root = upstream.resolve_root()
     upstream.register_tasks(root)
     bundle = upstream.resolve_bundle()
     builder = mjswan.Builder()
     project = builder.add_project(name="wuji-mjlab", license=root / "LICENSE")
     project.set_notice(root / "NOTICE")
-    for task_id, hand in HANDS.items():
-        policy, config = upstream.checkpoint(bundle, hand)
-        _add_hand(project, task_id, hand, policy, config)
+    for add_scenes in [PARTS[part]] if part else PARTS.values():
+        add_scenes(project, root, bundle)
     return builder
 
 
-def _add_hand(
-    project: Any, task_id: str, hand: str, policy: Path, config: dict
-) -> None:
+def _add_hand(project: Any, task_id: str, hand: str, policy: Path, config: dict) -> Any:
     env_cfg = play_env_cfg(task_id, config)
     scene = project.add_scene_mjlab(task_id, env_cfg=env_cfg)
     observations = adapt_observations(env_cfg.observations["policy"])
@@ -51,6 +60,7 @@ def _add_hand(
         policy_joint_names=[f"robot/{joint}" for joint in config["joint_order"]],
         default_joint_pos=config["default_joint_pos"],
     )
+    return scene
 
 
 def play_env_cfg(task_id: str, config: dict) -> Any:
