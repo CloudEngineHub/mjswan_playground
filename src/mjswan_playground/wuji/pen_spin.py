@@ -436,6 +436,12 @@ def wrap_policy(policy: onnx.ModelProto, config: dict) -> onnx.ModelProto:
         ),
         opset_imports=policy.opset_import,
         ir_version=policy.ir_version,
+        # Apache-2.0 asks a changed file to say so.
+        doc_string=(
+            f"Wuji Technology's pen-spin checkpoint from the wuji-mjlab {upstream.RELEASE}"
+            " asset bundle (Apache-2.0), changed by mjswan_playground: wrapped in"
+            " upstream's SingleHandResidualEMAAction."
+        ),
     )
     onnx.checker.check_model(wrapped, full_check=True)
     return wrapped
@@ -454,6 +460,7 @@ def add_scene(project: Any, root: Path, bundle: Path) -> None:
         env_cfg = play_env_cfg(root, clips_root, group, config)
         if i == 0:
             scene = project.add_scene_mjlab(TASK_ID, env_cfg=env_cfg)
+            upstream.add_attributions(scene, bundle)
         scene.add_policy(
             name=name,
             policy=wrap_policy(onnx.load(str(policy)), config),

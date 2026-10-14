@@ -9,6 +9,7 @@ import sys
 import urllib.request
 import zipfile
 from pathlib import Path
+from typing import Any
 
 from mjswan_playground._deps import CACHE_DIR, ensure_repo
 
@@ -30,9 +31,11 @@ PEN_SPIN_GROUPS = (
     "05_multi_axis_two_rotations",
 )
 PEN_SPIN_CLIPS = "pen_spin/data/rawdata/clips"
-#: What the build reads out of the bundle, which is mostly CAD: the checkpoints, and
-#: in ``BUNDLE_DIRS`` the pen-spin clips.
+#: What the build reads out of the bundle, which is mostly CAD: the checkpoints, the
+#: license and notice they come with, and in ``BUNDLE_DIRS`` the pen-spin clips.
 BUNDLE_FILES = (
+    "LICENSE",
+    "NOTICE",
     "reorient/checkpoints/hand1/policy.onnx",
     "reorient/checkpoints/hand1/config.json",
     "reorient/checkpoints/hand2/policy.onnx",
@@ -91,6 +94,17 @@ def resolve_bundle() -> Path:
             target.write_bytes(bundle.read(prefix + name))
     archive.unlink()
     return root
+
+
+def add_attributions(scene: Any, bundle: Path) -> None:
+    """Declare what a scene ships beyond wuji-mjlab's own ``LICENSE`` and ``NOTICE``."""
+    # Both hands' meshes are wuji-description's, under MIT, which wuji-mjlab does not ship.
+    scene.add_attribution(
+        "wuji-description", license="MIT", copyright="2025 Wuji Technology"
+    )
+    scene.add_attribution(
+        "wuji-mjlab-assets", license=bundle / "LICENSE", notice=bundle / "NOTICE"
+    )
 
 
 def checkpoint(bundle: Path, hand: str) -> tuple[Path, dict]:

@@ -53,6 +53,12 @@ its tasks through mjlab's entry point; [`upstream.py`](upstream.py) imports
 | bundle `pen_spin/checkpoints/<recipe>/config.json` | each one's action scale, residual clip, EMA factor and control period, checked against the config |
 | bundle `pen_spin/data/rawdata/clips/`, `data/recipe/` | the 40 clips and which recipe plays which, read through upstream's own resolver, which checks each clip's sha256 |
 | `LICENSE`, `NOTICE` | the project's license and notice |
+| bundle `LICENSE`, `NOTICE` | each scene's `wuji-mjlab-assets` attribution, for the policies and the clips |
+
+Each scene also declares `wuji-description`, under MIT, Copyright (c) 2025 Wuji Technology.
+Both hands' meshes are that repository's: upstream's `assets/README.md` says so of Hand
+2's, and Hand 1's 34 mesh files match wuji-description's byte for byte. wuji-mjlab ships
+no copy of that license.
 
 | Scene | Policy | Checkpoint | Input → action | Rate |
 |---|---|---|---|---|
