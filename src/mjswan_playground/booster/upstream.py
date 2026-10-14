@@ -17,7 +17,6 @@ REPO_URL = "https://github.com/IntelligentRoboticsLab/booster_mjlab.git"
 REPO_COMMIT = "d92e11395d961096d639446c0a8a176f12bb51da"
 #: The project page's demo, whose `scene.json` lays out `policy.bin`'s float32 weights.
 DEMO = "website/static/demo"
-TASK_PACKAGE = "booster_mjlab.tasks"
 
 
 def resolve_root() -> Path:
@@ -32,12 +31,10 @@ def resolve_root() -> Path:
 
 def register_tasks(root: Path) -> None:
     """Import upstream's task package from ``src/`` so mjlab's registry knows it."""
-    if TASK_PACKAGE in sys.modules:
-        return
     src = str(root / "src")
     if src not in sys.path:
         sys.path.insert(0, src)
-    importlib.import_module(TASK_PACKAGE)
+    importlib.import_module("booster_mjlab.tasks")
 
 
 def demo_policy(root: Path) -> tuple[onnx.ModelProto, dict]:
