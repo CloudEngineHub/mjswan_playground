@@ -22,8 +22,8 @@ def setup_builder() -> mjswan.Builder:
     # Training's helper force, which play already holds at zero.
     del env_cfg.events["assist_force"]
     walk.raise_effort_limits(env_cfg)
-    # Menlo's policy acts on the same joints in the same order about the same pose:
-    # upstream's robot.py copies both from Menlo's training code.
+    # Menlo's policy acts on the same joints, in the same order, about the same pose:
+    # upstream's robot.py copies them from Menlo's training code.
     joint_names = spec["action"]["joint_order"]
     joint_kwargs = {
         "policy_joint_names": [f"robot/{name}" for name in joint_names],
