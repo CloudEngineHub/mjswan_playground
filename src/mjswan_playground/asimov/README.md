@@ -18,7 +18,7 @@ Asimov 1, Menlo Research's open-source 1.2 m humanoid, with three policies on on
   upstream's 512 settled fall states (prone, supine, on a side or in between) at a
   random heading. The robot stands within about two seconds and holds the stance until
   the 20 s episode ends and the next fall begins.
-- **`safefall`**, OpenHorizon Labs' safe-fall policy, starts each episode standing,
+- **`safefall`**, OpenHorizon Labs' safe-fall policy, starts each 3 s episode standing,
   pushed at 0.8 to 2.0 m/s in a random direction. The robot holds its default pose until
   it tips past 30° or turns faster than 2 rad/s, then the policy takes over and lands it
   on its front or back. In mjlab, over 64 pushes, the hardest ground hit on the head,
@@ -169,11 +169,6 @@ in the model's joint order, which differs from the observations'.
 - **The deployed thresholds.** Training draws the tilt anew each episode from 20 to 45°
   and the rate from 2 to 4 rad/s. The wrapper fixes them at the 30° and 2 rad/s that
   upstream's spec gives for deployment.
-- **20 s episodes, for now.** Upstream's last 3 s, time to land and settle. mjswan 0.11.8
-  traces every policy's time limit at its scene's length, the walk's 20 s, so the robot
-  lies where it landed until the next push. ttktjmt/mjswan#167 traces each
-  policy's own; the build runs upstream's 3 s once the playground locks the mjswan
-  release that carries it.
 - **The reset draws through `sample_uniform`.** Upstream's `reset_standing_with_push`
   draws with `Tensor.uniform_`, which mjswan's tracer cannot follow.
   [`terms.py`](terms.py) restates it with mjlab's `sample_uniform`, from the same ranges
