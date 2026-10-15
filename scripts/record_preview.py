@@ -376,6 +376,28 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             upright=False,
         ),
     ),
+    "booster": (
+        # Forward on the joystick: left alone, the twist can stand still a while.
+        Preview(
+            scene="k1_walk",
+            steps=(("check", "twist:enabled", True), ("number", "lin_vel_x", 0.8)),
+            orbit=-30,
+            crop="540:395:190:166",
+            seconds=4.0,
+        ),
+        # Each clip's opening seconds, from a reset.
+        *(
+            Preview(
+                scene=scene,
+                query="debug=0",
+                orbit=-30,
+                crop="540:395:190:166",
+                from_reset=True,
+                seconds=4.0,
+            )
+            for scene in ("k1_mj_dance", "k1_fight")
+        ),
+    ),
 }
 
 
