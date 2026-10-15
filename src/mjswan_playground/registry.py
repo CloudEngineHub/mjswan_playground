@@ -38,9 +38,7 @@ _PARTS: dict[str, str] = {
         "mjswan_playground.microduckpg.main",
     ),
     **dict.fromkeys(("wuji-reorient", "wuji-penspin"), "mjswan_playground.wuji.main"),
-    **dict.fromkeys(
-        ("booster-walk", "booster-tracking"), "mjswan_playground.booster.main"
-    ),
+    "booster-open": "mjswan_playground.booster.main",
 }
 
 ALL_PARTS: tuple[str, ...] = tuple(_PARTS)

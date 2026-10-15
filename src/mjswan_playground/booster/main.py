@@ -7,18 +7,18 @@ from typing import Any
 import mjswan
 from mjlab.tasks.registry import load_env_cfg
 
-from . import deploy, tracking, upstream
+from . import deploy, envs, upstream
 
 TASK_ID = "Mjlab-Velocity-Flat-Booster-K1"
 #: (scene, booster_deploy task, clip): the K1's BeyondMimic tasks, as booster_deploy's
 #: `scripts/deploy.py --task` names them.
-SIMULATIONS = (
+CLIPS = (
     ("K1 MJ Dance", "k1_mj2", "MJ dance, segment 1"),
     ("K1 Fight", "k1_fight", "Fight"),
 )
 
 
-def _add_walk(project: Any) -> None:
+def _add_mjlab_walk(project: Any) -> None:
     root = upstream.resolve_root()
     upstream.register_tasks(root)
     policy, demo = upstream.demo_policy(root)
@@ -40,22 +40,41 @@ def _add_walk(project: Any) -> None:
     )
 
 
-def _add_tracking(project: Any) -> None:
+def _add_deploy(project: Any) -> None:
     root, assets = deploy.resolve_roots()
-    for scene_name, task_name, clip_name in SIMULATIONS:
-        task = deploy.task_cfg(root, task_name)
-        env_cfg = tracking.env_cfg(task, assets)
-        clip = deploy.clip_npz(root, task, env_cfg)
-        motion = env_cfg.commands["motion"]
-        motion.motion_file = str(clip)
+
+    def add_scene(scene_name: str, env_cfg: Any, task: Any, **policy: Any) -> Any:
         scene = project.add_scene_mjlab(scene_name, env_cfg=env_cfg)
         scene.add_attribution("booster_deploy", license=root / "LICENSE")
         scene.add_attribution("booster_assets", license=assets / "LICENSE")
-        handle = scene.add_policy(
-            name=task_name,
-            policy=deploy.policy_onnx(root, task),
-            policy_joint_names=[f"robot/{name}" for name in task.robot.joint_names],
+        return scene.add_policy(
+            policy_joint_names=[f"robot/{joint}" for joint in task.robot.joint_names],
             default_joint_pos=list(task.robot.default_joint_pos),
+            **policy,
+        )
+
+    walk = deploy.task_cfg(root, "k1_walk")
+    add_scene(
+        "K1 Walk",
+        envs.walk_cfg(walk, assets),
+        walk,
+        name="k1_walk",
+        policy=deploy.walk_onnx(walk),
+        in_keys=["actor", "is_init", "adapt_hx"],
+        out_keys=["action", ["next", "adapt_hx"]],
+    )
+    for scene_name, task_name, clip_name in CLIPS:
+        task = deploy.task_cfg(root, task_name)
+        env_cfg = envs.tracking_cfg(task, assets)
+        clip = deploy.clip_npz(task, env_cfg)
+        motion = env_cfg.commands["motion"]
+        motion.motion_file = str(clip)
+        handle = add_scene(
+            scene_name,
+            env_cfg,
+            task,
+            name=task_name,
+            policy=deploy.tracking_onnx(task),
         )
         handle.add_motion(
             name=clip_name,
@@ -67,13 +86,13 @@ def _add_tracking(project: Any) -> None:
         )
 
 
-#: Parts built alone, so the clips can be published without the unlicensed walk.
-PARTS = {"booster-walk": _add_walk, "booster-tracking": _add_tracking}
+#: Parts built alone: every scene but booster_mjlab's walk, which states no license.
+PARTS = {"booster-open": (_add_deploy,)}
 
 
 def setup_builder(part: str | None = None) -> mjswan.Builder:
     builder = mjswan.Builder()
     project = builder.add_project(name="Booster K1")
-    for add_scenes in [PARTS[part]] if part else PARTS.values():
+    for add_scenes in PARTS[part] if part else (_add_mjlab_walk, _add_deploy):
         add_scenes(project)
     return builder
