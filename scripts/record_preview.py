@@ -376,12 +376,27 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             upright=False,
         ),
     ),
-    # Forward on the panel's joystick: left alone, the twist can stand still a while.
-    "booster": Preview(
-        steps=(("check", "twist:enabled", True), ("number", "lin_vel_x", 0.5)),
-        orbit=-90,
-        crop="600:439:180:150",
-        seconds=5.0,
+    "booster": (
+        # Forward on the panel's joystick: left alone, the twist can stand still a while.
+        Preview(
+            scene="mjlab_velocity_flat_booster_k1",
+            steps=(("check", "twist:enabled", True), ("number", "lin_vel_x", 0.5)),
+            orbit=-90,
+            crop="600:439:180:150",
+            seconds=5.0,
+        ),
+        # Each clip's opening seconds, from a reset.
+        *(
+            Preview(
+                scene=scene,
+                query="debug=0",
+                orbit=150,
+                crop="540:395:190:166",
+                from_reset=True,
+                seconds=5.0,
+            )
+            for scene in ("k1_mj_dance", "k1_fight")
+        ),
     ),
 }
 
