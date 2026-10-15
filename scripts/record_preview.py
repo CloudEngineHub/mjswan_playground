@@ -377,14 +377,7 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
         ),
     ),
     "booster": (
-        # The walks go forward on the joystick: left alone, a twist can stand still.
-        Preview(
-            scene="mjlab_velocity_flat_booster_k1",
-            steps=(("check", "twist:enabled", True), ("number", "lin_vel_x", 0.5)),
-            orbit=-90,
-            crop="600:439:180:150",
-            seconds=4.0,
-        ),
+        # Forward on the joystick: left alone, the twist can stand still a while.
         Preview(
             scene="k1_walk",
             steps=(("check", "twist:enabled", True), ("number", "lin_vel_x", 0.8)),

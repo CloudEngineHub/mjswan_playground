@@ -165,7 +165,7 @@ def tracking_cfg(task: Any, assets: Path) -> ManagerBasedRlEnvCfg:
 
 def walk_cfg(task: Any, assets: Path) -> ManagerBasedRlEnvCfg:
     """One frame of what `LocomotionPolicy` reads, without its last action: the policy
-    keeps that and the history itself (`deploy.walk_onnx`)."""
+    keeps that and the history itself (`upstream.walk_onnx`)."""
     cfg = _controller_cfg(task, assets)
     joints = SceneEntityCfg(
         "robot", joint_names=tuple(task.policy.policy_joint_names), preserve_order=True

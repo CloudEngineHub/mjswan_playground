@@ -2,29 +2,22 @@
 
 <img src="../../../assets/booster.gif" width="480" alt="Booster K1 preview"/>
 
-Source: https://github.com/IntelligentRoboticsLab/booster_mjlab, its project page's walk
-(**no license stated**, see [License](#license)) ·
-https://github.com/BoosterRobotics/booster_deploy, Booster's own walk, dance and fight
-(Apache-2.0: the policies, the clips, whose origin it does not state, and the deploy
-settings) · their robot model: https://github.com/BoosterRobotics/booster_assets
-(BSD-3-Clause) · project page: https://intelligentroboticslab.github.io/booster_mjlab/
+Source: https://github.com/BoosterRobotics/booster_deploy (Apache-2.0: the policies, the
+clips, whose origin it does not state, and the deploy settings) · robot model:
+https://github.com/BoosterRobotics/booster_assets (BSD-3-Clause)
 
-A Booster K1 humanoid walking to velocity commands with two policies, booster_mjlab's
-and Booster Robotics' own, and dancing and fighting along two clips. Booster's three
-policies are the ones booster_deploy runs on the robot.
+A Booster K1 humanoid walking to velocity commands, and dancing and fighting along two
+clips, with Booster Robotics' own policies: the ones booster_deploy runs on the robot.
 
 | Scene | What it does |
 |---|---|
-| `Mjlab-Velocity-Flat-Booster-K1` | Walks on flat ground to a command drawn anew every 1 to 4 s, a fifth of the time standing still, through random pushes every 1.5 to 4 s, as upstream's play config runs it; the joystick panel can take over. |
 | `K1 Walk` | Walks to a command drawn anew every 4 to 8 s within booster_deploy's limits, -0.3 to 1.6 m/s forward, ±0.3 m/s sideways and ±1.8 rad/s, a fifth of the time standing still; the joystick panel can take over. |
 | `K1 MJ Dance` | Dances along `k1_mj2_seg1.npz`: 25.2 s, the last 3.5 s standing still, then starts over. |
 | `K1 Fight` | Punches and kicks along `k1_fight_final_deploy.npz`: 12.0 s, the last 3 s standing still, then starts over. |
 
-booster_mjlab's other tasks publish no checkpoint, so they are left out:
-`Mjlab-Tracking-Flat-Booster-K1`, which the project page's kick, side flip and Thomas
-flare were trained on, and the velocity tasks on rough ground or with the parallel-linkage ankle
-(`-Parallel`). booster_deploy's other policies, the T1 and T2 dances and walks, run on
-other robots.
+booster_deploy's other policies, the T1 and T2 dances and walks, run on other robots.
+[booster_mjlab](https://github.com/IntelligentRoboticsLab/booster_mjlab), whose project
+page runs another K1 walk in the browser, is left out: it states no license.
 
 ## Run
 
@@ -32,49 +25,18 @@ other robots.
 uv run msp run booster
 ```
 
-The build clones booster_mjlab, booster_deploy and booster_assets into `.cache/` at pinned
-commits; set `MJSWAN_BOOSTER_ROOT`, `MJSWAN_BOOSTER_DEPLOY_ROOT` or
-`MJSWAN_BOOSTER_ASSETS_ROOT` to point at a checkout you already have. It replays each clip
-through mjlab once, into `.cache/booster/`. `uv run msp build booster-open` builds every
-scene but booster_mjlab's walk (see [License](#license)).
+The build clones booster_deploy and booster_assets into `.cache/` at pinned commits; set
+`MJSWAN_BOOSTER_ROOT` or `MJSWAN_BOOSTER_ASSETS_ROOT` to point at a checkout you already
+have. It replays each clip through mjlab once, into `.cache/booster/`. booster_deploy is a
+deploy framework, not an mjlab repository: [`upstream.py`](upstream.py) imports its K1
+tasks from the checkout and converts their policies and clips, and [`envs.py`](envs.py)
+builds mjlab envs around booster_assets' K1.
 
-| Scene | Policy | Upstream task | Checkpoint |
+| Scene | Policy | booster_deploy task | Checkpoint |
 |---|---|---|---|
-| `Mjlab-Velocity-Flat-Booster-K1` | `walk` | booster_mjlab `Mjlab-Velocity-Flat-Booster-K1` | the project page's `policy.bin`, run `2026-09-18_18-14-22` |
-| `K1 Walk` | `k1_walk` | booster_deploy `k1_walk` | `k1_walk.pt` |
-| `K1 MJ Dance` | `k1_mj2` | booster_deploy `k1_mj2` | `k1_mj_dance_002_2025-12-03_00-10-28.pt` |
-| `K1 Fight` | `k1_fight` | booster_deploy `k1_fight` | `k1_fight_001.pt` |
-
-booster_mjlab's walk runs its own K1 model and actuators, which its policy was trained
-on; booster_deploy's walk, dance and fight run booster_assets' K1, as booster_deploy does.
-
-### booster_mjlab's walk
-
-booster_mjlab is a package that requires Python 3.13, which the playground cannot
-install, so [`upstream.py`](upstream.py) puts its `src/` on `sys.path` and imports
-`booster_mjlab.tasks`, which registers the tasks. The code imports under the playground's
-3.12 as it is.
-
-| From `booster_mjlab` | Used as |
-|---|---|
-| `Mjlab-Velocity-Flat-Booster-K1` (`play=True`) | the scene, the observations, the action term, the command, the terminations and the startup randomization |
-| `website/static/demo/policy.bin`, `scene.json` | the policy (75 → 22), rebuilt as ONNX; `scene.json` gives the joint order and the rest pose |
-
-The project page's exporter, `scripts/export_web_demo.py`, flattened the run's ONNX into
-raw float32 weights and a list of layers: the observation normalizer (`Sub`, `Div`) and an
-MLP of 512, 256 and 128 ELU units. `upstream.py` writes those layers back as ONNX, which
-agrees with upstream's own evaluator to float32 rounding. `scene.json` matches the flat
-config but for its action scales, rounded to three decimals; the build takes the
-config's. The project page calls the run its AMP velocity policy without naming its task:
-the flat `-Amp` tasks share its observation, action and command with the plain flat task
-the scene runs, and their play differs only in the resets (see
-[What differs from upstream](#what-differs-from-upstream)).
-
-### booster_deploy's walk, dance and fight
-
-booster_deploy is a deploy framework, not an mjlab repository: [`deploy.py`](deploy.py)
-imports its K1 tasks from the checkout and converts their policies and clips, and
-[`envs.py`](envs.py) builds mjlab envs around booster_assets' K1.
+| `K1 Walk` | `k1_walk` | `k1_walk` | `k1_walk.pt` |
+| `K1 MJ Dance` | `k1_mj2` | `k1_mj2` | `k1_mj_dance_002_2025-12-03_00-10-28.pt` |
+| `K1 Fight` | `k1_fight` | `k1_fight` | `k1_fight_001.pt` |
 
 | From | Used as |
 |---|---|
@@ -88,7 +50,8 @@ imports its K1 tasks from the checkout and converts their policies and clips, an
 
 Each scene runs what booster_deploy's MuJoCo controller runs: booster_assets' MJCF with
 its own solver options, physics at 500 Hz and the policy at 50 Hz, and a PD torque every
-physics step, clipped to the task's effort limit.
+physics step, clipped to the task's effort limit. Each converted ONNX says in its
+`doc_string` what changed, as Apache-2.0 asks.
 
 **The walk.** Its policy reads the last ten observations, oldest first. booster_deploy's
 `LocomotionPolicy` keeps them, the last action and a filtered joint target between steps;
@@ -120,17 +83,6 @@ run does:
 
 ## What the policies read
 
-`walk`: six terms, one frame, no history.
-
-| Term | Width | Source |
-|---|---|---|
-| `base_ang_vel` | 3 | the `imu_ang_vel` sensor |
-| `projected_gravity` | 3 | `projected_gravity_b` |
-| `joint_pos` | 22 | `joint_pos_rel`, read through the encoder bias |
-| `joint_vel` | 22 | `joint_vel_rel` |
-| `actions` | 22 | the previous action |
-| `command` | 3 | the `twist` command |
-
 `k1_walk`: one frame from mjswan, in the policy's joint order, which leaves out the head;
 the ONNX adds the last action and keeps ten frames.
 
@@ -157,36 +109,7 @@ frame, no history, in the model's joint order.
 
 ## What differs from upstream
 
-booster_mjlab's walk:
-
-- **The plain flat task's resets.** The `-Amp` tasks' play resets the robot to a pose
-  drawn from the clips of the
-  [lafan_locomotion_k1](https://huggingface.co/datasets/whirlwind-ams/lafan_locomotion_k1)
-  dataset. Those clips are retargeted from LAFAN1, whose CC BY-NC-ND 4.0 license forbids
-  sharing adaptations, so the build fetches none: each reset places the home pose within
-  ±0.5 m at any heading and offsets every joint by up to ±0.1 rad.
-- **The command ranges are the curriculum's first stage.** Play's config widens them to
-  ±2.5 m/s forward, ±2.0 m/s sideways and ±3.7 rad/s, but it keeps the `command_vel`
-  curriculum, which sets them back to its first stage at every reset: -1.0 to 1.2 m/s,
-  ±1.0 m/s and ±1.0 rad/s, until 40 minutes in. mjswan runs no curriculum, so `main.py`
-  sets that stage itself, and the joystick's limits follow it.
-- **No inertia randomization.** Play draws the mass, center of mass and inertia of the
-  trunk and of every other body once at startup, with mjlab's `pseudo_inertia`. It does
-  not trace: torch exports neither `diag_embed` nor `mT` to ONNX at opset 17, and the
-  eigenvector sign fix after mjlab's Jacobi solver branches on the data, which a trace
-  would freeze. `main.py` drops both events, and the browser runs the nominal model.
-- **No actuator delay.** The actuators take each command 2 to 8 physics steps late
-  (10 to 40 ms) in training and play; mjswan applies it at once, as upstream's own web
-  demo does.
-- **No encoder bias.** mjlab's play config draws a ±0.015 rad bias per joint at startup;
-  the browser applies the policy config's `encoder_bias` instead, and the demo ships none.
-- **One randomized robot, not a population.** The foot friction, the PD gains and the
-  ground's contact softness are drawn once from the browser's seeded PRNG, where mjlab
-  draws them per env.
-- **mjlab 1.6.0.** Upstream locks mjlab at `b517e0c`, six commits past 1.6.0: rsl-rl 5.5.0
-  in the runners and a `sample_gaussian` fix, neither of which this play config reaches.
-
-booster_deploy's walk:
+The walk:
 
 - **The command is drawn at random.** booster_deploy reads it off the keyboard; here a
   new one comes every 4 to 8 s, within the same limits, until the joystick takes over.
@@ -204,15 +127,3 @@ The dance and the fight:
   hand's height is 0.25 m off the clip's, or the trunk's tilt is off it by 0.8 in
   projected gravity. booster_deploy has only a safety stop, once the tilt is 60° off the
   clip's.
-
-## License
-
-booster_mjlab states no license: there is no LICENSE file, and neither its README, its
-code nor its K1 model carries a notice. Without one, all rights stay with the authors, so
-the project ships no `LICENSE`, and publishing its walk is its author's call. The model's
-meshes are Booster Robotics' own: 23 of the 25 its MJCF loads are byte-identical to the
-K1 in booster_assets, and the trunk's two are not there.
-
-booster_deploy's three scenes are permissive, and `booster-open` builds them alone: each
-carries booster_deploy's Apache-2.0 and booster_assets' BSD-3-Clause, and the ONNX files
-say what changed.
