@@ -1,10 +1,10 @@
-"""Asimov 1 walking, and getting up from a fall. See ``README.md``."""
+"""Asimov 1 walking, falling safely and getting up. See ``README.md``."""
 
 from __future__ import annotations
 
 import mjswan
 
-from . import terms, upstream, walk
+from . import safefall, terms, upstream, walk
 
 TASK_ID = "Asimov1-GetUp"
 
@@ -13,7 +13,7 @@ def setup_builder() -> mjswan.Builder:
     root = upstream.resolve_root()
     model = upstream.resolve_model()
     upstream.register_tasks(root, model)
-    policy, spec = upstream.policy()
+    policy, spec = upstream.policy("getup")
     env_cfg = upstream.flat_play_cfg()
     reset = env_cfg.events["reset_fall_state"]
     reset.func = terms.reset_from_fall_states
@@ -48,4 +48,18 @@ def setup_builder() -> mjswan.Builder:
     )
     scene.add_policy(name="walk", policy=walk.policy(), default=True, **joint_kwargs)
     scene.add_policy(name="getup", policy=policy, env_cfg=env_cfg, **joint_kwargs)
+    fall_policy, fall_spec = upstream.policy("safefall")
+    if (
+        fall_spec["action"]["joint_order"] != joint_names
+        or fall_spec["default_joint_pos"] != spec["default_joint_pos"]
+    ):
+        raise ValueError("The safe-fall and get-up policies' joint contracts differ.")
+    scene.add_policy(
+        name="safefall",
+        policy=safefall.wrap_policy(fall_policy, fall_spec),
+        env_cfg=safefall.env_cfg(),
+        in_keys=["actor", "is_init", "adapt_hx"],
+        out_keys=["action", ["next", "adapt_hx"]],
+        **joint_kwargs,
+    )
     return builder

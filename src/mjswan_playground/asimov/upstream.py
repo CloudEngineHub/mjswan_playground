@@ -1,4 +1,4 @@
-"""The asimov-v1-policies checkout, the Asimov 1 model it loads, and the get-up policy."""
+"""The asimov-v1-policies checkout, the Asimov 1 model it loads, and its policies."""
 
 from __future__ import annotations
 
@@ -27,8 +27,6 @@ MODEL_DIR = "sim-model"
 
 POLICY_REPO_ID = "openhorizon-labs/asimov1-getup-safefall"
 POLICY_REVISION = "f657abede4c0e8c74b96d7a2546568b63fed619f"
-POLICY_ONNX = "policies/getup.onnx"
-POLICY_SPEC = "policies/getup_policy_spec.json"
 
 TASK_PACKAGE = "asimov_policies.tasks"
 
@@ -79,8 +77,12 @@ def flat_play_cfg():
     )
 
 
-def policy() -> tuple[onnx.ModelProto, dict]:
-    """The get-up ONNX and its spec (joint orders, default pose)."""
-    path = hf_hub_download(POLICY_REPO_ID, POLICY_ONNX, revision=POLICY_REVISION)
-    spec = hf_hub_download(POLICY_REPO_ID, POLICY_SPEC, revision=POLICY_REVISION)
+def policy(name: str) -> tuple[onnx.ModelProto, dict]:
+    """``getup``'s or ``safefall``'s ONNX and its spec (joint orders, default pose)."""
+    path = hf_hub_download(
+        POLICY_REPO_ID, f"policies/{name}.onnx", revision=POLICY_REVISION
+    )
+    spec = hf_hub_download(
+        POLICY_REPO_ID, f"policies/{name}_policy_spec.json", revision=POLICY_REVISION
+    )
     return onnx.load(path), json.loads(Path(spec).read_text())
