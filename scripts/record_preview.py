@@ -381,7 +381,7 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
         Preview(
             scene="k1_walk",
             steps=(("check", "twist:enabled", True), ("number", "lin_vel_x", 0.8)),
-            orbit=150,
+            orbit=-30,
             crop="540:395:190:166",
             seconds=4.0,
         ),
@@ -390,7 +390,7 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             Preview(
                 scene=scene,
                 query="debug=0",
-                orbit=150,
+                orbit=-30,
                 crop="540:395:190:166",
                 from_reset=True,
                 seconds=4.0,
