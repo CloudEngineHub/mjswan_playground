@@ -12,7 +12,9 @@ panel can take over. Play also keeps upstream's random pushes, one every 1.5 to 
 
 Upstream's other tasks, `Mjlab-Tracking-Flat-Booster-K1` and the velocity tasks on rough
 ground or with the parallel-linkage ankle (`-Parallel`), publish no checkpoint, so they
-are left out.
+are left out. The project page's kick, side flip and Thomas flare come from the tracking
+task, and neither their checkpoints nor their clips are published: not in the repository,
+on its Hub organization (`whirlwind-ams`, datasets only) or on the team's site.
 
 ## Run
 
@@ -36,10 +38,11 @@ raw float32 weights and a list of layers: the observation normalizer (`Sub`, `Di
 MLP of 512, 256 and 128 ELU units. `upstream.py` writes those layers back as ONNX, which
 agrees with upstream's own evaluator to float32 rounding. `scene.json`'s observation order,
 joint order, PD gains and rest pose are the flat config's, and its action scales are the
-config's rounded to three decimals. The repository does not say which task the run
-(`2026-09-18_18-14-22`) trained on. Every flat K1 task (`-DA`, `-Amp`, `-Muon` and their
-combinations) has this policy's observation, action and command, so the scene is the
-plain one, whose resets start from the home pose rather than from a pool of motion clips.
+config's rounded to three decimals. The project page calls the run
+(`2026-09-18_18-14-22`) its AMP velocity policy without naming its task. The flat `-Amp`
+tasks share this policy's observation, action and command with the plain flat task, which
+the scene runs, and their play differs from it only in its resets (see
+[What differs from upstream](#what-differs-from-upstream)).
 
 ## What the policy reads
 
@@ -56,6 +59,12 @@ Six terms, one frame, no history:
 
 ## What differs from upstream
 
+- **The plain flat task's resets.** The `-Amp` tasks' play resets the robot to a pose
+  drawn from the clips of the
+  [lafan_locomotion_k1](https://huggingface.co/datasets/whirlwind-ams/lafan_locomotion_k1)
+  dataset. Those clips are retargeted from LAFAN1, whose CC BY-NC-ND 4.0 license forbids
+  sharing adaptations, so the build fetches none: each reset places the home pose within
+  ±0.5 m at any heading and offsets every joint by up to ±0.1 rad.
 - **The command ranges are the curriculum's first stage.** Play's config widens them to
   ±2.5 m/s forward, ±2.0 m/s sideways and ±3.7 rad/s, but it keeps the `command_vel`
   curriculum, which sets them back to its first stage at every reset: -1.0 to 1.2 m/s,
@@ -80,6 +89,8 @@ Six terms, one frame, no history:
 ## License
 
 booster_mjlab states no license: there is no LICENSE file, and neither its README, its
-code nor the K1 model, whose MJCF and meshes are Booster Robotics', carries a notice.
-Without one, all rights stay with the authors, so the project ships no `LICENSE`, and
-publishing the demo is its author's call.
+code nor its K1 model carries a notice. Without one, all rights stay with the authors, so
+the project ships no `LICENSE`, and publishing the demo is its author's call. The model's
+meshes are Booster Robotics' own: 23 of the 25 its MJCF loads are byte-identical to the
+K1 in [booster_assets](https://github.com/BoosterRobotics/booster_assets), which Booster
+publishes under BSD-3-Clause, and the trunk's two are not there.
