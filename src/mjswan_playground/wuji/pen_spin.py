@@ -354,6 +354,8 @@ def wrap_policy(policy: onnx.ModelProto, config: dict) -> onnx.ModelProto:
     (the observation's first slice, the command's joint positions) plus the smoothed
     residual, ``clip(scale * action) * alpha + previous * (1 - alpha)``.
     """
+    from wuji_mjlab.tasks.pen_spin.mdp.actions import SingleHandResidualEMAActionCfg
+
     graph = policy.graph
     (obs,) = graph.input
     (actions,) = graph.output
@@ -442,6 +444,16 @@ def wrap_policy(policy: onnx.ModelProto, config: dict) -> onnx.ModelProto:
             " asset bundle (Apache-2.0), changed by mjswan_playground: wrapped in"
             " upstream's SingleHandResidualEMAAction."
         ),
+    )
+    # The keys mjswan stamps on the graphs it traces, naming the term this one replaces.
+    term = SingleHandResidualEMAActionCfg
+    helper.set_model_props(
+        wrapped,
+        {
+            "mjswan.kind": "action",
+            "mjswan.term": "joint_pos",
+            "mjswan.func": f"{term.__module__}:{term.__qualname__}",
+        },
     )
     onnx.checker.check_model(wrapped, full_check=True)
     return wrapped

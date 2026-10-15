@@ -57,3 +57,53 @@ def reset_from_fall_states(
     asset.write_joint_state_to_sim(
         q[:, 7:], torch.zeros_like(q[:, 7:]), env_ids=env_ids
     )
+
+
+def reset_standing_with_push(
+    env,
+    env_ids: torch.Tensor | None,
+    joint_noise: float,
+    push_speed_range: tuple[float, float],
+    push_ang_vel: float,
+    yaw_rate: float,
+    z_offset: float = 0.0,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> None:
+    """Upstream's safe-fall reset with every draw through ``sample_uniform``, from the
+    same ranges: the tracer cannot follow ``Tensor.uniform_``."""
+    from asimov_policies import robot
+
+    if env_ids is None:
+        env_ids = torch.arange(env.num_envs, device=env.device)
+    asset = env.scene[asset_cfg.name]
+    n = len(env_ids)
+    dev = env.device
+
+    pos = torch.zeros(n, 3, device=dev)
+    pos[:, 2] = robot.standing_heights().pelvis + 0.005 + z_offset
+    pos += env.scene.env_origins[env_ids]
+    zeros = torch.zeros(n, device=dev)
+    yaw = quat_from_euler_xyz(
+        zeros, zeros, sample_uniform(-torch.pi, torch.pi, (n,), dev)
+    )
+    asset.write_root_link_pose_to_sim(torch.cat([pos, yaw], dim=-1), env_ids=env_ids)
+
+    heading = sample_uniform(0.0, 2 * torch.pi, (n,), dev)
+    speed = sample_uniform(*push_speed_range, (n,), dev)
+    vel = torch.cat(
+        [
+            (speed * torch.cos(heading))[:, None],
+            (speed * torch.sin(heading))[:, None],
+            zeros[:, None],
+            sample_uniform(-push_ang_vel, push_ang_vel, (n, 2), dev),
+            sample_uniform(-yaw_rate, yaw_rate, (n, 1), dev),
+        ],
+        dim=-1,
+    )
+    asset.write_root_link_velocity_to_sim(vel, env_ids=env_ids)
+
+    q = asset.data.default_joint_pos[env_ids]
+    q = q + sample_uniform(-joint_noise, joint_noise, q.shape, dev)
+    limits = asset.data.soft_joint_pos_limits[env_ids]
+    q = torch.clamp(q, limits[..., 0], limits[..., 1])
+    asset.write_joint_state_to_sim(q, torch.zeros_like(q), env_ids=env_ids)
