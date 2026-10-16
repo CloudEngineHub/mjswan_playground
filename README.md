@@ -27,9 +27,13 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 
 ## CLI
 
+Run a task in the browser without installing anything:
+
 ```
-uv run msp <subcommand>
+uvx mjswan-playground run jumper
 ```
+
+In a clone, `uv run msp <subcommand>`. `wbc` takes its extra as `uvx --from 'mjswan-playground[wbc]' msp run wbc`; `spinkick`, `musclemimic` and `terra` pull code PyPI does not carry, so run them from a clone.
 
 | Subcommand | Description | Options |
 |------------|-------------|---------|

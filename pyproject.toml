@@ -36,6 +36,7 @@ terra = ["myosuite[musclemimic]", "orbax-checkpoint>=0.11"]
 mjswan-playground = "mjswan_playground._cli:app"
 # Short alias for the same CLI.
 msp = "mjswan_playground._cli:app"
+mjswan_playground = "mjswan_playground._cli:app"
 
 [project.urls]
 "GitHub" = "https://github.com/ttktjmt/mjswan_playground"
@@ -46,6 +47,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mjswan_playground"]
+
+[tool.hatch.build.targets.sdist]
+# Keeps the README's preview GIFs (~50 MB) off PyPI.
+only-include = ["src"]
 
 [tool.uv.sources]
 # TERRA's code is only on feat/programmatic-waypoint-tasks; move to main once it merges.
