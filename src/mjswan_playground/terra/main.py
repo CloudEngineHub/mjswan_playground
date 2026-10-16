@@ -4,6 +4,7 @@ TERRA-4B checkpoint. See ``README.md``."""
 from __future__ import annotations
 
 import re
+from importlib.metadata import distribution
 from typing import Any
 
 import mjswan
@@ -30,6 +31,22 @@ from .terms import ENTITY
 
 #: myosuite's mjlab twin of its CPU waypoint task, registered through mjlab's entry point.
 TASK_ID = "myoFullBodyWaypoint-v0"
+
+#: The checkpoint states no license, so the scene carries where it comes from instead.
+WEIGHTS_NOTICE = """\
+TERRA-4B: https://huggingface.co/merc-s/TERRA-4B at b89a604, checkpoint_24416.
+Merkourios Simos, Chengkun Li, Bianca Ziliotto, Alexander Mathis. TERRA: Terrain-Aware
+Reconstruction, Retargeting and Control for Musculoskeletal Locomotion.
+arXiv:2609.38653, 2026. The model card states no license.
+"""
+
+
+def _license_file(package: str, name: str) -> Any:
+    return next(
+        f
+        for f in distribution(package).files
+        if f.match(f"*.dist-info/licenses/{name}")
+    ).locate()
 
 
 def _entity_spec(route: upstream.Route) -> mujoco.MjSpec:
@@ -126,10 +143,18 @@ def setup_builder() -> mjswan.Builder:
     onnx_path, obs_cfg = upstream.ensure_policy()
     policy = onnx.load(str(onnx_path))
     builder = mjswan.Builder()
-    project = builder.add_project(name="TERRA")
+    project = builder.add_project(
+        name="TERRA", license=_license_file("myosuite", "LICENSE")
+    )
     for route in upstream.routes():
         scene = project.add_scene_mjlab(
             route.name, env_cfg=play_env_cfg(route, obs_cfg)
         )
         scene.add_policy("TERRA-4B", policy)
+        scene.add_attribution(
+            "musclemimic_models",
+            license=_license_file("musclemimic_models", "LICENSE"),
+            notice=_license_file("musclemimic_models", "NOTICE"),
+        )
+        scene.add_attribution("terra-4b", notice=WEIGHTS_NOTICE)
     return builder

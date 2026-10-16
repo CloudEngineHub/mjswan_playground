@@ -123,3 +123,8 @@ mjlab's float32 cast and myosuite's float64 one land on either side.
 
 TERRA-4B's model card states no license. MyoSuite's maintainers asked for this port, and
 only the playground's author publishes it.
+
+The project's `LICENSE` is myosuite's Apache-2.0. Each scene carries
+`musclemimic_models`' `LICENSE` and `NOTICE` for the body, and a `NOTICE.terra-4b` naming
+the checkpoint. That `NOTICE` says the body's arms come from MoBL-ARMS, whose model
+definition is for non-commercial use only, as for `musclemimic`.
