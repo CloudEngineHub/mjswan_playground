@@ -41,44 +41,6 @@
     claude/in-hand-rotation-feasibility-vcnq4g of this repo has a feasibility study.
   pinned: '2026-10-16: the owner asked for inhand, luwu, walka and orcs next, in that order'
 
-- id: luwu
-  repo: https://github.com/LuwuDynamics/luwu_mjlab
-  commit: 447945fd40fb5585271dce4ea8cc82567916032a
-  simulations:
-    - task: Mini2S-Walk-Flat (src/tasks/velocity/config/mini2s_walk), the XGO Mini2S, a palm-sized robot dog with an arm, walking to velocity commands
-      policy: Hugging Face robomotic/XGO at 1646bc65ed37feff3698a43524a65cb3cd5b6981, mini2s_walk/policy.onnx (a third party's export, trained with luwu_mjlab at 447945f; obs 56, actions 15, mjlab metadata, normalizer baked in; params/env.yaml beside it is the training config)
-      ease: '2: no change to mjswan, but several playground-side rewrites: phase through the playground''s gait clock (_gait_clock.clock_phase, as bipedhrl and unitreerl), the twist rebuilt as mjlab 1.6''s UniformVelocityCommandCfg (luwu''s copy of 1.2''s lacks vel_command_w, is_world_env and is_forward_env, which mjswan''s binding of that class name traces), play''s randomize_terrain event dropped, and shims for mjlab 1.2.0; 250 Hz physics, 50 Hz control'
-    - task: Mini2SW-Walk-Flat (src/tasks/velocity/config/mini2sw_walk), the Mini2SW, a Mini2S with fixed wheels on its calves as feet, walking
-      policy: the same revision, mini2sw_walk/policy.onnx (obs 56, actions 15)
-      ease: '2: as Mini2S'
-    - task: Lite3-Walk-Flat (src/tasks/velocity/config/lite3_walk), the XGO Lite3 walking
-      policy: the same revision, lite3_walk/policy.onnx (obs 53, actions 14; its stiffness 0.8 is lite3.xml's at 447945f)
-      ease: '2: as Mini2S'
-    - task: Mini2S-Turn-Flat (src/tasks/velocity/config/mini2s_turn), getting up from a random fall
-      policy: the same revision, mini2s_turn/policy.onnx (obs 56, actions 15)
-      ease: '0: HeldJointPositionActionCfg, defined in the repository (src/tasks/velocity/mdp/actions.py), holds each joint where the reset left it for 1 s, play included, which no mjswan action does'
-    - task: Mini2SW-Turn-Flat (src/tasks/velocity/config/mini2sw_turn), the Mini2SW getting up
-      policy: the same revision, mini2sw_turn/policy.onnx (obs 56, actions 15)
-      ease: '0: the same held action'
-  left_out: >-
-    None: robomotic/XGO has a policy for each of the five registered tasks; its
-    model_1499.pt files are the same policies before export, and upstream ships none.
-  license: Apache-2.0 for the code and robot models (LICENCE); Apache-2.0 for the XGO checkpoints (robomotic's model card, a third party's, trained in simulation only with mjlab 1.2.0)
-  popularity: '0: 17 stars (2026-10-16)'
-  ease: '2: the three walks; the two get-up policies are at 0'
-  notes: >-
-    XGO robot dogs from Luwu Dynamics walking to velocity commands, and getting up. Upstream
-    publishes no policy; robomotic published one per task on 2026-09-15 under Apache-2.0,
-    with each run's env.yaml and agent.yaml. mjlab==1.2.0: checkout shape, with upstream's
-    top-level `src` first on sys.path, as unitreerl; XmlPositionActuatorCfg,
-    XmlMotorActuatorCfg and DelayedActuatorCfg (training only; 1.6 has XmlActuatorCfg),
-    update_assets and CollisionCfg need shims. luwu's UniformVelocityCommand also zeroes a
-    resampled twist under 0.1, which the rebuilt command drops or a terms.py rewrite keeps.
-    Play zeroes the joint-feedback and actuator delays, and Mini2S's play locks the yaw
-    command at 0. The walk policies drive the arm joints too (Mini2S arm_yaw, arm_thigh and
-    arm_calf; Lite3 mainarm and forearm).
-  pinned: '2026-10-16: the owner asked for inhand, luwu, walka and orcs next, in that order'
-
 - id: walka
   repo: https://github.com/thanhndv212/walka_rl_mjlab
   commit: fb03f3859f47856a9bf10e1f97a4a63b43c1dd46
