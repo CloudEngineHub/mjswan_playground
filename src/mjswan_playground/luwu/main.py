@@ -47,8 +47,7 @@ def _env_cfg(task_id: str) -> Any:
 
 
 def _mjlab_twist(twist: Any) -> UniformVelocityCommandCfg:
-    """Upstream's copy of mjlab 1.2's twist command, as mjlab 1.6's class, whose fields
-    mjswan's binding reads."""
+    """Upstream's copy of mjlab 1.2's twist command, as the 1.6 class mjswan binds."""
     fields = {field.name for field in dataclasses.fields(UniformVelocityCommandCfg)}
     values = {
         field.name: getattr(twist, field.name)
