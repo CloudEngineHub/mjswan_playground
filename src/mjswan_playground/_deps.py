@@ -42,7 +42,7 @@ def _head(repo: Path) -> str:
 def ensure_repo(
     *, name: str, url: str, commit: str, marker: str, root_env_var: str | None = None
 ) -> Path:
-    """Return a checkout of ``url`` at ``commit``, cloning into the cache if needed, or
+    """Return a checkout of ``url`` at ``commit``, fetching into the cache if needed, or
     whatever ``root_env_var`` points at if ``marker`` is present there."""
     configured = os.getenv(root_env_var) if root_env_var else None
     if configured:
@@ -56,16 +56,13 @@ def ensure_repo(
 
     repo = CACHE_DIR / name
     if not (repo / ".git").exists():
-        repo.parent.mkdir(parents=True, exist_ok=True)
-        _git(["clone", url, str(repo)], cwd=repo.parent)
+        repo.mkdir(parents=True, exist_ok=True)
+        _git(["init", "-q"], cwd=repo)
     elif _head(repo) == commit:
         # Already parked on the pinned commit: fetching would only add a network
         # round-trip, and would fail a build that could have run offline.
         return repo
-    else:
-        _git(["remote", "set-url", "origin", url], cwd=repo)
-        _git(["fetch", "--tags", "origin"], cwd=repo)
-    # Detached at a pinned commit: a branch name would leave the checkout stale
-    # after a fetch, and the assets are what the policy was trained against.
+    # --depth 1: some upstreams' history is many times the size of their files.
+    _git(["fetch", "--depth", "1", url, commit], cwd=repo)
     _git(["checkout", "--detach", commit], cwd=repo)
     return repo
