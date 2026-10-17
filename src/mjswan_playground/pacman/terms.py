@@ -4,6 +4,8 @@
   intersections instead (as upstream's own ``web-demo`` branch does).
 * :func:`throw_ball`: upstream's launch geometry, on an interval event: mjswan has no
   ``mode="step"`` for its per-env countdown.
+* :func:`park_ball`: upstream's reset without the state it keeps on the env, which
+  only the dropped ``throw_ball_on_dwell`` read.
 * :func:`add_camera_pose_sensors`: frame sensors giving the term the camera pose.
 * :func:`zero_command`: the velocity command the deployed dodge mode feeds, zero.
 """
@@ -226,6 +228,32 @@ def throw_ball(
     ball.write_root_link_velocity_to_sim(
         torch.cat([velocity_xy, velocity_z, torch.zeros(1, 3, device=device)], dim=-1),
         env_ids=env_ids,
+    )
+
+
+def park_ball(
+    env,
+    env_ids: torch.Tensor | None,
+    ball_name: str = "ball",
+    park_offset: tuple[float, float, float] = (0.0, 3.0, 0.1),
+) -> None:
+    """Upstream's ``reset_dodge_state`` without the dwell counter and throw countdown
+    it keeps on the env: the ball parked at ``env_origin + park_offset``, at rest."""
+    if env_ids is None:
+        env_ids = torch.arange(env.num_envs, device=env.device, dtype=torch.long)
+    ball = env.scene[ball_name]
+    count = len(env_ids)
+    origins = env.scene.env_origins[env_ids]
+    position = origins + torch.tensor(
+        park_offset, device=env.device, dtype=origins.dtype
+    )
+    upright = torch.zeros(count, 4, device=env.device)
+    upright[:, 0] = 1.0
+    ball.write_root_link_pose_to_sim(
+        torch.cat([position, upright], dim=-1), env_ids=env_ids
+    )
+    ball.write_root_link_velocity_to_sim(
+        torch.zeros(count, 6, device=env.device), env_ids=env_ids
     )
 
 
