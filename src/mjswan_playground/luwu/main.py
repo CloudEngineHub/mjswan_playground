@@ -1,5 +1,4 @@
-"""XGO Mini2S, Mini2SW and Lite3 walking to velocity commands, and getting up. See
-``README.md``."""
+"""XGO Mini2S, Mini2SW and Lite3 walking and getting up. See ``README.md``."""
 
 from __future__ import annotations
 

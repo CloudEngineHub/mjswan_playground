@@ -398,9 +398,8 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             for scene in ("k1_mj_dance", "k1_fight")
         ),
     ),
-    # The walks forward on the joystick: left alone, the twist can stand still a while.
-    # Each get-up from a reset, which drops the robot in a random pose; it lies on its
-    # side or back, so the tilt check is off.
+    # The walks go forward on the joystick: left alone, the twist can stand still a while.
+    # The get-ups start from a reset's random fall, on the side or back: no tilt check.
     "luwu": tuple(
         Preview(
             scene=scene,

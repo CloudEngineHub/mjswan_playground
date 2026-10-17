@@ -1,1 +1,1 @@
-"""XGO robot dogs from Luwu Dynamics walking to velocity commands."""
+"""XGO robot dogs from Luwu Dynamics walking and getting up."""
