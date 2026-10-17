@@ -22,8 +22,9 @@ def legacy_update_assets():
 
 
 def _update_assets(assets: dict[str, bytes], path: Path, meshdir: str | None) -> None:
-    """Every file in ``path``, keyed under ``meshdir``."""
-    for file in Path(path).iterdir():
+    """Every file in ``path``, keyed under ``meshdir``; none when it is missing, as in
+    1.2."""
+    for file in Path(path).glob("*"):
         if file.is_file():
             key = file.name if meshdir is None else posixpath.join(meshdir, file.name)
             assets[key] = file.read_bytes()
