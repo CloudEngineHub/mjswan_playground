@@ -97,11 +97,11 @@ in the model's joint order, which differs from the observations'.
   plane.
 - **The actuators run as PD within the effort limit.** mjswan runs upstream's
   `DcMotorActuatorCfg` as the `IdealPdActuatorCfg` it subclasses, which drops the
-  motors' torque-speed curve and their 0 to 25 ms command delay. In mjlab, from 128 fall
-  states on the plane, the get-up stands every time either way, in a median 1.23 s with
-  upstream's motors and 1.12 s without. In MuJoCo's C build, with the browser's PD, the
-  safe fall's hardest hit has a median of 254 N over 64 pushes, against 2145 N with the
-  pose held.
+  motors' torque-speed curve; their 0 to 25 ms command delay runs, as in mjlab. In mjlab,
+  from 128 fall states on the plane, the get-up stands every time either way, in a
+  median 1.23 s with upstream's motors and 1.12 s with PD and no delay. In MuJoCo's C
+  build, with PD and no delay, the safe fall's hardest hit has a median of 254 N over 64
+  pushes, against 2145 N with the pose held.
 - **The limits are `env.yaml`'s.** The walking policy trained with 45 N·m at the hips'
   pitch and roll and at the knees and 28 N·m at the hips' yaw, where upstream takes the
   motors' rated 40, 30, 25 and 20 N·m. [`walk.py`](walk.py) raises them on the scene all
