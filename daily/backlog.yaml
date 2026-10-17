@@ -20,27 +20,6 @@
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
 
-- id: inhand
-  repo: https://github.com/Msornerrrr/in-hand-rotation-mjlab
-  commit: 14004fe3bd5ee2ed51d8b7348ca5da34338c7f1e
-  simulations:
-    - task: Mjlab-Leap-Left-Custom-HandCube-Rotate (src/in_hand_rotation_mjlab/tasks/hand_cube/config/leap_left_custom), the custom left LEAP hand spinning a cube in its palm
-      policy: ckpts/leap_left_custom_model_4900.pt in git (an rsl_rl actor with its normalizer, obs 320, actions 16; convert at build time)
-      ease: '0: JointPositionDeltaActionCfg, defined in the repository (tasks/hand_cube/mdp/actions.py), integrates its target (the previous target plus a delta of up to 1/24 rad, ramped across the substeps), which no mjswan action does'
-  left_out: >-
-    Mjlab-Leap-Left-HandCube-Rotate and Mjlab-Leap-Right-HandCube-Rotate ship no checkpoint
-    of their own.
-  license: Apache-2.0; the LEAP hand MJCF is MIT
-  popularity: '0: 34 stars (2026-10-16)'
-  ease: '0: its one policy needs a delta action mjswan lacks'
-  notes: >-
-    A LEAP hand spinning a cube in its palm, after HORA. Written for mjlab 1.1
-    (DelayedActuatorCfg around IdealPdActuatorCfg, TerrainImporterCfg and update_assets are
-    gone in 1.6.0). Its JointPositionDeltaActionCfg is task-specific and stateful, so expect
-    the data-only stop unless mjswan gains a delta action; branch
-    claude/in-hand-rotation-feasibility-vcnq4g of this repo has a feasibility study.
-  pinned: '2026-10-16: the owner asked for inhand, luwu, walka and orcs next, in that order'
-
 - id: walka
   repo: https://github.com/thanhndv212/walka_rl_mjlab
   commit: fb03f3859f47856a9bf10e1f97a4a63b43c1dd46
