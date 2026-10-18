@@ -104,8 +104,11 @@ def _strip_untraceable(env_cfg: Any) -> None:
         env_cfg.events.pop(name, None)
     for name in DROPPED_DODGE_TERMINATIONS:
         env_cfg.terminations.pop(name, None)
-    # Untraceable `torch.randint` countdown; the interval event owns the timing now.
-    env_cfg.events["reset_dodge_state"].params["throw_interval_range"] = None
+    # Upstream's keeps a dwell counter and a throw countdown on the env, Python state
+    # the browser has no copy of; the interval event owns the timing now.
+    reset = env_cfg.events["reset_dodge_state"]
+    reset.func = terms.park_ball
+    reset.params.pop("throw_interval_range", None)
     # Contact sensor only: the fallback needs the previous step's ball velocity.
     env_cfg.terminations["ball_hit"].params["delta_v_threshold"] = 0.0
     # Drop the rendering camera and every group reading it; only the actor's ships.
