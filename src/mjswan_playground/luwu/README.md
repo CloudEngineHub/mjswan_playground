@@ -72,7 +72,10 @@ so the robot lies limp while it settles. mjswan traces the term's `process_actio
 ## How it behaves
 
 The Lite3 wags its yaw as it trots, about 0.5 rad/s either way, and turns slowly off its
-heading. It does the same in mjlab with upstream's own config, so it is the policy's.
+heading. The Mini2S stands up within about 3 s of every fall. The Mini2SW sometimes stops
+halfway, tipped about 19° with its body near the ground, and stays there until the next
+reset. Both do the same in mjlab with upstream's own config (the Mini2SW halfway in 6 of 32
+envs, the Mini2S in none), so it is the policies'.
 
 ## What differs from upstream
 

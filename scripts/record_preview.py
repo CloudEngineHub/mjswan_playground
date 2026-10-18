@@ -418,7 +418,7 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             orbit=-30,
             crop="480:351:230:175",
             from_reset=True,
-            seconds=3.0,
+            seconds=4.0,
             upright=False,
         )
         for scene in ("mini2s_turn_flat", "mini2sw_turn_flat")
