@@ -1,4 +1,4 @@
-"""XGO Mini2S, Mini2SW and Lite3 walking to velocity commands. See ``README.md``."""
+"""XGO Mini2S, Mini2SW and Lite3 walking and getting up. See ``README.md``."""
 
 from __future__ import annotations
 
@@ -14,19 +14,26 @@ from mjswan_playground._gait_clock import clock_phase
 from . import upstream
 
 #: Each scene's task id and the folder of its policy in the Hub repo, in upstream's order.
-WALKS = {
+SCENES = {
     "Mini2S-Walk-Flat": "mini2s_walk",
     "Mini2SW-Walk-Flat": "mini2sw_walk",
     "Lite3-Walk-Flat": "lite3_walk",
+    "Mini2S-Turn-Flat": "mini2s_turn",
+    "Mini2SW-Turn-Flat": "mini2sw_turn",
 }
 
 
 def setup_builder() -> mjswan.Builder:
     root = upstream.resolve_root()
     upstream.register_tasks(root)
+    # The get-ups hold each joint where the reset left it for their first second.
+    mjswan.register_action(
+        "HeldJointPositionActionCfg",
+        mjswan.ActionBinding(hold_s=lambda cfg: cfg.hold_duration_s),
+    )
     builder = mjswan.Builder()
     project = builder.add_project(name="luwu_mjlab", license=root / "LICENCE")
-    for task_id, folder in WALKS.items():
+    for task_id, folder in SCENES.items():
         scene = project.add_scene_mjlab(task_id, env_cfg=_env_cfg(task_id))
         scene.add_policy_hf(
             upstream.HF_REPO_ID,
@@ -41,8 +48,8 @@ def _env_cfg(task_id: str) -> Any:
     env_cfg = load_env_cfg(task_id, play=True)
     clock_phase(env_cfg)
     env_cfg.commands["twist"] = _mjlab_twist(env_cfg.commands["twist"])
-    # Play re-picks a terrain tile on reset; the flat walks have a plane and no tiles.
-    env_cfg.events.pop("randomize_terrain")
+    # The walks' play re-picks a terrain tile on reset; they have a plane and no tiles.
+    env_cfg.events.pop("randomize_terrain", None)
     return env_cfg
 
 
