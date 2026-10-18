@@ -13,13 +13,13 @@ from mjswan_playground._gait_clock import clock_phase
 
 from . import upstream
 
-#: Each scene's task id and the folder of its policy in the Hub repo, in upstream's order.
+#: Each scene's task id and the folder of its policy in the Hub repo, by robot.
 SCENES = {
     "Mini2S-Walk-Flat": "mini2s_walk",
-    "Mini2SW-Walk-Flat": "mini2sw_walk",
-    "Lite3-Walk-Flat": "lite3_walk",
     "Mini2S-Turn-Flat": "mini2s_turn",
+    "Mini2SW-Walk-Flat": "mini2sw_walk",
     "Mini2SW-Turn-Flat": "mini2sw_turn",
+    "Lite3-Walk-Flat": "lite3_walk",
 }
 
 

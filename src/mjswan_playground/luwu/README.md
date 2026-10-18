@@ -13,10 +13,10 @@ and the joystick panel can take over.
 | Scene | What it does |
 |---|---|
 | `Mini2S-Walk-Flat` | the palm-sized Mini2S, a 12-joint dog with a 3-joint arm on its back, trotting |
-| `Mini2SW-Walk-Flat` | the Mini2SW, a Mini2S with fixed wheels on its calves as feet |
-| `Lite3-Walk-Flat` | the larger Lite3, with a 2-joint arm |
 | `Mini2S-Turn-Flat` | the Mini2S dropped in a random pose, going limp for a second, then turning over and standing |
-| `Mini2SW-Turn-Flat` | the same on the Mini2SW |
+| `Mini2SW-Walk-Flat` | the Mini2SW, a Mini2S with fixed wheels on its calves as feet |
+| `Mini2SW-Turn-Flat` | the Mini2S's get-up on the Mini2SW |
+| `Lite3-Walk-Flat` | the larger Lite3, with a 2-joint arm |
 
 Each get-up episode lasts 5 s and starts from a new random fall.
 
@@ -35,10 +35,10 @@ checkout you already have. Upstream runs from source as the top-level package `s
 | Scene | Upstream task (`play=True`) | Policy on `robomotic/XGO` |
 |---|---|---|
 | `Mini2S-Walk-Flat` | `Mini2S-Walk-Flat` | `mini2s_walk/policy.onnx` (56 → 15) |
-| `Mini2SW-Walk-Flat` | `Mini2SW-Walk-Flat` | `mini2sw_walk/policy.onnx` (56 → 15) |
-| `Lite3-Walk-Flat` | `Lite3-Walk-Flat` | `lite3_walk/policy.onnx` (53 → 14) |
 | `Mini2S-Turn-Flat` | `Mini2S-Turn-Flat` | `mini2s_turn/policy.onnx` (56 → 15) |
+| `Mini2SW-Walk-Flat` | `Mini2SW-Walk-Flat` | `mini2sw_walk/policy.onnx` (56 → 15) |
 | `Mini2SW-Turn-Flat` | `Mini2SW-Turn-Flat` | `mini2sw_turn/policy.onnx` (56 → 15) |
+| `Lite3-Walk-Flat` | `Lite3-Walk-Flat` | `lite3_walk/policy.onnx` (53 → 14) |
 
 Each task gives the scene, the observations, the action term, the terminations and the
 startup randomization. Each export's mjlab metadata gives the joint order and the rest
