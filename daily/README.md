@@ -45,9 +45,14 @@ Then replace `WIP` in its README row with the link, as the other rows have it, i
      CLAUDE_CODE_EFFORT_LEVEL=max
      ```
 
-     The last four run the session and every subagent it starts on Opus at max effort.
+     The last four run the session and every subagent it starts on Opus, the session at
+     max effort.
      The routine's editor has no effort setting, and a session with several repositories
      reads nothing but plugin keys from their `.claude/settings.json`.
+     `CLAUDE_CODE_EFFORT_LEVEL` is optional: Claude Code reads only `low`, `medium`,
+     `high`, `xhigh` and `max` there and ignores any other value, such as `extra`. The
+     routine does not need it, since it starts its subagents at max itself and hands them
+     its long parts.
 
 2. In this repository's settings, set the Pages source to GitHub Actions, and in the `main` ruleset require the `released-mjswan` and `ready` status checks (`ready` is listed once `deploy` has run). Commits then reach `main` only through a pull request, yours included. Leave ttktjmt/mjswan's ruleset as it is: its release workflow pushes the version bump to `main`.
 3. The routine, at claude.ai/code/routines:
