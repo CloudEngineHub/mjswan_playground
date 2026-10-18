@@ -66,8 +66,8 @@ Upstream's `HeldJointPositionActionCfg` zeroes the policy's action for the first
 an episode and, on every physics substep, sets each joint's target to where the joint is,
 so the robot lies limp while it settles. mjswan traces the term's `process_actions` and
 `reset` and runs that hold natively in the browser, bound in [`main.py`](main.py) with
-`ActionBinding(hold_s=...)` from the task's own `hold_duration_s`. It needs mjswan with
-ttktjmt/mjswan#171, which `pyproject.toml` pins until 0.12.1.
+`ActionBinding(hold_s=...)` from the task's own `hold_duration_s`, which needs mjswan
+0.12.1 or later.
 
 ## How it behaves
 

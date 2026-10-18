@@ -129,7 +129,11 @@ makes the same trade.
   dataset (`init_motion_loader`, `reset_from_motion`); the loader writes nothing to the
   simulation, so there is no graph to trace and no dataset for the sampler. A reset lands
   on the entity's `KNEES_BENT_KEYFRAME` instead (the pose the action offsets are relative
-  to anyway) and still parks the ball aside, which is upstream's own `reset_dodge_state`.
+  to anyway) and still parks the ball aside.
+- **The reset parks the ball and keeps nothing on the env.** Upstream's
+  `reset_dodge_state` also resets a dwell counter and a throw countdown it stores as env
+  attributes, Python state the browser has no copy of, read only by
+  `throw_ball_on_dwell`. [`terms.park_ball`](terms.py) is the same event without them.
 - **One ball size.** Upstream randomizes the radius per episode (7.5–12.5 cm) through
   mjlab's `dr.geom_size`, which mjswan has no browser-side writer for. The demo keeps the
   entity's own 7.62 cm, the real dodgeball the hardware policy faced.
