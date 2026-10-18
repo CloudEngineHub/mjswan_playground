@@ -25,17 +25,13 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 | [`asimov`](src/mjswan_playground/asimov/README.md) | Asimov 1 | Walking ([asimov1-locomotion-0818](https://huggingface.co/Menlo/asimov1-locomotion-0818)), and falling safely and getting up ([asimov-v1-policies](https://github.com/openhorizon-labs/asimov-v1-policies)) | <a href="https://mjswan.com/s/fePFavL"><img src="assets/asimov.gif" width="200"/></a><br />[mjswan.com/s/fePFavL](https://mjswan.com/s/fePFavL) |
 | [`booster`](src/mjswan_playground/booster/README.md) | Booster K1 | Walking to velocity commands, dancing and fighting ([booster_deploy](https://github.com/BoosterRobotics/booster_deploy)) | <a href="https://mjswan.com/s/8gZdPOC"><img src="assets/booster.gif" width="200"/></a><br />[mjswan.com/s/8gZdPOC](https://mjswan.com/s/8gZdPOC) |
 | [`leap`](src/mjswan_playground/leap/README.md) | LEAP Hand | Turning a cube in its palm with its fingertips ([in-hand-rotation-mjlab](https://github.com/Msornerrrr/in-hand-rotation-mjlab), after [HORA](https://github.com/haozhiqi/hora)) | <a href="https://mjswan.com/s/L3eRFxI"><img src="assets/leap.gif" width="200"/></a><br />[mjswan.com/s/L3eRFxI](https://mjswan.com/s/L3eRFxI) |
-| [`luwu`](src/mjswan_playground/luwu/README.md) | XGO Mini2S, Mini2SW, Lite3 | Three robot dogs from Luwu Dynamics walking to velocity commands, and two of them getting up from a fall, with policies trained with [luwu_mjlab](https://github.com/LuwuDynamics/luwu_mjlab) | <img src="assets/luwu.gif" width="200"/><br />WIP |
+| [`luwu`](src/mjswan_playground/luwu/README.md) | XGO Mini2S, Mini2SW, Lite3 | Three robot dogs from Luwu Dynamics walking to velocity commands and getting up from a fall ([luwu_mjlab](https://github.com/LuwuDynamics/luwu_mjlab)) | <a href="https://mjswan.com/s/lMGfn63"><img src="assets/luwu.gif" width="200"/></a><br />[mjswan.com/s/lMGfn63](https://mjswan.com/s/lMGfn63) |
 
 ## CLI
 
-Run a task in the browser without installing anything:
-
 ```
-uvx mjswan-playground run jumper
+uv run msp <subcommand>
 ```
-
-In a clone, `uv run msp <subcommand>`. `wbc` takes its extra as `uvx --from 'mjswan-playground[wbc]' msp run wbc`; `spinkick`, `musclemimic` and `terra` pull code PyPI does not carry, so run them from a clone.
 
 | Subcommand | Description | Options |
 |------------|-------------|---------|
@@ -43,6 +39,12 @@ In a clone, `uv run msp <subcommand>`. `wbc` takes its extra as `uvx --from 'mjs
 | `run <task-id>` | Build a task and open it in the browser | `--host` (`localhost`), `--port` (`8080`), `--no-open`, `--output-dir` |
 | `build <task-id>` | Build a task without launching | `--output-dir` |
 | `site [<task-id>...]` | Build every task on the GitHub Pages site into one app | `--no-build`, `--base-path` (`/`), `--dist-dir` (`dist`), `--output-dir` (`dist/_site`) |
+
+Run a task in the browser without installing anything:
+
+```
+uvx mjswan-playground run <task-id>
+```
 
 ## Python
 

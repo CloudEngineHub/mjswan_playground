@@ -410,10 +410,8 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             crop="480:351:230:175",
             seconds=3.0,
         )
-        for scene in ("mini2s_walk_flat", "mini2sw_walk_flat", "lite3_walk_flat")
-    )
-    + tuple(
-        Preview(
+        if "walk" in scene
+        else Preview(
             scene=scene,
             orbit=-30,
             crop="480:351:230:175",
@@ -421,7 +419,13 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             seconds=4.0,
             upright=False,
         )
-        for scene in ("mini2s_turn_flat", "mini2sw_turn_flat")
+        for scene in (
+            "mini2s_walk_flat",
+            "mini2s_turn_flat",
+            "mini2sw_walk_flat",
+            "mini2sw_turn_flat",
+            "lite3_walk_flat",
+        )
     ),
 }
 
