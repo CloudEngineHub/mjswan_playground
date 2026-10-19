@@ -20,42 +20,6 @@
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
 
-- id: parkour
-  repo: https://github.com/yhx1203/parkour_mjlab
-  commit: dfe09f44a59ac628e295b1ced16147708f3fc6b8
-  simulations:
-    - task: Unitree-Go2-PIE (src/tasks/pie), a Go2 climbing stairs to velocity commands from a front depth camera
-      policy: 'logs/rsl_rl/go2_pie/policy.onnx in git (mjlab metadata; inputs proprio 45, proprio_history 450, depth_history [1, 2, 60, 86] and a GRU carry [1, 1, 128]; actions 12); model_8000.pt beside it'
-      ease: '1: a depth camera the browser cannot render (a pinhole raycast stand-in, unverified), its own velocity command classes, the DepthHistory class term and a GRU carry wrapper'
-    - task: Unitree-G1-PHP-{Locomotion,Low-Step,High-Step,Low-Climb,High-Climb}-Teacher (src/tasks/php), G1 teachers tracking PHP parkour clips over boxes
-      policy: logs/rsl_rl/g1_php_<skill>_teacher/model_20000.pt in git, one per skill (convert at build time); clips from amazon-far/php_parkour's release training-motion-examples-v1
-      ease: '1: PhpMotionCommandCfg needs a command binding over PHP''s bundles, and a startup event places each motion''s boxes'
-    - task: Unitree-G1-PHP-Student (src/tasks/php), the depth student distilled from the five teachers
-      policy: logs/rsl_rl/g1_php_student/model_23000.onnx in git (obs 104 and student_depth [1, 1, 58, 87]; actions 29; no metadata)
-      ease: '1: a depth image the browser cannot render and PHP''s skill commands'
-  left_out: >-
-    The G1 stair policy (logs/rsl_rl/g1_stair/stair_test/policy.onnx): its task is not in
-    the repository ("Release the G1 Goal Stair code" is unchecked). deploy/parkour's
-    amp_policy.onnx (humanoid_amp_mjlab's run) and student_policy_v6_model_10000.onnx (task
-    Unitree-G1-Direction-Mixed-Student-V6, not in the repository).
-  license: 'none stated (no LICENSE at the root); the G1 assets carry Unitree''s BSD-3-Clause (src/assets/robots/unitree_g1/LICENSE) and the Go2 MJCF is Unitree''s; the PHP motion bundles come from amazon-far/php_parkour (Apache-2.0)'
-  popularity: '1: 96 stars (2026-10-19)'
-  ease: '1: all three simulations: two need a depth camera the browser cannot render, the teachers a command binding over PHP''s clips and boxes'
-  notes: >-
-    Perceptive parkour: a Go2 on stairs (PIE) and a G1 doing Amazon FAR's PHP skills, five
-    tracking teachers and a depth student. Pins mjlab==1.2.0 and mujoco 3.5.0: shims.
-    mjswan serves no rendered frames (pacman's README), so each depth input needs a
-    stand-in, such as a RayCastSensor with a pinhole pattern and upstream's crop and resize
-    rewritten in torch; unverified, and 60 x 86 rays per frame may not keep up in the
-    browser. PIE: src/tasks/pie/mdp/velocity_command.py defines its own
-    UniformVelocityCommandCfg and TerrainAwareVelocityCommandCfg (not mjlab's), which need
-    a binding; mjlab's BuiltinPositionActuatorCfg for the Go2. PHP teachers:
-    PhpMotionCommandCfg (a MotionCommand subclass over PHP's npz bundles), the php_box_fields
-    startup event, a terrain-scan raycast; fetch the bundles from the release. 200 Hz
-    physics, 50 Hz control.
-  found: '2026-10-11: GitHub search for mjlab (stars), 71 stars'
-  pinned: '2026-10-19: the owner asked for orcs, parkour, sonic and walka next, in that order'
-
 - id: sonic
   repo: https://github.com/bethalageetachandraraju/sonic_4_-mjlab
   commit: c649dac4044277f91c9e3c5f8b41b3acc7a94ffb
