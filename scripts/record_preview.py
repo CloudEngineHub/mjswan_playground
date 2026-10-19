@@ -985,8 +985,7 @@ def check_run(
         failures.append(([nan], f"{steps[nan]['nan']} went NaN at {at(nan)}"))
 
     ok = {"time_out", *preview.ok_terminations}
-    # A term flagged `time_out` truncates the episode whatever its name, as orcs's
-    # `exceeded_motion` does: the manager reports only real terminations as `terminated`.
+    # A `time_out`-flagged term truncates whatever its name (orcs's `exceeded_motion`).
     ended = [t for t in segment.terms if t["terminated"]]
     bad = [t["k"] for t in ended if not set(t["reasons"]) <= ok]
     if bad:
