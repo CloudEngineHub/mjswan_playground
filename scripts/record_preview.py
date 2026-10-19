@@ -427,6 +427,46 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             "lite3_walk_flat",
         )
     ),
+    # PIE walks forward out of its pit, then circles, which keeps it on the terrain, at the
+    # highest yaw rate upstream draws over stairs. Each PHP cut starts where its clip
+    # reaches its boxes, or for the walk, starts walking; the walk loses its clip in its
+    # fast turns, in mjlab too under 0.02 rad of action noise, and its ee_body_pos
+    # termination starts the clip over. The climbs' clips lean the pelvis 71 to 72 degrees
+    # onto the boxes, so their tracking terminations judge a fall instead.
+    "parkour": (
+        Preview(
+            scene="unitree_go2_pie",
+            command_keys=(
+                (0.0, {"twist:lin_vel_x": 0.8, "twist:ang_vel_z": 0.0}),
+                (3.0, {"twist:lin_vel_x": 0.8, "twist:ang_vel_z": 0.0}),
+                (4.0, {"twist:lin_vel_x": 0.6, "twist:ang_vel_z": 0.3}),
+            ),
+            orbit=-60,
+            tilt=-20,
+            seconds=2.6,
+        ),
+        *(
+            Preview(
+                scene=f"unitree_g1_php_{scene}",
+                query="debug=0",
+                orbit=-15,
+                tilt=-20,
+                crop="600:439:180:150",
+                settle=settle,
+                seconds=seconds,
+                upright="climb" not in scene and scene != "student",
+                ok_terminations=terminations,
+            )
+            for scene, settle, seconds, terminations in (
+                ("locomotion_teacher", 2.6, 1.4, ("ee_body_pos",)),
+                ("low_step_teacher", 2.4, 1.6, ()),
+                ("high_step_teacher", 2.4, 1.4, ()),
+                ("low_climb_teacher", 4.2, 2.0, ()),
+                ("high_climb_teacher", 2.9, 1.6, ()),
+                ("student", 2.9, 1.6, ()),
+            )
+        ),
+    ),
 }
 
 
