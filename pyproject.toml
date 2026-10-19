@@ -27,6 +27,8 @@ musclemimic = [
     "orbax-checkpoint>=0.11",
     "onnxconverter-common>=1.16",
 ]
+# Checks the policies the orcs task converts, and reads GRAIL's curbs when it stages them.
+orcs = ["onnxruntime", "usd-core>=26.8"]
 spinkick = ["spinkick-example"]
 # Registers myosuite's waypoint task and TERRA's helpers, and reads the TERRA-4B Orbax
 # checkpoint; only the terra task needs it.
