@@ -20,32 +20,6 @@
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
 
-- id: walka
-  repo: https://github.com/thanhndv212/walka_rl_mjlab
-  commit: fb03f3859f47856a9bf10e1f97a4a63b43c1dd46
-  simulations:
-    - task: Walka-Flat (src/tasks/velocity/config/walka), the 24-joint Walka biped walking to velocity commands
-      policy: 'logs/rsl_rl/walka_velocity/2026-07-29_16-03-11/policy.onnx in git (obs 86, actions 24, mjlab metadata; model_9900.pt beside it; its env.yaml says plane and 4096 envs; trained at the public commit 93ed8dc on a clean tree)'
-      ease: '3: mjlab''s JointPositionActionCfg, BuiltinPositionActuatorCfg and UniformVelocityCommandCfg; the phase term goes through the playground''s _gait_clock, as unitreerl; mjlab 1.5.3 shims'
-    - task: Walka-Rough, the same on mjlab's generated rough terrain with a raycast height scan
-      policy: 'logs/rsl_rl/walka_velocity/2026-07-30_09-11-46/policy.onnx in git (obs 273 = 86 + 187-ray height_scan at scale 0.2, actions 24, metadata; env.yaml says generator and 2048 envs; trained at 9ca15d8 on a clean tree)'
-      ease: '3: as Flat; mjswan serves RayCastSensor scans and skips randomize_terrain natively'
-  left_out: >-
-    Walka-GetUp: no checkpoint.
-  license: 'none stated (no LICENSE, none in the README): all rights reserved; the Walka MJCF was converted from a jackbot_v1.urdf export (docs/kinematic_structure_analysis.md), source unpublished'
-  popularity: '0: 2 stars (2026-10-16)'
-  ease: '3: both walks on mjlab''s own classes with the gait clock'
-  notes: >-
-    A small humanoid walking on flat and rough ground, migrated from an Isaac Lab
-    project. Imports itself as top-level `src`, like unitreerl: checkout shape. Pins
-    mjlab==1.5.3 and mujoco-warp 3.10.0.3. 200 Hz physics, decimation 4. Phase period
-    0.6 s from episode_length_buf; use _gait_clock.clock_phase. Flat play narrows the
-    twist to x 0 to 1, y and yaw ±0.1, and adds randomize_terrain. After the runs, HEAD
-    changed only rl_cfg and widened both knee ranges to 2.79 rad (08-03, for get-up), so
-    take walka.xml from 9ca15d8. The metadata's gains match walka_constants.py.
-  found: '2026-10-13: GitHub search for mjlab (stars), 2 stars'
-  pinned: '2026-10-16: the owner asked for inhand, luwu, walka and orcs next, in that order'
-
 - id: orcs
   repo: https://github.com/lok-i/orcs
   commit: 49886d16d4b39e89442ce82ecadc7ae4288fae17
@@ -79,7 +53,96 @@
     throws at every env. Not reached in detail: PerLoco's sensor and terrain staging, Uolm's
     object scenes, and whether mocke's exporter takes the released adapters as they are.
   found: '2026-10-14: GitHub search for mjlab in READMEs, 138 stars'
-  pinned: '2026-10-16: the owner asked for inhand, luwu, walka and orcs next, in that order'
+  pinned: '2026-10-19: the owner asked for orcs, parkour, sonic and walka next, in that order'
+
+- id: parkour
+  repo: https://github.com/yhx1203/parkour_mjlab
+  commit: dfe09f44a59ac628e295b1ced16147708f3fc6b8
+  simulations:
+    - task: Unitree-Go2-PIE (src/tasks/pie), a Go2 climbing stairs to velocity commands from a front depth camera
+      policy: 'logs/rsl_rl/go2_pie/policy.onnx in git (mjlab metadata; inputs proprio 45, proprio_history 450, depth_history [1, 2, 60, 86] and a GRU carry [1, 1, 128]; actions 12); model_8000.pt beside it'
+      ease: '1: a depth camera the browser cannot render (a pinhole raycast stand-in, unverified), its own velocity command classes, the DepthHistory class term and a GRU carry wrapper'
+    - task: Unitree-G1-PHP-{Locomotion,Low-Step,High-Step,Low-Climb,High-Climb}-Teacher (src/tasks/php), G1 teachers tracking PHP parkour clips over boxes
+      policy: logs/rsl_rl/g1_php_<skill>_teacher/model_20000.pt in git, one per skill (convert at build time); clips from amazon-far/php_parkour's release training-motion-examples-v1
+      ease: '1: PhpMotionCommandCfg needs a command binding over PHP''s bundles, and a startup event places each motion''s boxes'
+    - task: Unitree-G1-PHP-Student (src/tasks/php), the depth student distilled from the five teachers
+      policy: logs/rsl_rl/g1_php_student/model_23000.onnx in git (obs 104 and student_depth [1, 1, 58, 87]; actions 29; no metadata)
+      ease: '1: a depth image the browser cannot render and PHP''s skill commands'
+  left_out: >-
+    The G1 stair policy (logs/rsl_rl/g1_stair/stair_test/policy.onnx): its task is not in
+    the repository ("Release the G1 Goal Stair code" is unchecked). deploy/parkour's
+    amp_policy.onnx (humanoid_amp_mjlab's run) and student_policy_v6_model_10000.onnx (task
+    Unitree-G1-Direction-Mixed-Student-V6, not in the repository).
+  license: 'none stated (no LICENSE at the root); the G1 assets carry Unitree''s BSD-3-Clause (src/assets/robots/unitree_g1/LICENSE) and the Go2 MJCF is Unitree''s; the PHP motion bundles come from amazon-far/php_parkour (Apache-2.0)'
+  popularity: '1: 96 stars (2026-10-16)'
+  ease: '1: all three simulations: two need a depth camera the browser cannot render, the teachers a command binding over PHP''s clips and boxes'
+  notes: >-
+    Perceptive parkour: a Go2 on stairs (PIE) and a G1 doing Amazon FAR's PHP skills, five
+    tracking teachers and a depth student. Pins mjlab==1.2.0 and mujoco 3.5.0: shims.
+    mjswan serves no rendered frames (pacman's README), so each depth input needs a
+    stand-in, such as a RayCastSensor with a pinhole pattern and upstream's crop and resize
+    rewritten in torch; unverified, and 60 x 86 rays per frame may not keep up in the
+    browser. PIE: src/tasks/pie/mdp/velocity_command.py defines its own
+    UniformVelocityCommandCfg and TerrainAwareVelocityCommandCfg (not mjlab's), which need
+    a binding; mjlab's BuiltinPositionActuatorCfg for the Go2. PHP teachers:
+    PhpMotionCommandCfg (a MotionCommand subclass over PHP's npz bundles), the php_box_fields
+    startup event, a terrain-scan raycast; fetch the bundles from the release. 200 Hz
+    physics, 50 Hz control.
+  found: '2026-10-11: GitHub search for mjlab (stars), 71 stars'
+  pinned: '2026-10-19: the owner asked for orcs, parkour, sonic and walka next, in that order'
+
+- id: sonic
+  repo: https://github.com/bethalageetachandraraju/sonic_4_-mjlab
+  commit: c649dac4044277f91c9e3c5f8b41b3acc7a94ffb
+  simulations:
+    - task: SONIC's G1 motion tracking rebuilt as an mjlab ManagerBasedRlEnv (sonic_mjlab/envs/env_cfg.py, composed from SONIC's Hydra tree by sonic_mjlab/envs/factory.py; tested at mjlab 1.6.0), NVIDIA's released GEAR-SONIC policy tracking reference motion through its G1 encoder (its teleop and SMPL encoders also run)
+      policy: 'Hugging Face nvidia/GEAR-SONIC at 6733128a3d8a523b1418b06bca3cdf61c8b0987f: sonic_release/last.pt with config.yaml (469 MB; loads with a strict state-dict match), or the release''s model_encoder.onnx (1,750 tokenizer features and an encoder index to a 64-dim token) and model_decoder.onnx (the token and 930 proprioceptive values, 10-frame histories, to 29 actions); clips from the same revision''s sample_data/robot_filtered (two walking clips)'
+      ease: '1: a generic extension on top of several rewrites: the G1 encoder''s tokenizer reads future reference frames with joint velocities, which mjswan''s TrackingCommand look-ahead does not serve (as orcs); SonicMotionCommand needs a binding; the encoder and decoder chained into one graph; SONIC''s Isaac Lab joint and body order permuted (SonicRobotAdapter)'
+  left_out: >-
+    The release's low_latency and sonic_v1_1 checkpoints and planner_sonic.onnx: other
+    versions of the same controller, which the port does not load. Rough terrain, HOI
+    objects, cameras, height scans, the force-push curriculum and the H2 are not ported
+    upstream.
+  license: 'Apache-2.0 for the port (LICENSE) and GR00T-WholeBodyControl''s training stack; NVIDIA Open Model License for the weights (the Hub card); the sample clips are NVIDIA''s release, terms not checked; the G1 is Unitree''s (BSD-3-Clause)'
+  popularity: '0: 0 stars (2026-10-16), created 2026-10-15; the weights it plays are NVIDIA''s (nvidia/GEAR-SONIC, 82 likes; NVlabs/GR00T-WholeBodyControl, 3.8k stars)'
+  ease: '1: its one policy needs SONIC''s joint-velocity look-ahead on top of several rewrites'
+  notes: >-
+    A third party's port of NVIDIA's GEAR-SONIC (arXiv 2511.07820) from Isaac Lab to mjlab:
+    SONIC's trainer, policy, losses and motion library run unchanged, and only the
+    environment is rebuilt on mjlab. On the two sample clips it reports success 1.0 and a
+    local MPJPE of 17.5 mm, SONIC's convergence bar. The decoder reads base_ang_vel,
+    joint_pos, joint_vel, actions and gravity_dir, each with a 10-frame history in SONIC's
+    joint order; actions go through mjlab's joint position action at SONIC's scale.
+    GR00T-WholeBodyControl is an editable path dependency with no pinned commit, so the port
+    pins one. The same SONIC base as orcs. One commit, created 2026-10-15.
+  found: '2026-10-16: GitHub search for mjlab (created since 2026-10-14), 0 stars'
+  pinned: '2026-10-19: the owner asked for orcs, parkour, sonic and walka next, in that order'
+
+- id: walka
+  repo: https://github.com/thanhndv212/walka_rl_mjlab
+  commit: fb03f3859f47856a9bf10e1f97a4a63b43c1dd46
+  simulations:
+    - task: Walka-Flat (src/tasks/velocity/config/walka), the 24-joint Walka biped walking to velocity commands
+      policy: 'logs/rsl_rl/walka_velocity/2026-07-29_16-03-11/policy.onnx in git (obs 86, actions 24, mjlab metadata; model_9900.pt beside it; its env.yaml says plane and 4096 envs; trained at the public commit 93ed8dc on a clean tree)'
+      ease: '3: mjlab''s JointPositionActionCfg, BuiltinPositionActuatorCfg and UniformVelocityCommandCfg; the phase term goes through the playground''s _gait_clock, as unitreerl; mjlab 1.5.3 shims'
+    - task: Walka-Rough, the same on mjlab's generated rough terrain with a raycast height scan
+      policy: 'logs/rsl_rl/walka_velocity/2026-07-30_09-11-46/policy.onnx in git (obs 273 = 86 + 187-ray height_scan at scale 0.2, actions 24, metadata; env.yaml says generator and 2048 envs; trained at 9ca15d8 on a clean tree)'
+      ease: '3: as Flat; mjswan serves RayCastSensor scans and skips randomize_terrain natively'
+  left_out: >-
+    Walka-GetUp: no checkpoint.
+  license: 'none stated (no LICENSE, none in the README): all rights reserved; the Walka MJCF was converted from a jackbot_v1.urdf export (docs/kinematic_structure_analysis.md), source unpublished'
+  popularity: '0: 2 stars (2026-10-16)'
+  ease: '3: both walks on mjlab''s own classes with the gait clock'
+  notes: >-
+    A small humanoid walking on flat and rough ground, migrated from an Isaac Lab
+    project. Imports itself as top-level `src`, like unitreerl: checkout shape. Pins
+    mjlab==1.5.3 and mujoco-warp 3.10.0.3. 200 Hz physics, decimation 4. Phase period
+    0.6 s from episode_length_buf; use _gait_clock.clock_phase. Flat play narrows the
+    twist to x 0 to 1, y and yaw ±0.1, and adds randomize_terrain. After the runs, HEAD
+    changed only rl_cfg and widened both knee ranges to 2.79 rad (08-03, for get-up), so
+    take walka.xml from 9ca15d8. The metadata's gains match walka_constants.py.
+  found: '2026-10-13: GitHub search for mjlab (stars), 2 stars'
+  pinned: '2026-10-19: the owner asked for orcs, parkour, sonic and walka next, in that order'
 
 - id: g1_flatwalk
   repo: https://github.com/velayudhana027/unitree-g1-locomotion
@@ -157,41 +220,6 @@
     runs a first-order low-pass instead. The author's zeitvex/zeitvex.github.io runs
     model_6800 and model_84 in a browser on MuJoCo WASM with pure-JS policies.
   found: '2026-10-09: GitHub search for mjlab, 142 stars'
-
-- id: parkour
-  repo: https://github.com/yhx1203/parkour_mjlab
-  commit: dfe09f44a59ac628e295b1ced16147708f3fc6b8
-  simulations:
-    - task: Unitree-Go2-PIE (src/tasks/pie), a Go2 climbing stairs to velocity commands from a front depth camera
-      policy: 'logs/rsl_rl/go2_pie/policy.onnx in git (mjlab metadata; inputs proprio 45, proprio_history 450, depth_history [1, 2, 60, 86] and a GRU carry [1, 1, 128]; actions 12); model_8000.pt beside it'
-      ease: '1: a depth camera the browser cannot render (a pinhole raycast stand-in, unverified), its own velocity command classes, the DepthHistory class term and a GRU carry wrapper'
-    - task: Unitree-G1-PHP-{Locomotion,Low-Step,High-Step,Low-Climb,High-Climb}-Teacher (src/tasks/php), G1 teachers tracking PHP parkour clips over boxes
-      policy: logs/rsl_rl/g1_php_<skill>_teacher/model_20000.pt in git, one per skill (convert at build time); clips from amazon-far/php_parkour's release training-motion-examples-v1
-      ease: '1: PhpMotionCommandCfg needs a command binding over PHP''s bundles, and a startup event places each motion''s boxes'
-    - task: Unitree-G1-PHP-Student (src/tasks/php), the depth student distilled from the five teachers
-      policy: logs/rsl_rl/g1_php_student/model_23000.onnx in git (obs 104 and student_depth [1, 1, 58, 87]; actions 29; no metadata)
-      ease: '1: a depth image the browser cannot render and PHP''s skill commands'
-  left_out: >-
-    The G1 stair policy (logs/rsl_rl/g1_stair/stair_test/policy.onnx): its task is not in
-    the repository ("Release the G1 Goal Stair code" is unchecked). deploy/parkour's
-    amp_policy.onnx (humanoid_amp_mjlab's run) and student_policy_v6_model_10000.onnx (task
-    Unitree-G1-Direction-Mixed-Student-V6, not in the repository).
-  license: 'none stated (no LICENSE at the root); the G1 assets carry Unitree''s BSD-3-Clause (src/assets/robots/unitree_g1/LICENSE) and the Go2 MJCF is Unitree''s; the PHP motion bundles come from amazon-far/php_parkour (Apache-2.0)'
-  popularity: '1: 96 stars (2026-10-16)'
-  ease: '1: all three simulations: two need a depth camera the browser cannot render, the teachers a command binding over PHP''s clips and boxes'
-  notes: >-
-    Perceptive parkour: a Go2 on stairs (PIE) and a G1 doing Amazon FAR's PHP skills, five
-    tracking teachers and a depth student. Pins mjlab==1.2.0 and mujoco 3.5.0: shims.
-    mjswan serves no rendered frames (pacman's README), so each depth input needs a
-    stand-in, such as a RayCastSensor with a pinhole pattern and upstream's crop and resize
-    rewritten in torch; unverified, and 60 x 86 rays per frame may not keep up in the
-    browser. PIE: src/tasks/pie/mdp/velocity_command.py defines its own
-    UniformVelocityCommandCfg and TerrainAwareVelocityCommandCfg (not mjlab's), which need
-    a binding; mjlab's BuiltinPositionActuatorCfg for the Go2. PHP teachers:
-    PhpMotionCommandCfg (a MotionCommand subclass over PHP's npz bundles), the php_box_fields
-    startup event, a terrain-scan raycast; fetch the bundles from the release. 200 Hz
-    physics, 50 Hz control.
-  found: '2026-10-11: GitHub search for mjlab (stars), 71 stars'
 
 - id: vinrobotics
   repo: https://github.com/VinRobotics/vinrobotics_mjlab
@@ -1173,32 +1201,6 @@
     standing policy (smoothstep from 0.22 s for 0.14 s, handoff/manifest.json). A fixed
     0.75 s launch window is the README's unvalidated stand-in for touchdown detection.
   found: '2026-10-11: web search, through joeynyc/awesome-microduck; 0 stars'
-
-- id: sonic
-  repo: https://github.com/bethalageetachandraraju/sonic_4_-mjlab
-  commit: c649dac4044277f91c9e3c5f8b41b3acc7a94ffb
-  simulations:
-    - task: SONIC's G1 motion tracking rebuilt as an mjlab ManagerBasedRlEnv (sonic_mjlab/envs/env_cfg.py, composed from SONIC's Hydra tree by sonic_mjlab/envs/factory.py; tested at mjlab 1.6.0), NVIDIA's released GEAR-SONIC policy tracking reference motion through its G1 encoder (its teleop and SMPL encoders also run)
-      policy: 'Hugging Face nvidia/GEAR-SONIC at 6733128a3d8a523b1418b06bca3cdf61c8b0987f: sonic_release/last.pt with config.yaml (469 MB; loads with a strict state-dict match), or the release''s model_encoder.onnx (1,750 tokenizer features and an encoder index to a 64-dim token) and model_decoder.onnx (the token and 930 proprioceptive values, 10-frame histories, to 29 actions); clips from the same revision''s sample_data/robot_filtered (two walking clips)'
-      ease: '1: a generic extension on top of several rewrites: the G1 encoder''s tokenizer reads future reference frames with joint velocities, which mjswan''s TrackingCommand look-ahead does not serve (as orcs); SonicMotionCommand needs a binding; the encoder and decoder chained into one graph; SONIC''s Isaac Lab joint and body order permuted (SonicRobotAdapter)'
-  left_out: >-
-    The release's low_latency and sonic_v1_1 checkpoints and planner_sonic.onnx: other
-    versions of the same controller, which the port does not load. Rough terrain, HOI
-    objects, cameras, height scans, the force-push curriculum and the H2 are not ported
-    upstream.
-  license: 'Apache-2.0 for the port (LICENSE) and GR00T-WholeBodyControl''s training stack; NVIDIA Open Model License for the weights (the Hub card); the sample clips are NVIDIA''s release, terms not checked; the G1 is Unitree''s (BSD-3-Clause)'
-  popularity: '0: 0 stars (2026-10-16), created 2026-10-15; the weights it plays are NVIDIA''s (nvidia/GEAR-SONIC, 82 likes; NVlabs/GR00T-WholeBodyControl, 3.8k stars)'
-  ease: '1: its one policy needs SONIC''s joint-velocity look-ahead on top of several rewrites'
-  notes: >-
-    A third party's port of NVIDIA's GEAR-SONIC (arXiv 2511.07820) from Isaac Lab to mjlab:
-    SONIC's trainer, policy, losses and motion library run unchanged, and only the
-    environment is rebuilt on mjlab. On the two sample clips it reports success 1.0 and a
-    local MPJPE of 17.5 mm, SONIC's convergence bar. The decoder reads base_ang_vel,
-    joint_pos, joint_vel, actions and gravity_dir, each with a 10-frame history in SONIC's
-    joint order; actions go through mjlab's joint position action at SONIC's scale.
-    GR00T-WholeBodyControl is an editable path dependency with no pinned commit, so the port
-    pins one. The same SONIC base as orcs. One commit, created 2026-10-15.
-  found: '2026-10-16: GitHub search for mjlab (created since 2026-10-14), 0 stars'
 
 - id: bendgrasp
   repo: https://github.com/flushddd/homie
