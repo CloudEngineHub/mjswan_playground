@@ -49,11 +49,6 @@ BUNDLES = {
 }
 #: Where upstream's ``dataset.DATA_ROOT`` looks for them.
 MOTION_DIR = "src/assets/motions/php_motion"
-
-PIE = "Unitree-Go2-PIE"
-STUDENT = "Unitree-G1-PHP-Student"
-PIE_POLICY = "logs/rsl_rl/go2_pie/policy.onnx"
-STUDENT_POLICY = "logs/rsl_rl/g1_php_student/model_23000.onnx"
 _CACHE = CACHE_DIR / "parkour"
 
 
@@ -66,7 +61,7 @@ def resolve_root() -> Path:
         name="parkour_mjlab",
         url=REPO_URL,
         commit=REPO_COMMIT,
-        marker=PIE_POLICY,
+        marker="logs/rsl_rl/g1_php_locomotion_teacher/model_20000.pt",
         root_env_var="MJSWAN_PARKOUR_ROOT",
     )
     for name, sha256 in BUNDLES.values():
