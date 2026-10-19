@@ -16,6 +16,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from mjswan_playground._deps import CACHE_DIR, ensure_repo
+
 REPO_URL = "https://github.com/lok-i/orcs"
 REPO_COMMIT = "49886d16d4b39e89442ce82ecadc7ae4288fae17"
 #: As upstream's deps.lock pins both; release.json's differ only in README and pyproject.
@@ -36,17 +38,10 @@ PERLOCO_OMRE = "Orcs-PerLoco-OmRe-AdaptSonic"
 PERLOCO_GRAIL = "Orcs-PerLoco-Grail-AdaptSonic"
 #: Each PerLoco task's staging source, the name of its roster.
 PERLOCO = {PERLOCO_OMRE: "omni", PERLOCO_GRAIL: "grail"}
-
-
-def _cache() -> Path:
-    from mjswan_playground._deps import CACHE_DIR
-
-    return CACHE_DIR / "orcs"
+_CACHE = CACHE_DIR / "orcs"
 
 
 def resolve_roots() -> dict[str, Path]:
-    from mjswan_playground._deps import ensure_repo
-
     return {
         "orcs": ensure_repo(
             name="orcs/orcs",
@@ -82,7 +77,7 @@ def register_tasks(roots: dict[str, Path]) -> None:
         if str(source) not in sys.path:
             sys.path.insert(0, str(source))
     # Upstream's switches: its data root, and no git check of mocke and rsl_rl on import.
-    os.environ.setdefault("ORCS_DATA_ROOT", str(_cache() / "data"))
+    os.environ.setdefault("ORCS_DATA_ROOT", str(_CACHE / "data"))
     os.environ.setdefault("ORCS_SKIP_DEP_CHECK", "1")
     import mjlab.scripts.gcs
 
@@ -254,7 +249,7 @@ def ensure_policy(
     joints its actions drive with their rest pose, as mjlab's env has them."""
     from mjlab.tasks.registry import load_rl_cfg
 
-    onnx_path = _cache() / "onnx" / f"{task_id}.onnx"
+    onnx_path = _CACHE / "onnx" / f"{task_id}.onnx"
     meta_path = onnx_path.with_suffix(".json")
     if not (onnx_path.exists() and meta_path.exists()):
         checkpoint = _fetch_checkpoint(roots["orcs"], task_id)
@@ -292,7 +287,7 @@ def checkpoint_license() -> Path:
             HF_REPO, "LICENSES/NVIDIA-OPEN-MODEL-LICENSE.txt", revision=HF_REVISION
         )
     ).read_text()
-    path = _cache() / "LICENSE.checkpoints"
+    path = _CACHE / "LICENSE.checkpoints"
     path.write_text(
         f"SPDX-License-Identifier: LicenseRef-NVIDIA-Open-Model-License\n\n{text}"
     )
