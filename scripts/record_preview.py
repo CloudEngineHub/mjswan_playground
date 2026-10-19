@@ -427,12 +427,11 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             "lite3_walk_flat",
         )
     ),
-    # PIE walks forward out of its pit, then circles, which keeps it on the terrain, at the
-    # highest yaw rate upstream draws over stairs. Each PHP cut starts where its clip
-    # reaches its boxes, or for the walk, starts walking; the walk loses its clip in its
-    # fast turns, in mjlab too under 0.02 rad of action noise, and its ee_body_pos
-    # termination starts the clip over. The climbs' clips lean the pelvis 71 to 72 degrees
-    # onto the boxes, so their tracking terminations judge a fall instead.
+    # PIE walks out of its pit, then circles at the highest yaw rate upstream draws over
+    # stairs, which keeps it on the terrain. Each PHP cut starts as its clip reaches its
+    # boxes, the walk as it starts walking. The walk loses its clip in its fast turns, as
+    # in mjlab under 0.02 rad of action noise, and ee_body_pos restarts it; the climbs'
+    # clips lean the pelvis 71 to 72 degrees, so their tracking terminations judge a fall.
     "parkour": (
         Preview(
             scene="unitree_go2_pie",
