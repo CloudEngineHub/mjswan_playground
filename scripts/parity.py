@@ -16,7 +16,11 @@ from unittest import mock
 
 import mjswan.project
 from mjswan.compile import run_command_parity, run_parity
-from mjswan.mjlab import resolve_runner_defaults
+from mjswan.mjlab import (
+    DEFAULT_OBS_GROUP_KEY,
+    adapt_observations,
+    resolve_runner_defaults,
+)
 from mjswan.mjlab.command import _adapt_command_cfg
 from mjswan.mjlab.env import build_mjlab_env
 
@@ -53,11 +57,17 @@ def _check(task_id: str, cfg, motion_file: Path | None) -> bool:
                 term.motion_file = str(motion_file)
     cfg.scene.num_envs = 1
 
-    groups = (resolve_runner_defaults(task_id).obs_groups or {}).get("actor")
+    obs_groups = resolve_runner_defaults(task_id).obs_groups
+    actor = ((obs_groups or {}).get("actor") or (DEFAULT_OBS_GROUP_KEY,))[0]
     env = build_mjlab_env(cfg)
-    report = run_parity(env, obs_group=groups[0] if groups else "actor", n_steps=16)
-    print(report.summary())
-    passed = report.passed
+    passed = True
+    # Every group the build traces, as it picks them: the actor's, and any the runner
+    # gives no network (orcs's tokenizer). run_parity resets the env for each.
+    for slot in adapt_observations(cfg.observations, obs_groups=obs_groups) or {}:
+        group = actor if slot == DEFAULT_OBS_GROUP_KEY else slot
+        report = run_parity(env, obs_group=group, n_steps=16)
+        print(f"-- {group}\n{report.summary()}")
+        passed = report.passed and passed
     for name, term_cfg in cfg.commands.items():
         pending = _adapt_command_cfg(term_cfg).pending_trace
         if pending is None:
