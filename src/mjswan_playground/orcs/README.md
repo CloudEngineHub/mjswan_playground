@@ -94,14 +94,15 @@ Three inputs, in the actor's own order:
   collider for a box plate, and its visual mesh for a flat hand from
   `drcl-deploy/assets`, whose G1 meshes record no license. The plates are here; the
   visual stays mjlab's hand, and visual geoms collide with nothing.
-- **The reference clip is a traced command.** Upstream's `MultiClipMotionCommand` keeps
-  an integer frame, which the browser feeds a graph as a float, so
-  [`terms.py`](terms.py)'s `ClipCommand` restates it over the one clip each scene plays:
-  frame zero with upstream's reset jitter, the frame advanced and held at the clip's end,
-  and the anchor rows the twist observations read. SONIC's tokenizer reads it unchanged,
-  its clip tables baked into the graph. Against upstream's command in mjlab, the reset's
-  writes, the tokenizer, the twist observations and `exceeded_motion` agree exactly, over
-  20 reset draws and full rollouts. No reference ghost is drawn.
+- **The reference clip is a traced command.** Upstream's `MultiClipMotionCommand`, and
+  PerLoco's `TerrainMotionCommand` over it, keep an integer frame, which the browser feeds
+  a graph as a float, so [`terms.py`](terms.py)'s `ClipCommand` restates them over the one
+  clip each scene plays: frame zero with upstream's reset jitter, the frame advanced and
+  held at the clip's end, and the anchor rows the twist observations read. SONIC's
+  tokenizer reads it unchanged, its clip tables baked into the graph. Against upstream's
+  command in mjlab, the reset's writes, the tokenizer, the twist observations and
+  `exceeded_motion` agree exactly, over 20 reset draws and full rollouts. No reference
+  ghost is drawn.
 - **Dodge's throw is a command.** Upstream's `ThrowBall` is an interval event with a
   countdown and a flight timer that pins the ball overhead between throws; mjswan traces
   an event as a stateless function and lets a command write the sim only when it
