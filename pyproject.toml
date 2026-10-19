@@ -56,6 +56,9 @@ only-include = ["src"]
 # TERRA's code is only on feat/programmatic-waypoint-tasks; move to main once it merges.
 myosuite = { git = "https://github.com/MyoHub/myosuite", rev = "992bd58928e61d3f7ce27a033be02d0be18a2c18" }
 spinkick-example = { git = "https://github.com/mujocolab/g1_spinkick_example", rev = "f1c4b230bd1a76c44e801e49f079212b6c6487da" }
+# parkour's depth cameras: https://github.com/ttktjmt/mjswan/pull/172. Drop once a release
+# carries it.
+mjswan = { git = "https://github.com/ttktjmt/mjswan", rev = "d872425deda86139e9741e131d24c35444260188" }
 
 [dependency-groups]
 dev = ["pytest>=9.0.2", "ruff==0.16.0"]
