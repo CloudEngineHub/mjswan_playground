@@ -450,6 +450,17 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             seconds=8.0,
             ok_terminations=("exceeded_motion",),
         ),
+        Preview(
+            scene="orcs_uolm_adaptsonic",
+            orbit=-30,
+            crop="880:643:40:40",
+            from_reset=True,
+            seconds=10.0,
+            # The checkpoint falls as its clip ends, under upstream's play config in mjlab
+            # too, and lands on its pelvis or not.
+            upright=False,
+            ok_terminations=("exceeded_motion", "illegal_contact"),
+        ),
     ),
 }
 

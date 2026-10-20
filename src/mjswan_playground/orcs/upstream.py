@@ -13,8 +13,12 @@ import json
 import os
 import subprocess
 import sys
+import urllib.request
+from collections.abc import Collection
+from functools import partial
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 from mjswan_playground._deps import CACHE_DIR, ensure_repo
 
@@ -32,12 +36,31 @@ OMNI_REPO = "omniretarget/OmniRetarget_Dataset"
 OMNI_REVISION = "135259130158f1cb1799e4ab9b6566c938285fc9"
 GRAIL_REPO = "nvidia/PhysicalAI-Robotics-Locomanipulation-GRAIL"
 GRAIL_REVISION = "40e795761302e611c1e7e3a6caefdd010d56c199"
+#: Uolm's clips and objects, at deps.lock's pins.
+MOTIONS_REPO = "l-k-r/retargeted_motions"
+MOTIONS_REVISION = "e635ed670162c8b4cc91dd6247d4f3b47368ab3c"
+ASSETS_URL = "https://github.com/drcl-deploy/assets"
+ASSETS_COMMIT = "90e226008bda5edc9c07ca3eb69f9f79c4603de1"
 
 DODGE = "Orcs-Dodge-AdaptSonic"
 PERLOCO_OMRE = "Orcs-PerLoco-OmRe-AdaptSonic"
 PERLOCO_GRAIL = "Orcs-PerLoco-Grail-AdaptSonic"
 #: Each PerLoco task's staging source, the name of its roster.
 PERLOCO = {PERLOCO_OMRE: "omni", PERLOCO_GRAIL: "grail"}
+UOLM = "Orcs-Uolm-AdaptSonic"
+#: The Uolm roster's clips, one an object, as upstream's ``lfs_include`` picks them at
+#: ``MOTIONS_REVISION``. The scene plays the first, the tire's.
+UOLM_CLIPS = (
+    "custom/tire_roll/sample1",
+    "custom/woodchair2_flip/sample2",
+    "omomo/sub1_largetable_053/sample1",
+    "omomo/sub1_suitcase_010/sample1",
+    "omomo/sub7_trashcan_007/sample1",
+    "omomo/sub8_plasticbox_000/sample1",
+)
+_TIRE = "src/assets/custom_objects/tire"
+#: The tire's tread texture, averaged.
+_TIRE_RGBA = (0.26, 0.26, 0.26, 1.0)
 _CACHE = CACHE_DIR / "orcs"
 
 
@@ -67,12 +90,10 @@ def resolve_roots() -> dict[str, Path]:
     }
 
 
-def register_tasks(roots: dict[str, Path]) -> None:
-    """Make the data ``DODGE`` and ``PERLOCO`` read, then register them with mjlab."""
+def register_tasks(roots: dict[str, Path], task_ids: Collection[str]) -> None:
+    """Make the data the tasks in ``task_ids`` read, then register them with mjlab."""
     if "orcs.tasks.perloco" in sys.modules:
         return
-    from unittest import mock
-
     for source in (roots["orcs"] / "src", roots["mocke"] / "src"):
         if str(source) not in sys.path:
             sys.path.insert(0, str(source))
@@ -91,16 +112,35 @@ def register_tasks(roots: dict[str, Path]) -> None:
     _ensure_nominal_stand()
     import orcs.tasks.dodge  # noqa: F401
 
-    for source in PERLOCO.values():
-        _ensure_tiles(roots["orcs"], source)
+    perloco_ids = [task_id for task_id in PERLOCO if task_id in task_ids]
+    for task_id in perloco_ids:
+        _ensure_tiles(roots["orcs"], PERLOCO[task_id])
     # Staging imported this package before the tiles existed, skipping its tasks.
     import orcs.tasks.perloco as perloco
     from mjlab.tasks.registry import list_tasks
     from orcs.core.registry import register_all
 
-    rows = [r for r in perloco._TASKS if r[0] in PERLOCO and r[0] not in list_tasks()]
+    rows = [
+        r for r in perloco._TASKS if r[0] in perloco_ids and r[0] not in list_tasks()
+    ]
     if skipped := register_all(rows):
         raise RuntimeError(f"PerLoco did not register: {skipped}")
+    if UOLM not in task_ids:
+        return
+
+    _ensure_clips()
+    # Skips Uolm, whose rows spawn all six objects from models `assets generate` makes;
+    # the tire's row below needs the tire's alone.
+    import orcs.tasks.uolm as uolm
+
+    tire = tire_cfg()
+    rows = [
+        (task_id, partial(env_cfg, _object_entity=tire), rl_cfg)
+        for task_id, env_cfg, rl_cfg in uolm._TASKS
+        if task_id == UOLM
+    ]
+    if skipped := register_all(rows):
+        raise RuntimeError(f"Uolm did not register: {skipped}")
 
 
 def _offline() -> str:
@@ -129,8 +169,6 @@ def _replace_hand_collision(spec: Any) -> None:
 def _ensure_nominal_stand() -> None:
     """``orcs-make-nominal``'s stand, made once on the CPU where Dodge reads it. Not via
     ``nominal_root``: importing it registers Dodge before the clip exists."""
-    from unittest import mock
-
     from orcs.core.paths import DATA_ROOT
 
     root = DATA_ROOT / "nominal_motions"
@@ -153,8 +191,6 @@ def _roster(root: Path, source: str) -> dict[str, list]:
 
 def _ensure_tiles(root: Path, source: str) -> None:
     """``source``'s roster tiles, as ``orcs-stage-terrain`` stages them from the Hub."""
-    from unittest import mock
-
     from huggingface_hub import snapshot_download
     from orcs.core.paths import DATA_ROOT
 
@@ -220,11 +256,114 @@ def _load_arrays(path: Path) -> Any:
         return Arrays(str(path), file, ensure_native_byte_order=True).load()
 
 
+def _clip(name: str) -> Path:
+    from orcs.core.paths import DATA_ROOT
+
+    return DATA_ROOT / "retargeted_motions/data/unitree_g1" / name / "motion.npz"
+
+
+def _ensure_clips() -> None:
+    """``UOLM_CLIPS``, where upstream's setup checks the dataset out."""
+    from huggingface_hub import snapshot_download
+    from orcs.core.paths import DATA_ROOT
+
+    if all(_clip(name).exists() for name in UOLM_CLIPS):
+        return
+    snapshot_download(
+        MOTIONS_REPO,
+        repo_type="dataset",
+        revision=MOTIONS_REVISION,
+        allow_patterns=[
+            f"data/unitree_g1/{name}/{file}"
+            for name in UOLM_CLIPS
+            for file in ("metadata.json", "*.npz")
+        ],
+        local_dir=DATA_ROOT / "retargeted_motions",
+    )
+
+
+def tire_cfg() -> Any:
+    """The tire as upstream's variant entity spawns it, alone, and drawn in one gray: its
+    tread texture records no source, and the demo has no need of it."""
+    from mjlab.entity import EntityCfg
+    from orcs.assets.objects import _make_spec_fn
+
+    load = _make_spec_fn(_tire_xml())
+
+    def spec_fn() -> Any:
+        spec = load()
+        spec.delete(spec.texture("tire_texture"))
+        material = spec.material("tire_material")
+        material.textures = [""] * len(material.textures)
+        material.rgba = _TIRE_RGBA
+        return spec
+
+    return EntityCfg(spec_fn=spec_fn)
+
+
+def _tire_xml() -> Path:
+    """The tire's model, from upstream's setup step ``assets generate`` run on it alone.
+    It names the meshes by their paths in the checkout."""
+    # Its meshes are Git LFS objects, of which the tire's alone are fetched below.
+    with mock.patch.dict(os.environ, GIT_LFS_SKIP_SMUDGE="1"):
+        root = ensure_repo(
+            name="orcs/assets",
+            url=ASSETS_URL,
+            commit=ASSETS_COMMIT,
+            marker=f"{_TIRE}/metadata.json",
+            root_env_var="MJSWAN_ORCS_ASSETS_ROOT",
+        )
+    tire = root / _TIRE
+    _fetch_lfs(
+        root,
+        [
+            tire / "tire.obj",
+            *sorted((tire / "convex_decomp_meshes").glob("*.obj")),
+            root / "src/assets/textures/tire.png",
+        ],
+    )
+    out = _CACHE / "objects"
+    xml = out / "custom_objects/tire/tire_cvx_dcmp.xml"
+    if not xml.exists():
+        subprocess.run(
+            [sys.executable, "-m", "assets.cli", "generate", str(tire)]
+            + ["--output-root", str(out)],
+            env={**os.environ, "PYTHONPATH": str(root / "src")},
+            check=True,
+        )
+    return xml
+
+
+def _fetch_lfs(root: Path, files: list[Path]) -> None:
+    """Each Git LFS pointer in ``files`` swapped for its object, from GitHub's media host,
+    checked against the pointer's size and hash."""
+    repo = ASSETS_URL.removeprefix("https://github.com/")
+    for file in files:
+        pointer = file.read_bytes()
+        if not pointer.startswith(b"version https://git-lfs.github.com/spec/v1"):
+            continue
+        spec = dict(line.split(" ", 1) for line in pointer.decode().splitlines())
+        path = file.relative_to(root).as_posix()
+        url = f"https://media.githubusercontent.com/media/{repo}/{ASSETS_COMMIT}/{path}"
+        with urllib.request.urlopen(url) as response:
+            data = response.read()
+        digest = hashlib.sha256(data).hexdigest()
+        if len(data) != int(spec["size"]) or spec["oid"] != f"sha256:{digest}":
+            raise RuntimeError(f"{url} does not match its LFS pointer ({digest})")
+        file.write_bytes(data)
+
+
 def play_env_cfg(roots: dict[str, Path], task_id: str) -> Any:
-    """``task_id``'s play config, a PerLoco one on its roster's first tile and clip alone:
-    the browser runs one env, where upstream's play gives each env a tile."""
+    """``task_id``'s play config: a PerLoco one on its roster's first tile and clip alone,
+    and Uolm's on the tire's clip, the browser running one env where upstream's play
+    gives each env a tile, or an object."""
     from mjlab.tasks.registry import load_env_cfg
 
+    if task_id == UOLM:
+        env_cfg = load_env_cfg(task_id, play=True)
+        # The clip the browser's command plays; upstream's names the roster's first, unread.
+        env_cfg.commands["motion"].motion_file = str(_clip(UOLM_CLIPS[0]))
+        return env_cfg
     if task_id not in PERLOCO:
         return load_env_cfg(task_id, play=True)
     from orcs.core.paths import DATA_ROOT
@@ -384,7 +523,8 @@ def _export(checkpoint: str, out: str, spec_json: str) -> None:
         return np.concatenate([session.run(None, feed)[0] for feed in feeds])
 
     error = float(np.abs(actions() - reference).max())
-    if error > 1e-4:
+    # float32 rounding, which grows with the actions: random inputs drive Uolm's past 100.
+    if error > 1e-5 * float(np.abs(reference).max()):
         Path(out).unlink()
         raise RuntimeError(f"The ONNX actor disagrees with the fork's by {error:.2e}")
     _half_decoder(out)

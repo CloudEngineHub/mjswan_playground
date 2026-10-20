@@ -1,5 +1,6 @@
-"""ORCS's privileged SONIC adapters on a G1: dodging thrown balls, and climbing a box and
-walking over curbs it reads with a height scan. See ``README.md``."""
+"""ORCS's privileged SONIC adapters on a G1: dodging thrown balls, climbing a box and
+walking over curbs it reads with a height scan, and rolling a tire it reads the pose
+of. See ``README.md``."""
 
 from __future__ import annotations
 
@@ -15,7 +16,11 @@ SCENES = (
     ("Dodge", upstream.DODGE),
     ("Climb", upstream.PERLOCO_OMRE),
     ("Curb", upstream.PERLOCO_GRAIL),
+    ("Tire", upstream.UOLM),
 )
+#: Parts built on their own, each with the scenes it leaves out. The site and mjswan Cloud
+#: carry ``orcs-open``, without the scenes a non-commercial license covers.
+PARTS = {"orcs-open": (upstream.PERLOCO_GRAIL, upstream.UOLM)}
 #: The attribution the checkpoints' license requires beside its text.
 CHECKPOINT_NOTICE = (
     "Licensed by NVIDIA Corporation under the NVIDIA Open Model License."
@@ -28,17 +33,24 @@ card declares. Lujie Yang, Xiaoyu Huang, Zhen Wu, Angjoo Kanazawa, Pieter Abbeel
 Sferrazza, C. Karen Liu, Rocky Duan, Guanya Shi. OmniRetarget: Interaction-Preserving Data
 Generation for Humanoid Whole-Body Loco-Manipulation and Scene Interaction. 2025.
 """
+#: The clip's dataset declares MIT in its card's front matter, which the Hub does not
+#: show, the card being `readme.md`, and names no copyright holder.
+MOTIONS_NOTICE = """\
+Retargeted Motion Dataset: https://huggingface.co/datasets/l-k-r/retargeted_motions at
+e635ed6, the clip custom/tire_roll/sample1, MIT as the dataset card declares.
+"""
 
 
-def setup_builder() -> mjswan.Builder:
+def setup_builder(part: str | None = None) -> mjswan.Builder:
+    scenes = [scene for scene in SCENES if not part or scene[1] not in PARTS[part]]
     roots = upstream.resolve_roots()
-    upstream.register_tasks(roots)
+    upstream.register_tasks(roots, [task_id for _, task_id in scenes])
     from . import terms
 
     builder = mjswan.Builder()
     project = builder.add_project(name="ORCS", license=roots["orcs"] / "LICENSE")
     project.set_notice(roots["orcs"] / "NOTICE")
-    for name, task_id in SCENES:
+    for name, task_id in scenes:
         env_cfg = terms.browser_env_cfg(upstream.play_env_cfg(roots, task_id))
         policy, contract = upstream.ensure_policy(roots, task_id, env_cfg)
         scene = project.add_scene_mjlab(task_id, env_cfg=env_cfg)
@@ -58,6 +70,11 @@ def setup_builder() -> mjswan.Builder:
         if task_id == upstream.PERLOCO_GRAIL:
             scene.add_attribution(
                 "grail", license=Path(__file__).with_name("LICENSE.grail")
+            )
+        if task_id == upstream.UOLM:
+            scene.add_attribution("retargeted-motions", notice=MOTIONS_NOTICE)
+            scene.add_attribution(
+                "tire", license=Path(__file__).with_name("LICENSE.tire")
             )
         scene.add_policy(
             name=name,

@@ -1,10 +1,12 @@
-"""The reference clip and Dodge's ball throw, as traced commands the browser can keep.
+"""The reference clip, Uolm's object along it, and Dodge's ball throw, as traced commands
+the browser can keep.
 
 Upstream's ``MultiClipMotionCommand`` indexes its clips by an integer frame, which the
 browser feeds a graph as float32, so ``ClipCommand`` restates it over the one clip each
 scene plays, with the frame as a float, and with the anchor rows the twist observations
 read as fields. SONIC's tokenizer reads it unchanged, through ``future_frames`` and the
-clip tables, which the graph bakes in.
+clip tables, which the graph bakes in. ``ObjectClipCommand`` does the same for Uolm's
+``ObjectMotionCommand``.
 
 mjswan traces an event as a stateless function and lets a command write the sim only when
 it resamples, so upstream's ``ThrowBall``, an interval event that keeps a countdown and a
@@ -59,17 +61,19 @@ class ClipCommand(CommandTerm):
     cfg: ClipCommandCfg
 
     def __init__(self, cfg: ClipCommandCfg, env: Any) -> None:
-        from orcs.core.data.loader import ConcatMotionLoader
-
         super().__init__(cfg, env)
         self.robot = env.scene[cfg.entity_name]
-        file = Path(cfg.motion_file)
-        self.motion = ConcatMotionLoader(str(file.parent), self.device, [str(file)])
+        self.motion = self._load(Path(cfg.motion_file))
         self.motion_anchor_body_index = cfg.body_names.index(cfg.anchor_body_name)
         self.time_steps = torch.zeros(self.num_envs, device=self.device)
         # Steps held on the last frame, which upstream's `exceeded_motion_by_eps` reads.
         self._steps_past_end = torch.zeros(self.num_envs, device=self.device)
         self._read_frame()
+
+    def _load(self, file: Path) -> Any:
+        from orcs.core.data.loader import ConcatMotionLoader
+
+        return ConcatMotionLoader(str(file.parent), self.device, [str(file)])
 
     @property
     def command(self) -> torch.Tensor:
@@ -149,6 +153,83 @@ register_command(
             "anchor_quat_w",
             "anchor_lin_vel_w",
             "anchor_ang_vel_w",
+        ],
+        command_field="time_steps",
+    ),
+)
+
+
+@dataclass(kw_only=True)
+class ObjectClipCommandCfg(ClipCommandCfg):
+    """``ObjectMotionCommandCfg`` over one clip, played from its first frame."""
+
+    contact_graph_body_names: tuple[str, ...]
+    object_entity_name: str = "object"
+    object_init_pose_range: dict[str, tuple[float, float]] = field(default_factory=dict)
+
+    def build(self, env: Any) -> ObjectClipCommand:
+        return ObjectClipCommand(self, env)
+
+
+class ObjectClipCommand(ClipCommand):
+    """The object written onto the clip's first frame after the robot, and the rows the
+    augmentation reads as fields, the goal the clip's last frame, as ``_reset_task``
+    sets it."""
+
+    cfg: ObjectClipCommandCfg
+
+    def __init__(self, cfg: ObjectClipCommandCfg, env: Any) -> None:
+        super().__init__(cfg, env)
+        self.object_goal_pos_env = self.motion.obj_pos[-1:].repeat(self.num_envs, 1)
+        self.object_goal_quat = self.motion.obj_quat[-1:].repeat(self.num_envs, 1)
+
+    def _load(self, file: Path) -> Any:
+        from orcs.tasks.uolm.mdp.commands import _ConcatMotionLoader
+
+        return _ConcatMotionLoader(
+            str(file.parent),
+            self.device,
+            [str(file)],
+            contact_graph_body_names=self.cfg.contact_graph_body_names,
+        )
+
+    def _read_frame(self) -> None:
+        super()._read_frame()
+        index = self.time_steps.long()
+        self.object_bodywise_contact = self.motion.obj_bodywise_contact[index]
+
+    def _resample_command(self, env_ids: torch.Tensor) -> None:
+        """``ObjectMotionCommand._reset_task`` at a clip start, after the robot's write."""
+        super()._resample_command(env_ids)
+        n = len(env_ids)
+        pos = self.motion.obj_pos[0:1] + self._env.scene.env_origins[env_ids]
+        quat = self.motion.obj_quat[0:1].expand(n, 4)
+        if self.cfg.object_init_pose_range:
+            pose = self._sample_se3(self.cfg.object_init_pose_range, n)
+            pos = pos + pose[:, 0:3]
+            quat = quat_mul(
+                quat_from_euler_xyz(pose[:, 3], pose[:, 4], pose[:, 5]), quat
+            )
+        lin_vel = self.motion.obj_lin_vel[0:1].expand(n, 3)
+        ang_vel = self.motion.obj_ang_vel[0:1].expand(n, 3)
+        # Through the scene: the tracer keys every entity attribute by `entity_name`.
+        self._env.scene[self.cfg.object_entity_name].write_root_state_to_sim(
+            torch.cat([pos, quat, lin_vel, ang_vel], -1), env_ids=env_ids
+        )
+
+
+register_command(
+    "ObjectClipCommandCfg",
+    CommandBinding(
+        state_fields=[
+            "time_steps",
+            "_steps_past_end",
+            "anchor_quat_w",
+            "anchor_lin_vel_w",
+            "anchor_ang_vel_w",
+            "object_bodywise_contact",
+            "object_goal_pos_env",
+            "object_goal_quat",
         ],
         command_field="time_steps",
     ),
@@ -290,6 +371,20 @@ def robot_root_pos_env(
     return env.scene[robot_cfg.name].data.root_link_pos_w
 
 
+def object_pos_w_obs(env: Any, object_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Uolm's ``object_pos_w_obs``, rewritten as ``robot_root_pos_env`` is."""
+    return env.scene[object_cfg.name].data.root_link_pos_w
+
+
+def object_id_onehot(env: Any, slot: int, num_objects: int) -> torch.Tensor:
+    """Uolm's ``object_id_onehot`` for the browser's one object, at its roster slot.
+    Upstream reads each env's slot off the command, as an integer, which the browser
+    would feed the graph as a float."""
+    onehot = torch.zeros(env.num_envs, num_objects, device=env.device)
+    onehot[:, slot] = 1.0
+    return onehot
+
+
 def _only_clip(motion: Any) -> str:
     """The one clip upstream's command samples from, on its roster's tiles and clips if
     it has them; ``ClipCommand`` plays no other."""
@@ -306,6 +401,25 @@ def _only_clip(motion: Any) -> str:
     return motion.motion_file
 
 
+def _object_slot(motion: Any) -> int:
+    """The roster slot of the object whose only clip is ``motion.motion_file``: upstream's
+    command samples an env's clips from its object's, and ``ObjectClipCommand`` plays
+    one."""
+    from orcs.core.data.retargeted import load_motion_files_from_datasets
+
+    clips = load_motion_files_from_datasets(
+        motion.dataset_dir, list(motion.exclude_motions)
+    )
+    names = motion.ordered_object_names
+    owners = [name for name in names if clips.get(name) == [motion.motion_file]]
+    if len(owners) != 1 or not motion.start_from_zero:
+        raise ValueError(
+            f"ObjectClipCommand plays one object's only clip from its start, not "
+            f"{motion.motion_file}."
+        )
+    return names.index(owners[0])
+
+
 def _throw_params(event: Any) -> dict[str, Any]:
     """The event's params over ``ThrowBall.__call__``'s defaults: every knob it reads."""
     signature = inspect.signature(event.func.__call__)
@@ -320,16 +434,36 @@ def _throw_params(event: Any) -> dict[str, Any]:
 def browser_env_cfg(env_cfg: Any) -> Any:
     """Upstream's play config as the browser runs it, in place: the commands above in
     place of the clip command and the throw, and none of what only training reads."""
+    from orcs.tasks.uolm.mdp.commands import ObjectMotionCommandCfg
+
     motion = env_cfg.commands["motion"]
-    env_cfg.commands["motion"] = ClipCommandCfg(
-        motion_file=_only_clip(motion),
-        body_names=tuple(motion.body_names),
-        anchor_body_name=motion.anchor_body_name,
-        entity_name=motion.entity_name,
-        pose_range=dict(motion.pose_range),
-        velocity_range=dict(motion.velocity_range),
-        joint_position_range=tuple(motion.joint_position_range),
-    )
+    clip = {
+        "body_names": tuple(motion.body_names),
+        "anchor_body_name": motion.anchor_body_name,
+        "entity_name": motion.entity_name,
+        "pose_range": dict(motion.pose_range),
+        "velocity_range": dict(motion.velocity_range),
+        "joint_position_range": tuple(motion.joint_position_range),
+    }
+    augmentation = env_cfg.observations["augmentation"].terms
+    if isinstance(motion, ObjectMotionCommandCfg):
+        env_cfg.commands["motion"] = ObjectClipCommandCfg(
+            motion_file=motion.motion_file,
+            contact_graph_body_names=tuple(motion.contact_graph_body_names),
+            object_entity_name=motion.object_entity_name,
+            object_init_pose_range=dict(motion.object_init_pose_range),
+            **clip,
+        )
+        augmentation["object_pos_w"].func = object_pos_w_obs
+        augmentation["object_id"].func = object_id_onehot
+        augmentation["object_id"].params = {
+            "slot": _object_slot(motion),
+            "num_objects": len(motion.ordered_object_names),
+        }
+    else:
+        env_cfg.commands["motion"] = ClipCommandCfg(
+            motion_file=_only_clip(motion), **clip
+        )
     if "throw_ball" in env_cfg.events:
         throw = _throw_params(env_cfg.events.pop("throw_ball"))
         step_dt = env_cfg.sim.mujoco.timestep * env_cfg.decimation
@@ -338,9 +472,7 @@ def browser_env_cfg(env_cfg: Any) -> Any:
             entity_name=throw["robot_name"],
             resampling_time_range=(step_dt, step_dt),
         )
-    env_cfg.observations["augmentation"].terms[
-        "robot_root_pos_env"
-    ].func = robot_root_pos_env
+    augmentation["robot_root_pos_env"].func = robot_root_pos_env
     # Feeds the training anneals and curricula only.
     env_cfg.events.pop("policy_update_counter", None)
     del env_cfg.observations["critic"]
