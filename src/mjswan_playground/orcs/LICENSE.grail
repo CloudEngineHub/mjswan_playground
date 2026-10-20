@@ -1,0 +1,22 @@
+SPDX-License-Identifier: CC-BY-NC-4.0
+
+The curb this scene walks over, and the clip it tracks, are curb_000's geometry and its
+take 000 from NVIDIA's GRAIL dataset
+(https://huggingface.co/datasets/nvidia/PhysicalAI-Robotics-Locomanipulation-GRAIL, at
+40e7957), from "GRAIL: Generating Humanoid Loco-Manipulation from 3D Assets and Video
+Priors" (arXiv:2606.05160). The dataset card states:
+
+    "Use of the released dataset is governed by the Creative Commons Attribution-
+     NonCommercial 4.0 International License (CC BY-NC 4.0)."
+
+that its procedurally generated curbs, slopes and stairs are "GRAIL-original outputs,
+released under CC BY-NC 4.0", and that the license covers its motion trajectories.
+
+Changed here: ORCS stages the curb as a terrain tile and the take as a clip; this scene
+builds the tile into its model, and its command graph carries the clip's frames.
+
+The license's terms are at
+
+    https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+It permits sharing and adapting for noncommercial purposes only, with credit.

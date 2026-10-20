@@ -21,6 +21,7 @@ _TASKS: dict[str, str] = {
     "microduck": "mjswan_playground.microduck.main",
     "microduckpg": "mjswan_playground.microduckpg.main",
     "musclemimic": "mjswan_playground.musclemimic.main",
+    "orcs": "mjswan_playground.orcs.main",
     "pacman": "mjswan_playground.pacman.main",
     "parkour": "mjswan_playground.parkour.main",
     "spinkick": "mjswan_playground.spinkick.main",
@@ -43,6 +44,7 @@ _PARTS: dict[str, str] = {
         "mjswan_playground.microduckpg.main",
     ),
     **dict.fromkeys(("wuji-reorient", "wuji-penspin"), "mjswan_playground.wuji.main"),
+    "orcs-open": "mjswan_playground.orcs.main",
     "parkour-open": "mjswan_playground.parkour.main",
 }
 
