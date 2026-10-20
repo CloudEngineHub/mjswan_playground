@@ -108,13 +108,13 @@ depth the same way (`--depth-backend ray`, its default).
   would read it wrong there; the rays report the distance upstream trained on. Against
   3.11's camera converted back, in mjlab, PIE's frames agree to 2e-5 and the student's to
   within 1e-4 over full rollouts, and the policies' actions are the same on either.
-- **One call per camera, not per ray.** mjswan 0.12.1 casts each ray with its own
+- **One call per camera, not per ray.** mjswan 0.12.1 cast each ray with its own
   `mj_ray` call through the WASM binding, which costs far more than the ray: 19.5 ms a
   step for the student's camera, and both depth scenes fell to 40 to 43 of their 50
-  control steps a second.
-  [mjswan#172](https://github.com/ttktjmt/mjswan/pull/172) casts a camera's rays, all
+  control steps a second. mjswan 0.12.2
+  ([mjswan#172](https://github.com/ttktjmt/mjswan/pull/172)) casts a camera's rays, all
   from one point, in one `mj_multiRay` call: 1.3 ms, with the same readings, and both
-  scenes hold 48 to 49.
+  scenes hold 48 to 49. The playground requires it.
 - **PIE's rays test the terrain alone,** group 0, where the camera renders groups 0 to 2.
   From the Go2's nose the camera sees nothing else: over two 30 s stair rollouts in mjlab,
   the robot's own meshes never reached the image, and the two agree exactly. The
@@ -142,7 +142,7 @@ its camera alone, its arms reaching for the edge.
   terrain type (upstream's `TerrainAwareVelocityCommand`). Here, as in upstream's own
   sim2sim (`--lin-vel-x 0.5`, then a gamepad or keys), sliders over play's ranges set it:
   forward 0 to 1.5 m/s from 0.5, a yaw rate of ±1.2 rad/s, `lin_vel_y` held at zero, as
-  PIE trained. mjlab's own joystick would be the alternative, but mjswan 0.12.1 records
+  PIE trained. mjlab's own joystick would be the alternative, but mjswan 0.12.2 records
   its fixed `lin_vel_y` axis as a range companion and drops it, which moves the yaw slider
   onto `lin_vel_y`.
 - **PIE's terrain is drawn once,** with seed 0, where play draws a new 5 × 5 grid of its
@@ -174,7 +174,7 @@ its camera alone, its arms reaching for the edge.
   [`php.py`](php.py) wraps `model_23000.onnx` to keep three frames in `adapt_hx` and feed
   the one 3 steps old, every frame the current one on an episode's first step, as
   `PhpDepthImage` primes them; in mjlab its actions equal the export's fed those frames
-  directly. The lag is not a `history_steps` on the term: mjswan 0.12.1 attaches a
+  directly. The lag is not a `history_steps` on the term: mjswan 0.12.2 attaches a
   raycast's descriptor to a fused group only, and a term with a history does not fuse, so
   the browser never casts its rays.
 - **The groups are renamed:** PIE's `actor`, `proprio_history` and `camera` to `proprio`,
