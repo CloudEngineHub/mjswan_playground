@@ -53,7 +53,10 @@ def _check(segment, preview=None) -> list:
 
 def test_a_healthy_run_passes() -> None:
     segment = _segment()
-    segment.terms = [{"k": 150, "reasons": ["time_out"]}]
+    segment.terms = [
+        {"k": 150, "reasons": ["time_out"], "terminated": False},
+        {"k": 180, "reasons": ["exceeded_motion"], "terminated": False},
+    ]
     assert _check(segment) == []
 
 
@@ -62,7 +65,9 @@ def test_the_first_bipedhrl_port_fails_on_everything_it_did() -> None:
     segment = _segment()
     for k, step in enumerate(segment.steps):
         step.update(zero=["actor"], same=k > 0, tilt=80.0 if k % 70 >= 65 else 2.0)
-    segment.terms = [{"k": k, "reasons": ["fell_over"]} for k in (69, 139)]
+    segment.terms = [
+        {"k": k, "reasons": ["fell_over"], "terminated": True} for k in (69, 139)
+    ]
     segment.runs["mdp/a0/obs/actor.onnx"] = 0
     found = dict((message, steps) for steps, message in _check(segment))
     assert found == {
@@ -77,7 +82,7 @@ def test_the_first_bipedhrl_port_fails_on_everything_it_did() -> None:
 def test_a_clip_can_call_for_a_flip_or_a_termination() -> None:
     segment = _segment()
     segment.steps[120]["tilt"] = 170.0
-    segment.terms = [{"k": 130, "reasons": ["out_of_bounds"]}]
+    segment.terms = [{"k": 130, "reasons": ["out_of_bounds"], "terminated": True}]
     assert [m for _, m in _check(segment)] == [
         "terminated 1x (out_of_bounds), first at 2.6 s (after the clip)",
         "root tipped past 75° 1x, first at 2.4 s (after the clip), to 170°",

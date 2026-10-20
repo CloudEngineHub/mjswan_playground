@@ -36,7 +36,7 @@ own build is missing:
         --software --chromium /opt/pw-browsers/chromium
 
 Every recording also checks the task works: the app runs on for `--check-seconds` after
-the clip, and the recording fails on a termination other than `time_out`, a root tipped
+the clip, and the recording fails on a termination that is not a time-out, a root tipped
 past `MAX_TILT_DEG`, NaN state, observations or actions, an observation input that stays
 all zeros, a traced graph that stops running, actions that never change, a stalled step
 loop, a page error, or a slow-motion or choppy clip. It writes `dist/preview/<task-id>.json`
@@ -124,7 +124,7 @@ class Preview:
             `from_reset`, also about how far into the scene's run the clip starts.
         upright: Fail when the root tips past `MAX_TILT_DEG`. Off only for a clip that
             leaves upright on purpose, a flip.
-        ok_terminations: Terminations besides `time_out` the task itself plays out, as a
+        ok_terminations: Terminations besides time-outs the task itself plays out, as a
             dodgeball hit ends an episode.
     """
 
@@ -677,7 +677,7 @@ _TELEMETRY = """(() => {
                 tm.evaluate = (...a) => {
                     const k = rec.steps.length - 1;
                     const note = (r) => {
-                        if (r.done) rec.terms.push({ k, reasons: r.reasons });
+                        if (r.done) rec.terms.push({ k, reasons: r.reasons, terminated: r.terminated });
                         return r;
                     };
                     // Async in mjswan 0.11.5: `done` read off the promise is undefined.
@@ -801,6 +801,7 @@ def film(
     the app from the first frame on and keeps it running that long after the clip;
     `None` records nothing.
     """
+    from playwright.sync_api import Error as PlaywrightError
     from playwright.sync_api import sync_playwright
 
     seconds = preview.seconds if seconds is None else seconds
@@ -848,7 +849,12 @@ def film(
             "() => window.__mjswanReady || window.__mjswanError", timeout=240_000
         )
         if page.evaluate("() => window.__mjswanError"):
-            raise SystemExit(f"{url} failed to load its scene")
+            # The app shows why in its error HUD, which renders just after the flag.
+            try:
+                reason = page.inner_text(".hud-error .hud-message", timeout=5_000)
+            except PlaywrightError:
+                reason = "the page shows no reason"
+            raise SystemExit(f"{url} failed to load its scene: {reason}")
         if checked:
             if not hooked:
                 raise SystemExit(
@@ -1009,9 +1015,11 @@ def check_run(
         failures.append(([nan], f"{steps[nan]['nan']} went NaN at {at(nan)}"))
 
     ok = {"time_out", *preview.ok_terminations}
-    bad = [t["k"] for t in segment.terms if not set(t["reasons"]) <= ok]
+    # A `time_out`-flagged term truncates whatever its name (orcs's `exceeded_motion`).
+    ended = [t for t in segment.terms if t["terminated"]]
+    bad = [t["k"] for t in ended if not set(t["reasons"]) <= ok]
     if bad:
-        reasons = {r for t in segment.terms for r in t["reasons"]} - ok
+        reasons = {r for t in ended for r in t["reasons"]} - ok
         failures.append(
             (
                 bad,
