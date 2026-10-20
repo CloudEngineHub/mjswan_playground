@@ -1,0 +1,22 @@
+SPDX-License-Identifier: CC-BY-NC-4.0
+
+The tire this scene's robot rolls is the tire of drcl-deploy/assets
+(https://github.com/drcl-deploy/assets, at 90e2260): its mesh, and the eight convex parts
+it collides with. The repository's THIRD_PARTY_NOTICES.md states:
+
+    "The MIT license at the repository root covers original project code. Bundled
+     third-party models, meshes, textures, and derived files remain under their
+     respective upstream terms."
+
+and it records no source or terms for the tire. Finding no terms for redistributing it,
+this demo holds it to those it follows for the curb scene's GRAIL data, the Creative
+Commons Attribution-NonCommercial 4.0 license's, and takes it down at an owner's request.
+
+Changed here: the tire is drawn in one gray, without its tread texture, and this scene
+builds it into its model.
+
+The license's terms are at
+
+    https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+It permits sharing and adapting for noncommercial purposes only, with credit.

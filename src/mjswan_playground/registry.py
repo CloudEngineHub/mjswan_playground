@@ -21,6 +21,7 @@ _TASKS: dict[str, str] = {
     "microduck": "mjswan_playground.microduck.main",
     "microduckpg": "mjswan_playground.microduckpg.main",
     "musclemimic": "mjswan_playground.musclemimic.main",
+    "orcs": "mjswan_playground.orcs.main",
     "pacman": "mjswan_playground.pacman.main",
     "spinkick": "mjswan_playground.spinkick.main",
     "terra": "mjswan_playground.terra.main",
@@ -33,13 +34,16 @@ _TASKS: dict[str, str] = {
 ALL_TASKS: tuple[str, ...] = tuple(_TASKS)
 
 #: Part ID -> the task module whose ``setup_builder(part)`` builds it: a subset of the
-#: task to upload alone. Not tasks: the README, the site and the previews show the whole.
+#: task to upload alone. Not tasks: the README and the previews show the whole, and so
+#: does the site, but for a task's ``<task>-open`` part, the scenes no non-commercial
+#: license covers, which the site and mjswan Cloud carry in the whole's place.
 _PARTS: dict[str, str] = {
     **dict.fromkeys(
         ("microduckpg-moves", "microduckpg-parkour", "microduckpg-stilts"),
         "mjswan_playground.microduckpg.main",
     ),
     **dict.fromkeys(("wuji-reorient", "wuji-penspin"), "mjswan_playground.wuji.main"),
+    "orcs-open": "mjswan_playground.orcs.main",
 }
 
 ALL_PARTS: tuple[str, ...] = tuple(_PARTS)

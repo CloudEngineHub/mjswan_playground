@@ -7,7 +7,7 @@ import re
 import shutil
 from pathlib import Path
 
-from mjswan_playground.registry import ALL_TASKS
+from mjswan_playground.registry import ALL_PARTS, ALL_TASKS
 
 README = Path(__file__).resolve().parents[2] / "README.md"
 #: GitHub Pages refuses a published site larger than 1 GB.
@@ -29,7 +29,8 @@ class SiteError(Exception):
 
 
 def task_order(readme: Path = README) -> list[str]:
-    """The site's tasks in README's order. Every registry task needs exactly one row."""
+    """The site's builds in README's order, each a task or the part `site_build` picks.
+    Every registry task needs exactly one row."""
     if not readme.exists():
         raise SiteError(
             f"{readme} is missing: the site takes its task order from the repository's "
@@ -47,7 +48,13 @@ def task_order(readme: Path = README) -> list[str]:
         raise SiteError(
             f"README's Tasks table sets the site's order, and it has {'; '.join(problems)}."
         )
-    return [task for task in ids if task not in NOT_ON_SITE]
+    return [site_build(task) for task in ids if task not in NOT_ON_SITE]
+
+
+def site_build(task: str) -> str:
+    """What the site carries of ``task``: its ``-open`` part, the scenes no non-commercial
+    license covers, if it has one, as mjswan Cloud does; else the whole."""
+    return f"{task}-open" if f"{task}-open" in ALL_PARTS else task
 
 
 def merge(builds: list[Path], output_dir: Path) -> list[dict]:
