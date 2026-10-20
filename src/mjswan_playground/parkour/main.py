@@ -32,9 +32,13 @@ here, all its own training runs, carry no grant: PHP releases no teacher checkpo
 its student release is another pair. PHP's clips and boxes are Amazon's, under Apache-2.0,
 as each G1 scene's own notice says.
 """
+#: Parts built on their own, each with the scenes it leaves out. The site and mjswan Cloud
+#: carry ``parkour-open``, without the scenes a non-commercial license covers: none.
+PARTS = {"parkour-open": ()}
 
 
-def setup_builder() -> mjswan.Builder:
+def setup_builder(part: str | None = None) -> mjswan.Builder:
+    """Every scene, for ``parkour-open`` too."""
     root = upstream.resolve_root()
     upstream.register_tasks(root)
 

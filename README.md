@@ -28,6 +28,10 @@ A collection of tasks built with [mjswan](https://github.com/ttktjmt/mjswan).
 | [`luwu`](src/mjswan_playground/luwu/README.md) | XGO Mini2S, Mini2SW, Lite3 | Three robot dogs from Luwu Dynamics walking to velocity commands and getting up from a fall ([luwu_mjlab](https://github.com/LuwuDynamics/luwu_mjlab)) | <a href="https://mjswan.com/s/lMGfn63"><img src="assets/luwu.gif" width="200"/></a><br />[mjswan.com/s/lMGfn63](https://mjswan.com/s/lMGfn63) |
 | [`parkour`](src/mjswan_playground/parkour/README.md) | Unitree Go2, Unitree G1 | Perceptive parkour from depth: a Go2 climbing stairs to velocity commands (PIE), and a G1 stepping and climbing onto boxes, five PHP teachers tracking their clips and the depth student they distill into ([parkour_mjlab](https://github.com/yhx1203/parkour_mjlab)) | <img src="assets/parkour.gif" width="200"/><br />WIP |
 
+Where a task has a `<task-id>-open` part, the GitHub Pages site and mjswan Cloud carry
+that part: the task's scenes no non-commercial license covers. The task ID still builds
+every scene.
+
 ## CLI
 
 ```

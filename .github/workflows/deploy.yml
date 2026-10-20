@@ -72,13 +72,19 @@ jobs:
         with:
           enable-cache: true
 
+      # A part, `<task>-<name>`, is built by its task's module.
+      - id: module
+        run: echo "dir=${TASK%%-*}" >> "$GITHUB_OUTPUT"
+        env:
+          TASK: ${{ matrix.task }}
+
       # The tasks' pinned upstream checkouts, conversions and Hub downloads.
       - uses: actions/cache@v6
         with:
           path: |
             .cache
             ~/.cache/huggingface
-          key: upstream-${{ matrix.task }}-${{ hashFiles(format('src/mjswan_playground/{0}/**', matrix.task), 'src/mjswan_playground/_deps.py', 'uv.lock') }}
+          key: upstream-${{ matrix.task }}-${{ hashFiles(format('src/mjswan_playground/{0}/**', steps.module.outputs.dir), 'src/mjswan_playground/_deps.py', 'uv.lock') }}
 
       - run: uv sync --frozen --all-extras
 

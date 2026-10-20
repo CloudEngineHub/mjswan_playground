@@ -179,7 +179,11 @@ def site_cmd(
         str, typer.Option(help="URL path the site is served from.")
     ] = "/",
     dist_dir: Annotated[
-        Path, typer.Option(help="Where each task's build is, as <dist-dir>/<task-id>.")
+        Path,
+        typer.Option(
+            help="Where each task's build is, as <dist-dir>/<task-id>, or "
+            "<task-id>-open for a task with that part."
+        ),
     ] = Path("dist"),
     output_dir: Annotated[
         Optional[Path],
@@ -203,13 +207,14 @@ def site_cmd(
                     f"{task} is not on the site: {_site.NOT_ON_SITE[task]}.", err=True
                 )
             raise typer.Exit(1)
-        if unknown := [task for task in task_ids if task not in order]:
+        builds = [_site.site_build(task) for task in task_ids]
+        if unknown := [task for task in builds if task not in order]:
             typer.echo(
                 f"Unknown task {', '.join(unknown)}. Available: {', '.join(order)}",
                 err=True,
             )
             raise typer.Exit(1)
-        order = [task for task in order if task in task_ids]
+        order = [task for task in order if task in builds]
 
     dist_dir = dist_dir.resolve()
     if not no_build:

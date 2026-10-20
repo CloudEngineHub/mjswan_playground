@@ -26,7 +26,12 @@ def _build(root: Path, name: str, *project_ids: str, **header) -> Path:
 
 def test_readme_lists_every_task_once() -> None:
     on_site = set(ALL_TASKS) - set(_site.NOT_ON_SITE)
-    assert sorted(_site.task_order()) == sorted(on_site)
+    assert sorted(_site.task_order()) == sorted(map(_site.site_build, on_site))
+
+
+def test_the_site_carries_a_task_s_open_part_in_its_place(monkeypatch) -> None:
+    monkeypatch.setattr(_site, "ALL_PARTS", ("one-open", "two-moves"))
+    assert [_site.site_build(task) for task in ("one", "two")] == ["one-open", "two"]
 
 
 def test_the_site_leaves_out_registered_tasks_only() -> None:
@@ -95,6 +100,22 @@ def test_site_merges_without_building(tmp_path, monkeypatch) -> None:
     merged = json.loads((tmp_path / "_site" / "manifest.json").read_text())
     assert [p["id"] for p in merged["projects"]] == ["second", "first"]
     assert engines == ["/p/"]
+
+
+def test_site_takes_a_task_id_for_its_open_part(tmp_path, monkeypatch) -> None:
+    _build(tmp_path, "one-open", "first")
+    _build(tmp_path, "two", "second")
+    monkeypatch.setattr(_site, "ALL_PARTS", ("one-open",))
+    monkeypatch.setattr(_site, "task_order", lambda: ["two", "one-open"])
+    monkeypatch.setattr(_site, "install_engine", lambda site, base: None)
+
+    result = CliRunner().invoke(
+        _cli.app, ["site", "one", "--no-build", "--dist-dir", str(tmp_path)]
+    )
+
+    assert result.exit_code == 0, result.output
+    merged = json.loads((tmp_path / "_site" / "manifest.json").read_text())
+    assert [p["id"] for p in merged["projects"]] == ["first"]
 
 
 def test_site_says_why_it_leaves_a_task_out(monkeypatch) -> None:
