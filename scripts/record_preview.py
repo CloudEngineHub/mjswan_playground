@@ -801,6 +801,7 @@ def film(
     the app from the first frame on and keeps it running that long after the clip;
     `None` records nothing.
     """
+    from playwright.sync_api import Error as PlaywrightError
     from playwright.sync_api import sync_playwright
 
     seconds = preview.seconds if seconds is None else seconds
@@ -848,7 +849,12 @@ def film(
             "() => window.__mjswanReady || window.__mjswanError", timeout=240_000
         )
         if page.evaluate("() => window.__mjswanError"):
-            raise SystemExit(f"{url} failed to load its scene")
+            # The app shows why in its error HUD, which renders just after the flag.
+            try:
+                reason = page.inner_text(".hud-error .hud-message", timeout=5_000)
+            except PlaywrightError:
+                reason = "the page shows no reason"
+            raise SystemExit(f"{url} failed to load its scene: {reason}")
         if checked:
             if not hooked:
                 raise SystemExit(
