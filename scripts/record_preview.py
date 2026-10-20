@@ -427,8 +427,8 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             "lite3_walk_flat",
         )
     ),
-    # Dodge throws every 1 to 4 s, so 5 s catch one or two. Climb and Curb play from a
-    # reset; a clip's end times the episode out 2 s later, as `exceeded_motion`.
+    # Dodge throws every 1 to 4 s, so 5 s catch one or two. The others play from a reset;
+    # a clip's end times the episode out 2 s later, as `exceeded_motion`.
     "orcs": (
         Preview(
             scene="orcs_dodge_adaptsonic", orbit=45, crop="880:643:80:0", seconds=5.0

@@ -102,7 +102,7 @@ def register_tasks(roots: dict[str, Path], task_ids: Collection[str]) -> None:
     os.environ.setdefault("ORCS_SKIP_DEP_CHECK", "1")
     import mjlab.scripts.gcs
 
-    # ponytail: importing mocke registers two sandbox tasks on mjlab's demo clip (LAFAN1,
+    # Importing mocke registers two sandbox tasks on mjlab's demo clip (LAFAN1,
     # CC BY-NC-ND), downloading it; without it they skip, as mocke does offline.
     with mock.patch.object(mjlab.scripts.gcs, "ensure_default_motion", _offline):
         import mocke  # noqa: F401
