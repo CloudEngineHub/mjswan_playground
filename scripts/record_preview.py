@@ -427,6 +427,41 @@ PREVIEWS: dict[str, Preview | tuple[Preview, ...]] = {
             "lite3_walk_flat",
         )
     ),
+    # Dodge throws every 1 to 4 s, so 5 s catch one or two. The others play from a reset;
+    # a clip's end times the episode out 2 s later, as `exceeded_motion`.
+    "orcs": (
+        Preview(
+            scene="orcs_dodge_adaptsonic", orbit=45, crop="880:643:80:0", seconds=5.0
+        ),
+        Preview(
+            scene="orcs_perloco_omre_adaptsonic",
+            orbit=-45,
+            crop="800:585:80:40",
+            from_reset=True,
+            seconds=5.6,
+            ok_terminations=("exceeded_motion",),
+        ),
+        Preview(
+            scene="orcs_perloco_grail_adaptsonic",
+            steps=(("number", "FOV (°)", 60),),
+            orbit=-45,
+            crop="720:526:0:40",
+            from_reset=True,
+            seconds=8.0,
+            ok_terminations=("exceeded_motion",),
+        ),
+        Preview(
+            scene="orcs_uolm_adaptsonic",
+            orbit=-30,
+            crop="880:643:40:40",
+            from_reset=True,
+            seconds=10.0,
+            # The checkpoint falls as its clip ends, under upstream's play config in mjlab
+            # too, and lands on its pelvis or not.
+            upright=False,
+            ok_terminations=("exceeded_motion", "illegal_contact"),
+        ),
+    ),
     # PIE walks out of its pit, then circles at the highest yaw rate upstream draws over
     # stairs, which keeps it on the terrain. Each PHP cut starts as its clip reaches its
     # boxes, the walk as it starts walking. The walk loses its clip in its fast turns, as

@@ -1631,6 +1631,10 @@ musclemimic = [
     { name = "orbax-checkpoint", version = "0.11.39", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "orbax-checkpoint", version = "0.12.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
+orcs = [
+    { name = "onnxruntime" },
+    { name = "usd-core" },
+]
 spinkick = [
     { name = "spinkick-example" },
 ]
@@ -1661,15 +1665,17 @@ requires-dist = [
     { name = "myosuite", extras = ["musclemimic"], marker = "extra == 'terra'", git = "https://github.com/MyoHub/myosuite?rev=992bd58928e61d3f7ce27a033be02d0be18a2c18" },
     { name = "onnx", specifier = ">=1.20.0" },
     { name = "onnxconverter-common", marker = "extra == 'musclemimic'", specifier = ">=1.16" },
+    { name = "onnxruntime", marker = "extra == 'orcs'" },
     { name = "orbax-checkpoint", marker = "extra == 'musclemimic'", specifier = ">=0.11" },
     { name = "orbax-checkpoint", marker = "extra == 'terra'", specifier = ">=0.11" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "spinkick-example", marker = "extra == 'spinkick'", git = "https://github.com/mujocolab/g1_spinkick_example?rev=f1c4b230bd1a76c44e801e49f079212b6c6487da" },
     { name = "torch", specifier = ">=2.9.1" },
     { name = "typer", specifier = ">=0.12" },
+    { name = "usd-core", marker = "extra == 'orcs'", specifier = ">=26.8" },
     { name = "wbc-mjlab", marker = "extra == 'wbc'", specifier = ">=0.0.6" },
 ]
-provides-extras = ["wbc", "musclemimic", "spinkick", "terra"]
+provides-extras = ["wbc", "musclemimic", "orcs", "spinkick", "terra"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -3773,6 +3779,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
+]
+
+[[package]]
+name = "usd-core"
+version = "26.8"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0a/87/ee3611de8006030b4855ebf6243a4f302256f7f3f4cfec4b98eb54f9ce0a/usd_core-26.8-cp310-none-macosx_10_15_universal2.whl", hash = "sha256:f89c1492782f3882a7e16e488e9042718616ef45f8452bad4fb271521471a166", size = 40653920, upload-time = "2026-07-20T14:32:02.229Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/cd/6627b9a45d5bf96b8368902f164c00bfab5eac49161406a6c95245f677fc/usd_core-26.8-cp310-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:98ca82fceca81ddb3e1d47c55173fc3117312d2e22dac677bc4d7aeb3f89ac0e", size = 29604993, upload-time = "2026-07-20T14:32:05.744Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/f2/c544477979230b5d1a40d1eedc9d85f1776ed235818d358d19e01fa681bc/usd_core-26.8-cp310-none-win_amd64.whl", hash = "sha256:9dbfb76a4aa24e2d6d33716f3918c85860633a4983dfd06bd58e83932f2071fd", size = 13848462, upload-time = "2026-07-20T14:32:08.701Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/7b/fd674dc4c3273e18cede49c50be75d90649d38dbec6180bda83b4047a8f0/usd_core-26.8-cp311-none-macosx_10_15_universal2.whl", hash = "sha256:781ddef732e3a6d300a5fa2d0c5b8af103aa8589a88c4af77ac6608f39293880", size = 40653076, upload-time = "2026-07-20T14:32:11.676Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/d7/491a3dd0f62424f92f59240c5aa5c64c03588c1b4920b00f5df2ac4f4087/usd_core-26.8-cp311-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:53ebbc130108c7e0e7b4af9a4fe3bdac2ae084a12db13496a50f895db527382e", size = 29611915, upload-time = "2026-07-20T14:32:14.833Z" },
+    { url = "https://files.pythonhosted.org/packages/66/18/7ccfb5c69366fa0d7590697e0f62adb4b5c20f02a3c3a674331b4bf40d43/usd_core-26.8-cp311-none-win_amd64.whl", hash = "sha256:d39cef20efdfc29473e92887487bb8c10c45e966c492b5356d32a52724c3578f", size = 13848082, upload-time = "2026-07-20T14:32:17.701Z" },
+    { url = "https://files.pythonhosted.org/packages/97/44/fb780d02b04bbebc410bfb6decccc66aec07fb0322172ad019c4579ad80a/usd_core-26.8-cp312-none-macosx_10_15_universal2.whl", hash = "sha256:aaf1a68bf4c7ab959b9f4d3a6e0ef9347ff6135a1452676bb40916060146c53e", size = 40698020, upload-time = "2026-07-20T14:32:20.788Z" },
+    { url = "https://files.pythonhosted.org/packages/19/0b/efe5c0d7c273149ac94083831e5b36649925a621a73cd2ddf9616e160c8c/usd_core-26.8-cp312-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:204fb1ef1fc977b827c491f4e9fa39b57518504ed0cacfe12e026e95123cacf1", size = 29530957, upload-time = "2026-07-20T14:32:24.255Z" },
+    { url = "https://files.pythonhosted.org/packages/79/d3/749edc4d2eea3ffb94aa0526d5da6f4a3f185ef7004ceeb6b5ecdb6a0c68/usd_core-26.8-cp312-none-win_amd64.whl", hash = "sha256:6db0031224b718cae53e4b19ecd80aea0a7ed4348e330fd82ccfbdc9b8b311ed", size = 13887898, upload-time = "2026-07-20T14:32:27.452Z" },
 ]
 
 [[package]]
