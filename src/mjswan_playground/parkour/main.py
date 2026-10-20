@@ -16,9 +16,22 @@ from . import php, pie, upstream
 STUDENT_SKILL = "High-Climb"
 #: Upstream draws the student's depth 3 or 4 steps old each step; the browser keeps 3.
 STUDENT_DEPTH_LAG = 3
-PHP_NOTICE = "PHP training motions: https://github.com/amazon-far/php_parkour, release \
-training-motion-examples-v1. Copyright Amazon.com, Inc. or its affiliates. All Rights \
-Reserved."
+#: Apache-2.0 asks a changed file to say what changed.
+PHP_NOTICE = """\
+PHP training motions: https://github.com/amazon-far/php_parkour, release
+training-motion-examples-v1. Copyright Amazon.com, Inc. or its affiliates. All Rights
+Reserved. Changed here: the scene's clip is rewritten in mjlab's motion layout, and its
+boxes are built into the scene.
+"""
+#: parkour_mjlab ships no license or notice of its own.
+PROJECT_NOTICE = f"""\
+Parkour MJLab: {upstream.REPO_URL} at {upstream.REPO_COMMIT[:7]}. It trains PIE's Go2 and
+PHP's G1 on mjlab, its PHP half a port of https://github.com/amazon-far/php_parkour, which
+lists it among its community projects. It states no license, so its code and the policies
+here, all its own training runs, carry no grant: PHP releases no teacher checkpoints, and
+its student release is another pair. PHP's clips and boxes are Amazon's, under Apache-2.0,
+as each G1 scene's own notice says.
+"""
 
 
 def setup_builder() -> mjswan.Builder:
@@ -26,7 +39,7 @@ def setup_builder() -> mjswan.Builder:
     upstream.register_tasks(root)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="Parkour MJLab")
+    project = builder.add_project(name="Parkour MJLab").set_notice(PROJECT_NOTICE)
 
     env_cfg, history = pie.env_cfg()
     policy = onnx.load(str(root / upstream.PIE_POLICY))
