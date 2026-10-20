@@ -38,6 +38,9 @@ humanoid_amp_mjlab, and `student_policy_v6_model_10000.onnx` trains on
 uv run msp run parkour
 ```
 
+`parkour-open`, what the GitHub Pages site and mjswan Cloud carry, leaves out the scenes a
+non-commercial license covers, and so builds them all: none is (see [License](#license)).
+
 The first build clones parkour_mjlab into `.cache/` at a pinned commit (399 MB with its
 checkpoints); set `MJSWAN_PARKOUR_ROOT` to use a checkout you have. It then downloads
 PHP's five motion bundles (306 MB), checks each against the sha256 the release lists, and
@@ -117,4 +120,4 @@ projects. Only some of what the scenes carry is PHP's:
 - **The G1 model** is Unitree's under BSD-3-Clause (upstream's
   `src/assets/robots/unitree_g1/LICENSE`, which every scene carries).
 
-The demo is published only by its author.
+Nothing here is under a non-commercial license. The demo is published only by its author.

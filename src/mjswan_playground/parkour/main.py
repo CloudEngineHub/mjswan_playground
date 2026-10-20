@@ -23,9 +23,13 @@ projects. It states no license, so its code and the policies here, which it trai
 no grant: PHP releases no teacher checkpoints. PHP's clips and boxes are Amazon's, under
 Apache-2.0, as each scene's own notice says.
 """
+#: Parts built on their own, each with the scenes it leaves out. The site and mjswan Cloud
+#: carry ``parkour-open``, without the scenes a non-commercial license covers: none.
+PARTS = {"parkour-open": ()}
 
 
-def setup_builder() -> mjswan.Builder:
+def setup_builder(part: str | None = None) -> mjswan.Builder:
+    """Every scene, for ``parkour-open`` too."""
     root = upstream.resolve_root()
     upstream.register_tasks(root)
 
