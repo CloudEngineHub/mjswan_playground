@@ -2,9 +2,9 @@
 
 <img src="../../../assets/parkour.gif" width="480" alt="Parkour MJLab preview"/>
 
-Source: https://github.com/yhx1203/parkour_mjlab (no license stated, see
-[License](#license); its G1 model is Unitree's, BSD-3-Clause) · PHP's motion clips and
-their boxes from https://github.com/amazon-far/php_parkour, release
+Source: https://github.com/yhx1203/parkour_mjlab, a port of PHP to mjlab (no license
+stated, see [License](#license); its G1 model is Unitree's, BSD-3-Clause) · PHP's motion
+clips and their boxes from https://github.com/amazon-far/php_parkour, release
 `training-motion-examples-v1` (Apache-2.0)
 
 > Zhen Wu, Xiaoyu Huang, Lujie Yang, Yuanhang Zhang, Xi Chen, Pieter Abbeel, Rocky Duan,
@@ -102,8 +102,19 @@ action noise ends the same clip at 14.5 s.
 
 ## License
 
-parkour_mjlab states no license: its repository has no `LICENSE`, so its code and its
-checkpoints, the policies here, carry no grant, and the project ships no license file. The
-G1 model is Unitree's under BSD-3-Clause (upstream's `src/assets/robots/unitree_g1/LICENSE`,
-which every scene carries), and PHP's clips and boxes are Amazon's under Apache-2.0, with
-the scenes carrying its notice. The demo is published only by its author.
+parkour_mjlab is a port of PHP to mjlab, which PHP's README lists among its community
+projects. Only some of what the scenes carry is PHP's:
+
+- **PHP's clips and boxes** are Amazon's, under Apache-2.0 like PHP's repository, and the
+  release ships them unchanged. Each scene carries the license and Amazon's notice, which
+  also says what the port changes: the clip is rewritten in mjlab's layout, and its boxes
+  are built into the scene.
+- **parkour_mjlab's task code and checkpoints** are its own. The code is written for
+  mjlab, not copied from PHP or the Holosoma framework it trains with, and the teachers
+  are its own training runs, since PHP releases no teacher checkpoints. parkour_mjlab
+  states no license, so they carry no grant, and the project ships no license file, only
+  a notice saying so.
+- **The G1 model** is Unitree's under BSD-3-Clause (upstream's
+  `src/assets/robots/unitree_g1/LICENSE`, which every scene carries).
+
+The demo is published only by its author.

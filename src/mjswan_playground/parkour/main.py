@@ -8,9 +8,21 @@ from mjswan.mjlab.onnx_meta import read_mjlab_metadata
 
 from . import php, upstream
 
-PHP_NOTICE = "PHP training motions: https://github.com/amazon-far/php_parkour, release \
-training-motion-examples-v1. Copyright Amazon.com, Inc. or its affiliates. All Rights \
-Reserved."
+#: Apache-2.0 asks a changed file to say what changed.
+PHP_NOTICE = """\
+PHP training motions: https://github.com/amazon-far/php_parkour, release
+training-motion-examples-v1. Copyright Amazon.com, Inc. or its affiliates. All Rights
+Reserved. Changed here: the scene's clip is rewritten in mjlab's motion layout, and its
+boxes are built into the scene.
+"""
+#: parkour_mjlab ships no license or notice of its own.
+PROJECT_NOTICE = f"""\
+Parkour MJLab: {upstream.REPO_URL} at {upstream.REPO_COMMIT[:7]}, a port of PHP
+(https://github.com/amazon-far/php_parkour) to mjlab, which PHP lists among its community
+projects. It states no license, so its code and the policies here, which it trained, carry
+no grant: PHP releases no teacher checkpoints. PHP's clips and boxes are Amazon's, under
+Apache-2.0, as each scene's own notice says.
+"""
 
 
 def setup_builder() -> mjswan.Builder:
@@ -18,7 +30,7 @@ def setup_builder() -> mjswan.Builder:
     upstream.register_tasks(root)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="Parkour MJLab")
+    project = builder.add_project(name="Parkour MJLab").set_notice(PROJECT_NOTICE)
     for skill in upstream.BUNDLES:
         # Upstream's play draws each bundle's clips in turn, from its first.
         clip = upstream.clips(root, skill)[0]
