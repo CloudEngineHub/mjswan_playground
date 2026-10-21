@@ -3,7 +3,7 @@
 <img src="../../../assets/parkour.gif" width="480" alt="Parkour MJLab preview"/>
 
 Source: https://github.com/yhx1203/parkour_mjlab, which trains PIE's Go2 and ports PHP to
-mjlab (no license stated, see [License](#license); its G1 model is Unitree's,
+mjlab (Apache-2.0 with its policies, see [License](#license); its G1 model is Unitree's,
 BSD-3-Clause, and its Go2 model is Unitree's from mujoco_menagerie, BSD-3-Clause) · PHP's
 motion clips and their boxes from https://github.com/amazon-far/php_parkour, release
 `training-motion-examples-v1` (Apache-2.0)
@@ -61,6 +61,7 @@ clip in the layout mjlab's motion command reads.
 | `logs/rsl_rl/g1_php_<skill>_teacher/model_20000.pt` | each teacher, converted |
 | `logs/rsl_rl/g1_php_student/model_23000.onnx` | the student, upstream's sim2sim export, and its joint order and default pose |
 | `src/assets/robots/unitree_g1/LICENSE` | the G1 scenes' attribution |
+| `LICENSE`, `NOTICE` | the project's license and notice |
 
 | From `php_parkour`, release `training-motion-examples-v1` | Used as |
 |---|---|
@@ -200,18 +201,20 @@ its camera alone, its arms reaching for the edge.
 ## License
 
 parkour_mjlab trains PIE's Go2 and ports PHP to mjlab, and PHP's README lists it among
-its community projects. Only some of what the scenes carry is PHP's:
+its community projects. What the scenes carry:
 
+- **parkour_mjlab's code and policies** are Apache-2.0: its `LICENSE` and `NOTICE`, which
+  the project carries. Its `logs/LICENSE` puts the seven checkpoints here under it by
+  name, browser demos and cloud-hosted inference included. Each scene's notice names its
+  policy and says what the port changes: the teachers are exported to ONNX by mjlab's
+  runner, and PIE's and the student's exports are wrapped to carry their state from step
+  to step.
 - **PHP's clips and boxes** are Amazon's, under Apache-2.0 like PHP's repository, and the
   release ships them unchanged. Each G1 scene carries the license and Amazon's notice,
   which also says what the port changes: the clip is rewritten in mjlab's layout, and its
-  boxes are built into the scene.
-- **parkour_mjlab's task code and checkpoints** are its own. The code is written for
-  mjlab, not copied from PHP or the Holosoma framework it trains with, and every policy
-  here is its own training run: PHP releases no teacher checkpoints, its student release
-  is a different ONNX pair, and PIE is not PHP's. parkour_mjlab states no license, so they
-  carry no grant, and the project ships no license file, only a notice saying so.
+  boxes are built into the scene. parkour_mjlab's license does not cover them, as its
+  `logs/LICENSE` says.
 - **The robots** are Unitree's under BSD-3-Clause: the G1 (upstream's
   `src/assets/robots/unitree_g1/LICENSE`, which every G1 scene carries) and the Go2.
 
-Nothing here is under a non-commercial license. The demo is published only by its author.
+Nothing here is under a non-commercial license.

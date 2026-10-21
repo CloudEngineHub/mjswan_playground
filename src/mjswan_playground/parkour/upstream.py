@@ -18,7 +18,7 @@ from mjswan_playground._compat import collision_defaults, legacy_update_assets
 from mjswan_playground._deps import CACHE_DIR, ensure_repo
 
 REPO_URL = "https://github.com/yhx1203/parkour_mjlab"
-REPO_COMMIT = "dfe09f44a59ac628e295b1ced16147708f3fc6b8"
+REPO_COMMIT = "0e2cb60f4af9645ea9fc0a9645ae752129f80645"
 #: amazon-far/php_parkour's release training-motion-examples-v1, each bundle with the
 #: sha256 its SHA256SUMS lists, in upstream's ``BUNDLES`` order.
 BUNDLE_URL = (
@@ -59,6 +59,11 @@ _CACHE = CACHE_DIR / "parkour"
 
 def teacher(skill: str) -> str:
     return f"Unitree-G1-PHP-{skill}-Teacher"
+
+
+def teacher_checkpoint(skill: str) -> str:
+    folder = "g1_php_" + skill.lower().replace("-", "_") + "_teacher"
+    return f"logs/rsl_rl/{folder}/model_20000.pt"
 
 
 def resolve_root() -> Path:
@@ -163,8 +168,7 @@ def teacher_onnx(root: Path, skill: str, env_cfg: Any) -> Path:
     from mjlab.rl.exporter_utils import attach_metadata_to_onnx, get_base_metadata
     from mjswan.mjlab.runner import create_pt_onnx_export_context, export_checkpoint
 
-    folder = "g1_php_" + skill.lower().replace("-", "_") + "_teacher"
-    checkpoint = f"logs/rsl_rl/{folder}/model_20000.pt"
+    checkpoint = teacher_checkpoint(skill)
     context = create_pt_onnx_export_context(teacher(skill), env_cfg=env_cfg)
     try:
         model = export_checkpoint(context, root / checkpoint)

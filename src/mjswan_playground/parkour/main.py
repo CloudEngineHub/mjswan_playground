@@ -4,6 +4,7 @@ student. See ``README.md``."""
 from __future__ import annotations
 
 import json
+import textwrap
 from typing import Any
 
 import mjswan
@@ -23,18 +24,23 @@ training-motion-examples-v1. Copyright Amazon.com, Inc. or its affiliates. All R
 Reserved. Changed here: the scene's clip is rewritten in mjlab's motion layout, and its
 boxes are built into the scene.
 """
-#: parkour_mjlab ships no license or notice of its own.
-PROJECT_NOTICE = f"""\
-Parkour MJLab: {upstream.REPO_URL} at {upstream.REPO_COMMIT[:7]}. It trains PIE's Go2 and
-PHP's G1 on mjlab, its PHP half a port of https://github.com/amazon-far/php_parkour, which
-lists it among its community projects. It states no license, so its code and the policies
-here, all its own training runs, carry no grant: PHP releases no teacher checkpoints, and
-its student release is another pair. PHP's clips and boxes are Amazon's, under Apache-2.0,
-as each G1 scene's own notice says.
-"""
 #: Parts built on their own, each with the scenes it leaves out. The site and mjswan Cloud
 #: carry ``parkour-open``, without the scenes a non-commercial license covers: none.
 PARTS = {"parkour-open": ()}
+
+
+def _policy_notice(checkpoint: str, change: str) -> str:
+    """The notice a scene's policy carries: its checkpoint, which parkour_mjlab's
+    logs/LICENSE puts under Apache-2.0, and what the port changes, as Apache-2.0 asks."""
+    return (
+        textwrap.fill(
+            f"Policy: {checkpoint} from {upstream.REPO_URL} at "
+            f"{upstream.REPO_COMMIT[:7]}, under Apache-2.0 by its logs/LICENSE. "
+            f"Changed here: {change}",
+            88,
+        )
+        + "\n"
+    )
 
 
 def setup_builder(part: str | None = None) -> mjswan.Builder:
@@ -43,12 +49,20 @@ def setup_builder(part: str | None = None) -> mjswan.Builder:
     upstream.register_tasks(root)
 
     builder = mjswan.Builder()
-    project = builder.add_project(name="Parkour MJLab").set_notice(PROJECT_NOTICE)
+    project = builder.add_project(name="Parkour MJLab", license=root / "LICENSE")
+    project.set_notice(root / "NOTICE")
 
     env_cfg, history = pie.env_cfg()
     policy = onnx.load(str(root / upstream.PIE_POLICY))
     contract = read_mjlab_metadata(policy)
     scene = project.add_scene_mjlab(upstream.PIE, env_cfg=env_cfg)
+    scene.add_attribution(
+        "parkour_mjlab-policy",
+        notice=_policy_notice(
+            upstream.PIE_POLICY,
+            "wrapped to carry its depth history and GRU state from step to step.",
+        ),
+    )
     scene.add_policy(
         name="PIE",
         policy=pie.policy(root, **history),
@@ -59,12 +73,15 @@ def setup_builder(part: str | None = None) -> mjswan.Builder:
         default_joint_pos=contract.default_joint_pos,
     )
 
-    def php_scene(task_id: str, env_cfg: Any, clip: str, **policy: Any) -> None:
+    def php_scene(
+        task_id: str, env_cfg: Any, clip: str, policy_notice: str, **policy: Any
+    ) -> None:
         scene = project.add_scene_mjlab(task_id, env_cfg=env_cfg)
         scene.add_attribution(
             "unitree_g1", license=root / "src/assets/robots/unitree_g1/LICENSE"
         )
         scene.add_attribution("php_parkour", license="Apache-2.0", notice=PHP_NOTICE)
+        scene.add_attribution("parkour_mjlab-policy", notice=policy_notice)
         motion = env_cfg.commands["motion"]
         scene.add_policy(**policy).add_motion(
             name=clip,
@@ -85,6 +102,10 @@ def setup_builder(part: str | None = None) -> mjswan.Builder:
             upstream.teacher(skill),
             env_cfg,
             clip.stem.removesuffix("_motion"),
+            _policy_notice(
+                upstream.teacher_checkpoint(skill),
+                "exported to ONNX by mjlab's runner.",
+            ),
             name=skill,
             policy=policy,
             policy_joint_names=[f"robot/{name}" for name in contract.joint_names],
@@ -102,6 +123,11 @@ def setup_builder(part: str | None = None) -> mjswan.Builder:
         upstream.STUDENT,
         env_cfg,
         clip.stem.removesuffix("_motion"),
+        _policy_notice(
+            upstream.STUDENT_POLICY,
+            f"wrapped to read its depth image {STUDENT_DEPTH_LAG} steps old, where "
+            "upstream draws 3 or 4 each step.",
+        ),
         name="Student",
         policy=policy,
         in_keys=["proprio", "depth", "is_init", "adapt_hx"],
