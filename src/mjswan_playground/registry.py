@@ -23,6 +23,7 @@ _TASKS: dict[str, str] = {
     "musclemimic": "mjswan_playground.musclemimic.main",
     "orcs": "mjswan_playground.orcs.main",
     "pacman": "mjswan_playground.pacman.main",
+    "parkour": "mjswan_playground.parkour.main",
     "spinkick": "mjswan_playground.spinkick.main",
     "terra": "mjswan_playground.terra.main",
     "unitreerl": "mjswan_playground.unitreerl.main",
