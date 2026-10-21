@@ -24,9 +24,6 @@ training-motion-examples-v1. Copyright Amazon.com, Inc. or its affiliates. All R
 Reserved. Changed here: the scene's clip is rewritten in mjlab's motion layout, and its
 boxes are built into the scene.
 """
-#: Parts built on their own, each with the scenes it leaves out. The site and mjswan Cloud
-#: carry ``parkour-open``, without the scenes a non-commercial license covers: none.
-PARTS = {"parkour-open": ()}
 
 
 def _policy_notice(checkpoint: str, change: str) -> str:
@@ -43,8 +40,7 @@ def _policy_notice(checkpoint: str, change: str) -> str:
     )
 
 
-def setup_builder(part: str | None = None) -> mjswan.Builder:
-    """Every scene, for ``parkour-open`` too."""
+def setup_builder() -> mjswan.Builder:
     root = upstream.resolve_root()
     upstream.register_tasks(root)
 
