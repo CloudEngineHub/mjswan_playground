@@ -85,6 +85,8 @@ def student_cfg(cfg: Any, clip: Path) -> Any:
     runner gives two groups, while the exported student takes them as two inputs."""
     from src.tasks.php.mdp.depth import FOVY
 
+    robot = cfg.scene.entities["robot"]
+    robot.spec_fn = functools.partial(_drawn, robot.spec_fn)
     camera = next(s for s in cfg.scene.sensors if s.name == "depth_camera")
     cfg.scene.sensors = (
         *(s for s in cfg.scene.sensors if s is not camera),
@@ -134,6 +136,16 @@ def student_cfg(cfg: Any, clip: Path) -> Any:
         "depth": groups["student_depth"],
     }
     return cfg
+
+
+def _drawn(spec_fn: Any) -> Any:
+    """Upstream's student G1 with the torso meshes it hides from the camera, in group 4,
+    moved to group 1, which mjswan draws and the camera's rays skip."""
+    spec = spec_fn()
+    for geom in spec.geoms:
+        if geom.group == 4:
+            geom.group = 1
+    return spec
 
 
 def student_policy(root: Path, lag: int) -> Any:

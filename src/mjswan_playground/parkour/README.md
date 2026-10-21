@@ -178,6 +178,11 @@ its camera alone, its arms reaching for the edge.
   directly. The lag is not a `history_steps` on the term: mjswan 0.12.2 attaches a
   raycast's descriptor to a fused group only, and a term with a history does not fuse, so
   the browser never casts its rays.
+- **The student's torso is in group 1.** Upstream moves its torso, head and logo meshes,
+  which enclose the camera, to group 4, out of the camera's groups 0 and 2, and its own
+  viewer draws them with group 2. mjswan draws groups 0 to 2 alone, so
+  [`php.py`](php.py) puts them in group 1, which the rays skip too; in mjlab the student's
+  observations are unchanged over 300 steps.
 - **The groups are renamed:** PIE's `actor`, `proprio_history` and `camera` to `proprio`,
   `history` and `depth`, and the student's `student_proprio` and `student_depth` to
   `proprio` and `depth`. mjswan refuses an actor its runner feeds several groups, while
