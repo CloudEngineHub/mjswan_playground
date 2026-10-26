@@ -21,7 +21,7 @@ BUNDLE_URL = (
     "https://github.com/wuji-technology/wuji-mjlab/releases/download/"
     f"{RELEASE}/wuji-mjlab-{RELEASE}-assets.zip"
 )
-BUNDLE_SHA256 = "de01b29921b69ea38100a29416c324b384905e1ae4ebbfa40d769be948fc2d39"
+BUNDLE_SHA256 = "b1a23d3329fdcef6bc80114caceda93e1cc26292cded0b36dce62fa7b531f8c8"
 #: Upstream's pen-spin recipes, each with a checkpoint and a group of clips.
 PEN_SPIN_GROUPS = (
     "01_single_axis",
