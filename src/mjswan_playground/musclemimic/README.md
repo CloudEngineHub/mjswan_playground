@@ -2,7 +2,7 @@
 
 <img src="../../../assets/musclemimic.gif" width="480" alt="MuscleMimic full body preview"/>
 
-Source: https://github.com/MyoHub/myosuite/tree/ms3 (Apache-2.0) ·
+Source: https://github.com/MyoHub/myosuite/tree/992bd58928e61d3f7ce27a033be02d0be18a2c18 (Apache-2.0) ·
 policy and clips from https://github.com/amathislab/musclemimic
 
 > Chengkun Li, Cheryl Wang, Bianca Ziliotto, Merkourios Simos, Jozsef Kovecses,
@@ -12,15 +12,15 @@ policy and clips from https://github.com/amathislab/musclemimic
 
 A 354-muscle, 89-DoF musculoskeletal body tracking a retargeted walking clip, driven by
 the public checkpoint [`amathislab/mm-10m-2`](https://huggingface.co/amathislab/mm-10m-2)
-(2.05e9 steps). The scene is myosuite's mjlab task `myoMimicFullbody-v0`; the policy reads
-upstream MuscleMimic's own 2418-wide observation, which `upstream.py` reproduces in torch
-from myosuite's numpy builder.
+(2.05e9 steps). The scene is myosuite's mjlab task `myoMimicFullbody-v0`, its body built
+as `musclemimic_models` 1.0.5, the release the checkpoint was trained on: on 1.0.6,
+myosuite's default, which fixes the left knee's coupling, it falls within 2 s. The policy
+reads upstream MuscleMimic's own 2418-wide observation, which `upstream.py` reproduces in
+torch from myosuite's numpy builder.
 
 ## Run
 
-The `myoMimic*` mjlab tasks and `FullbodyObsAdapter` live on myosuite's
-[`ms3`](https://github.com/MyoHub/myosuite/tree/ms3) branch, which `--extra musclemimic`
-pins; the PyPI release (2.12.2) carries neither.
+`--extra musclemimic` takes myosuite from GitHub, at the commit the `terra` task pins.
 
 ```sh
 uv sync --extra musclemimic
@@ -28,8 +28,9 @@ hf auth login          # the clip dataset is gated, auto-approved
 uv run msp run musclemimic
 ```
 
-The first build downloads the checkpoint (140 MB) and the clip, converts the actor to
-float16 ONNX (19 MB) into `.cache/`, and checks it against myosuite's forward pass.
+The first build downloads the checkpoint (140 MB) and the clip, exports the actor to ONNX,
+checks it against myosuite's forward pass, and stores it with float16 weights (19 MB) in
+`.cache/`.
 
 ## What the policy reads
 
@@ -56,8 +57,8 @@ sensor values per step, not the whole arrays.
 | Compared | max \|Δ\| |
 |---|---:|
 | exported actor vs myosuite's numpy forward pass | 6.7e-06 |
-| float16 vs float32 weights (600-step rollout identical) | 1.8e-02 |
-| torch observation vs myosuite's numpy builder, 40 steps | 4.4e-07 |
+| float16 vs float32 weights: actions / the root over a 483-step rollout | 1.3e-03 / 2.3 cm |
+| torch observation vs myosuite's numpy builder, 44 states | 1.0e-06 |
 | traced graph vs the torch observation, 24 steps | 4.5e-07 |
 
 ## What differs from upstream
@@ -69,10 +70,12 @@ sensor values per step, not the whole arrays.
   myosuite's own reset does not.
 - **The termination is upstream's**, mean relative-site deviation or root deviation over
   1.0 m, not myosuite's `mimic_deviation`, which compares the root against the *mean of the
-  target sites* with a 0.3 m limit and would end the episode at 1.8 s. The episode ends
-  where the 484-frame clip wraps, at 4.84 s.
-- **The actor is float16.** 38 MB in float32; hosts such as Cloudflare Pages cap a file at
-  25 MiB. Actions move by at most 0.018 and the rollout does not change. Int8 would give
-  9.6 MB but moves them by 0.22 and worsens tracking.
+  target sites* with a 0.3 m limit and would end the episode at 1.8 s. The episode is the
+  484-frame clip: it times out on the last frame, at 4.83 s, before the reference wraps
+  to its start.
+- **The actor's weights are float16**, cast back to float32 as the graph loads: 19 MB,
+  not 38 MB, for hosts such as Cloudflare Pages that cap a file at 25 MiB. A float16 graph
+  would run at under half the policy's 100 Hz in the browser. Int8 would give 9.6 MB but
+  moves the actions by 0.22 and worsens tracking.
 - **Browser behaviour is not asserted.** Parity proves each graph matches mjlab under
   `mujoco_warp`; the browser runs MuJoCo's WASM build.
