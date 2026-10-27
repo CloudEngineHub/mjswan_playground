@@ -54,9 +54,8 @@ def ensure_policy() -> tuple[Path, dict[str, Any]]:
     Converted once into the cache: the Orbax train state is read, the actor rebuilt with
     myosuite's own ``MimicActorModule``, exported, and checked against myosuite's numpy
     forward pass. Its weight matrices are then stored as float16, cast back to float32 in
-    the graph: half the 38 MB file, to fit hosts that cap a file at 25 MiB, while
-    onnxruntime folds the casts as it loads and infers in float32. A float16 graph runs
-    16x slower on onnxruntime-web's CPU, below the 100 Hz the policy acts at.
+    the graph: half the 38 MB file, for hosts that cap a file at 25 MiB, with float32
+    inference, as onnxruntime-web runs a float16 graph 16x slower than the 100 Hz needs.
     """
     onnx_path = _CACHE / "policy_mm10m2_w16.onnx"
     params_path = _CACHE / "policy_mm10m2_env.json"
