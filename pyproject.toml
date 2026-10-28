@@ -9,7 +9,7 @@ authors = [{ name = "mjswan Developers" }]
 # pre-built wheel for 3.13+.
 requires-python = ">=3.10, <3.13"
 dependencies = [
-    "mjswan>=0.12.2",
+    "mjswan>=0.12.3",
     "mjlab==1.6.0",
     "torch>=2.9.1",
     "onnx>=1.20.0",
@@ -25,7 +25,6 @@ wbc = ["wbc-mjlab>=0.0.6"]
 musclemimic = [
     "myosuite[musclemimic]",
     "orbax-checkpoint>=0.11",
-    "onnxconverter-common>=1.16",
 ]
 # Checks the policies the orcs task converts, and reads GRAIL's curbs when it stages them.
 orcs = ["onnxruntime", "usd-core>=26.8"]

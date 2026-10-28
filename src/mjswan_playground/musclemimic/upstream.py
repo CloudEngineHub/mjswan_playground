@@ -49,14 +49,15 @@ def fetch_clip() -> Path:
 
 
 def ensure_policy() -> tuple[Path, dict[str, Any]]:
-    """The actor as float16 ONNX, plus the observation params it was trained with.
+    """The actor as ONNX, plus the observation params it was trained with.
 
     Converted once into the cache: the Orbax train state is read, the actor rebuilt with
     myosuite's own ``MimicActorModule``, exported, and checked against myosuite's numpy
-    forward pass. float16 weights (float32 in/out) halve the 38 MB file to fit hosts that
-    cap a file at 25 MiB; they move the actions by at most 0.018 and no rollout.
+    forward pass. Its weight matrices are then stored as float16, cast back to float32 in
+    the graph: half the 38 MB file, for hosts that cap a file at 25 MiB, with float32
+    inference, as onnxruntime-web runs a float16 graph 16x slower than the 100 Hz needs.
     """
-    onnx_path = _CACHE / "policy_mm10m2.onnx"
+    onnx_path = _CACHE / "policy_mm10m2_w16.onnx"
     params_path = _CACHE / "policy_mm10m2_env.json"
     if not (onnx_path.exists() and params_path.exists()):
         _convert(onnx_path, params_path)
@@ -74,17 +75,13 @@ def _convert(onnx_path: Path, params_path: Path) -> None:
         load_local_policy_artifacts,
         read_checkpoint_config_metadata,
     )
-    from onnxconverter_common import float16
+    from onnx import helper, numpy_helper
 
     root = Path(snapshot_download(POLICY_REPO_ID))
     artifacts = load_local_policy_artifacts(root)
     module = MimicActorModule.from_artifacts(artifacts)
 
     fp32 = export_to_onnx(module, _CACHE / "policy_mm10m2.fp32.onnx")
-    # keep_io_types: the browser feeds and reads float32; only the weights shrink.
-    onnx.save(
-        float16.convert_float_to_float16(onnx.load(fp32), keep_io_types=True), onnx_path
-    )
 
     # The export is only trusted if it matches myosuite's forward pass on observations
     # drawn from the checkpoint's own running statistics.
@@ -104,11 +101,28 @@ def _convert(onnx_path: Path, params_path: Path) -> None:
     exported = ort.InferenceSession(str(fp32), providers=["CPUExecutionProvider"]).run(
         ["actions"], {"obs": sample}
     )[0]
+    model = onnx.load(fp32)
     fp32.unlink()
     error = float(np.abs(exported - reference).max())
     if error > 1e-4:
-        onnx_path.unlink()
         raise RuntimeError(f"Exported actor disagrees with myosuite's by {error:.2e}")
+
+    graph = model.graph
+    for init in list(graph.initializer):
+        if len(init.dims) != 2:
+            continue
+        half = numpy_helper.from_array(
+            numpy_helper.to_array(init).astype(np.float16), f"{init.name}.fp16"
+        )
+        graph.initializer.remove(init)
+        graph.initializer.append(half)
+        graph.node.insert(
+            0,
+            helper.make_node(
+                "Cast", [half.name], [init.name], to=onnx.TensorProto.FLOAT
+            ),
+        )
+    onnx.save(model, onnx_path)
 
     params_path.write_text(
         json.dumps(
@@ -125,19 +139,24 @@ def _convert(onnx_path: Path, params_path: Path) -> None:
 
 @contextlib.contextmanager
 def _resolve_entity_names(entity: str = ENTITY):
-    """Let name lookups fall back to mjlab's ``entity/name`` form: the adapter asks for
-    bare names (``root``, ``r_foot``), and mjlab prefixes every attached element."""
-    original = mujoco.mj_name2id
+    """Let the adapter use bare names (``root``, ``r_foot``) where mjlab prefixes every
+    attached element ``entity/``: lookups fall back to the prefixed name, and names read
+    back by id lose the prefix, so the clip's joint names match the model's."""
+    name2id, id2name = mujoco.mj_name2id, mujoco.mj_id2name
 
     def prefixed(model: Any, obj_type: Any, name: str) -> int:
-        found = original(model, obj_type, name)
-        return found if found >= 0 else original(model, obj_type, f"{entity}/{name}")
+        found = name2id(model, obj_type, name)
+        return found if found >= 0 else name2id(model, obj_type, f"{entity}/{name}")
 
-    mujoco.mj_name2id = prefixed
+    def bare(model: Any, obj_type: Any, obj_id: int) -> str | None:
+        name = id2name(model, obj_type, obj_id)
+        return name.removeprefix(f"{entity}/") if name else name
+
+    mujoco.mj_name2id, mujoco.mj_id2name = prefixed, bare
     try:
         yield
     finally:
-        mujoco.mj_name2id = original
+        mujoco.mj_name2id, mujoco.mj_id2name = name2id, id2name
 
 
 def _mat_to_rotvec(mat: torch.Tensor) -> torch.Tensor:
