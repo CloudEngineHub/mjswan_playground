@@ -20,7 +20,7 @@
 # An entry with a single `task` and `policy` still waits for part A to list its
 # repository's simulations.
 
-- id: supermimic
+- id: msm
   repo: https://github.com/kaibohex/muscle-supermimic
   commit: d73bbcb866da83bef186a730547ab09ecb96bd3d
   simulations:
